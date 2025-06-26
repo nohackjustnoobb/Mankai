@@ -1,0 +1,102 @@
+//
+//  DebugMangas.swift
+//  mankai
+//
+//  Created by Travis XU on 26/6/2025.
+//
+
+import SwiftUI
+
+extension DebugMangas {
+    private func statusText(_ status: Status?) -> String {
+        guard let status = status else { return String(localized: "nil") }
+        switch status {
+        case .any:
+            return String(localized: "any")
+        case .onGoing:
+            return String(localized: "onGoing")
+        case .ended:
+            return String(localized: "ended")
+        }
+    }
+
+    private func chapterText(_ chapter: Chapter?) -> String {
+        guard let chapter = chapter else { return String(localized: "nil") }
+        if let title = chapter.title, let id = chapter.id {
+            return "\(title) (\(String(localized: "id")): \(id))"
+        } else if let title = chapter.title {
+            return title
+        } else if let id = chapter.id {
+            return "\(String(localized: "id")): \(id)"
+        } else {
+            return String(localized: "noDetails")
+        }
+    }
+}
+
+struct DebugMangas: View {
+    let mangas: [Manga]
+    let plugin: JsPlugin
+    var title: String? = nil
+
+    var body: some View {
+        Section(title ?? String(localized: "mangas")) {
+            ForEach(mangas) { manga in
+                NavigationLink(
+                    destination: DebugGetMangasAndGetDetailedManga(
+                        mangaId: manga.id, plugin: plugin
+                    )
+                ) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("id")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(manga.id)
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text("status")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(statusText(manga.status))
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                        }
+
+                        HStack {
+                            Text("title").font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(manga.title ?? String(localized: "nil"))
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+
+                        HStack {
+                            Text("cover")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(manga.cover ?? String(localized: "nil"))
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                            Spacer()
+                        }
+
+                        HStack {
+                            Text("latestChapter")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(chapterText(manga.latestChapter))
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
