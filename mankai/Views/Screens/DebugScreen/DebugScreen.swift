@@ -48,14 +48,14 @@ struct DebugScreen: View {
                             .italic()
                     } else {
                         ForEach(plugin.availableGenres, id: \.self) { genre in
-                            Text(genre.rawValue)
+                            Text(LocalizedStringKey(genre.rawValue))
                         }
                     }
                 }
 
                 Section("configs") {
                     if plugin.configs.isEmpty {
-                        Text("noConfigs")
+                        Text("noConfig")
                             .foregroundColor(.secondary)
                             .italic()
                     } else {
@@ -67,12 +67,8 @@ struct DebugScreen: View {
                                     Text(config.name)
                                         .font(.headline)
                                     Spacer()
-                                    Text(config.type.rawValue)
-                                        .font(.caption)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.secondary.opacity(0.2))
-                                        .cornerRadius(4)
+                                    SmallTag(
+                                        text: NSLocalizedString(config.type.rawValue, comment: ""))
                                 }
 
                                 if let description = config.description {
@@ -99,12 +95,12 @@ struct DebugScreen: View {
                                         .fontDesign(.monospaced)
                                 }
 
-                                if config.option != nil {
+                                if let options = config.options {
                                     HStack {
                                         Text("option")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
-                                        Text(String(describing: config.option!))
+                                        Text(String(describing: options))
                                             .font(.caption)
                                             .fontDesign(.monospaced)
                                     }

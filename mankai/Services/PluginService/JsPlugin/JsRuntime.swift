@@ -75,6 +75,7 @@ async function fetch(url, options = {}) {
 enum Method: String {
     case log
     case fetch
+    case setConfig
 }
 
 class JsRuntime: NSObject {
@@ -95,7 +96,9 @@ class JsRuntime: NSObject {
     /// - Parameter js: The JavaScript code to execute
     /// - Returns: The result of the JavaScript execution
     @MainActor
-    public func execute(_ js: String, from: String? = nil) async throws -> Any? {
+    public func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
+        -> Any?
+    {
         await initWebview()
 
         guard let webview else {
@@ -105,21 +108,46 @@ class JsRuntime: NSObject {
         }
 
         // Inject functions
-        let injectedJs = inject(js, from: from)
+        let injectedJs = inject(js, from: from, plugin: plugin)
 
         return try await webview.callAsyncJavaScript(injectedJs, contentWorld: .defaultClient)
     }
 
-    private func inject(_ js: String, from: String? = nil) -> String {
+    private func inject(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) -> String {
         // TODO: inject getValue and setValue functions
-        // TODO: inject getConfigs and setConfigs functions
-
         var injectedJs = JS_LOG + JS_FETCH
 
-        let from = from == nil ? "undefined" : "\"\(from!)\""
+        if let plugin = plugin {
+            let configValuesArray = plugin.configValues.map { configValue in
+                [
+                    "key": configValue.key,
+                    "value": configValue.value,
+                ]
+            }
+
+            let configValuesJson: String
+            do {
+                let jsonData = try JSONSerialization.data(
+                    withJSONObject: configValuesArray, options: [])
+                configValuesJson = String(data: jsonData, encoding: .utf8) ?? "[]"
+            } catch {
+                configValuesJson = "[]"
+            }
+
+            let getConfigs = """
+            function getConfigs() {
+                return \(configValuesJson);
+            }
+            """
+
+            injectedJs += getConfigs
+        }
+
+        var from = plugin?.id ?? from
+        from = from == nil ? "undefined" : "\"\(from!)\""
 
         // Override console.log
-        injectedJs += "console.log = (...m) => log(m.join(' '), \(from));"
+        injectedJs += "console.log = (...m) => log(m.join(' '), \(from!));"
 
         injectedJs += js
         return injectedJs

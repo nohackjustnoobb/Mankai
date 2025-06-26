@@ -1,22 +1,33 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@: %lld %@" : {
+    "%lld bytes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@: %2$lld %3$@"
+            "state" : "translated",
+            "value" : "%lld Bytes"
           }
         }
       }
     },
-    "%lld %@" : {
+    "action" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld %2$@"
+            "state" : "translated",
+            "value" : "Action"
+          }
+        }
+      }
+    },
+    "actions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions"
           }
         }
       }
@@ -71,16 +82,6 @@
         }
       }
     },
-    "bytes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bytes"
-          }
-        }
-      }
-    },
     "cancel" : {
       "localizations" : {
         "en" : {
@@ -121,12 +122,12 @@
         }
       }
     },
-    "dataSize" : {
+    "dataSize: %lld bytes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Data Size"
+            "value" : "Data Size: %lld Bytes"
           }
         }
       }
@@ -217,6 +218,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed To Load Image"
+          }
+        }
+      }
+    },
+    "failedToParsePlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Parse plugin"
+          }
+        }
+      }
+    },
+    "failedToRemovePlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Remove Plugin"
+          }
+        }
+      }
+    },
+    "failedToResetConfigs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Reset Configs"
+          }
+        }
+      }
+    },
+    "failedToSetConfigValue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Set Config Value"
           }
         }
       }
@@ -412,12 +453,12 @@
         }
       }
     },
-    "noConfigs" : {
+    "noConfig" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Configs"
+            "value" : "No Config"
           }
         }
       }
@@ -438,6 +479,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Genres Available"
+          }
+        }
+      }
+    },
+    "number" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number"
           }
         }
       }
@@ -502,12 +554,72 @@
         }
       }
     },
+    "remove" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "removePlugin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Plugin"
+          }
+        }
+      }
+    },
+    "removePluginConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove this plugin?"
+          }
+        }
+      }
+    },
     "repository" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repository"
+          }
+        }
+      }
+    },
+    "reset" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
+    },
+    "resetConfigs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Configs"
+          }
+        }
+      }
+    },
+    "resetConfigsConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to reset all configs?"
           }
         }
       }
@@ -558,6 +670,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Test JS"
+          }
+        }
+      }
+    },
+    "text" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
           }
         }
       }
@@ -631,6 +754,9 @@
           }
         }
       }
+    },
+    "v%@" : {
+
     },
     "version" : {
       "localizations" : {

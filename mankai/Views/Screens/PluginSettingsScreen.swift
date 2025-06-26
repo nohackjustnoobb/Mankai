@@ -22,8 +22,24 @@ struct PluginSettingsScreenContent: View {
     var body: some View {
         List {
             ForEach(pluginService.plugins) { plugin in
-                // TODO: plugin info page
-                Text(plugin.id)
+                NavigationLink(destination: {
+                    PluginInfoScreen(plugin: plugin)
+                }) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Text(plugin.name ?? plugin.id)
+                            if let version = plugin.version {
+                                SmallTag(text: String(localized: "v\(version)"))
+                            }
+                        }
+                        if let description = plugin.description {
+                            Text(description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                }
             }
         }
         .navigationBarTitleDisplayMode(.inline)

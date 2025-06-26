@@ -31,7 +31,7 @@ struct DebugGetImage: View {
                             HStack {
                                 Text("imageSize")
                                 Spacer()
-                                Text("\(imageData.count) \(String(localized: "bytes"))")
+                                Text("\(imageData.count) bytes")
                                     .foregroundColor(.secondary)
                             }
                             HStack {
@@ -49,7 +49,7 @@ struct DebugGetImage: View {
                                 Text("failedToLoadImage")
                                     .font(.headline)
                                 Text(
-                                    "\(String(localized: "dataSize")): \(imageData.count) \(String(localized: "bytes"))"
+                                    "dataSize: \(imageData.count) bytes"
                                 )
                                 .font(.caption)
                                 .foregroundColor(.secondary)
