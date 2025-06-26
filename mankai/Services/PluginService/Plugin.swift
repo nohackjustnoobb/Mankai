@@ -20,10 +20,15 @@ struct Config {
     var description: String?
     var type: ConfigType
     var defaultValue: Any
-    var option: Any?
+    var options: [Any]?
 }
 
-class Plugin: Identifiable {
+struct ConfigValue {
+    var key: String
+    var value: Any
+}
+
+class Plugin: Identifiable, ObservableObject {
     // ----------- Metadata -----------
 
     var id: String {
@@ -62,7 +67,59 @@ class Plugin: Identifiable {
         fatalError("Not Implemented")
     }
 
+    // ----------- Config Values -----------
+
+    lazy var _configValues: [String: ConfigValue] = {
+        var _configValues: [String: ConfigValue] = [:]
+
+        for config in configs {
+            _configValues[config.key] = ConfigValue(
+                key: config.key, value: config.defaultValue)
+        }
+
+        return _configValues
+    }()
+
+    var configValues: [ConfigValue] {
+        Array(_configValues.values)
+    }
+
     // ----------- Methods -----------
+
+    func getConfig(_ key: String) -> Any {
+        _configValues[key]!.value
+    }
+
+    func setConfig(key: String, value: Any) throws {
+        _configValues[key] = ConfigValue(key: key, value: value)
+
+        objectWillChange.send()
+
+        try savePlugin()
+    }
+
+    func resetConfigs() throws {
+        _configValues = [:]
+
+        for config in configs {
+            _configValues[config.key] = ConfigValue(
+                key: config.key, value: config.defaultValue)
+        }
+
+        objectWillChange.send()
+
+        try savePlugin()
+    }
+
+    // ----------- Abstract Methods -----------
+
+    func savePlugin() throws {
+        fatalError("Not Implemented")
+    }
+
+    func deletePlugin() throws {
+        fatalError("Not Implemented")
+    }
 
     func isOnline() async throws -> Bool {
         fatalError("Not Implemented")

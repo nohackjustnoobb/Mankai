@@ -5,6 +5,7 @@
 //  Created by Travis XU on 21/6/2025.
 //
 
+import CoreData
 import Foundation
 
 class PluginService: ObservableObject {
@@ -15,24 +16,43 @@ class PluginService: ObservableObject {
     }
 
     init() {
-        // TODO: Load plugins from the file system
+        loadJsPluginsFromCoreData()
+    }
+
+    private func loadJsPluginsFromCoreData() {
+        let context = DbService.shared.getContext()
+        let request: NSFetchRequest<JsPluginData> = JsPluginData.fetchRequest()
+
+        do {
+            let jsPluginDataArray = try context.fetch(request)
+
+            for jsPluginData in jsPluginDataArray {
+                if let jsPlugin = JsPlugin.fromDataModel(jsPluginData) {
+                    _plugins[jsPlugin.id] = jsPlugin
+                }
+            }
+        } catch {
+            print("Failed to load plugins from Core Data: \(error)")
+        }
     }
 
     func getPlugin(byId id: String) -> Plugin? {
         return _plugins[id]
     }
 
-    func addPlugin(_ plugin: Plugin) {
-        objectWillChange.send()
+    func addPlugin(_ plugin: Plugin) throws {
         _plugins[plugin.id] = plugin
 
-        // TODO: Save the plugin to the file system
+        objectWillChange.send()
+
+        try plugin.savePlugin()
     }
 
-    func removePlugin(byId id: String) {
-        objectWillChange.send()
-        _plugins.removeValue(forKey: id)
+    func removePlugin(_ id: String) throws {
+        if let plugin = _plugins.removeValue(forKey: id) {
+            objectWillChange.send()
 
-        // TODO: Remove the plugin from the file system
+            try plugin.deletePlugin()
+        }
     }
 }

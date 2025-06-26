@@ -5,6 +5,7 @@
 //  Created by Travis XU on 21/6/2025.
 //
 
+import CoreData
 import Foundation
 
 enum ScriptType: String {
@@ -45,6 +46,12 @@ class JsPlugin: Plugin {
     var _scripts: [ScriptType: String]
     var _funcName: [ScriptType: String] = [:]
     var _scriptsNoExport: [ScriptType: String] = [:]
+
+    private func setConfigValues(_ configValues: [ConfigValue]) {
+        for configValue in configValues {
+            _configValues[configValue.key] = configValue
+        }
+    }
 
     init(
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
@@ -92,7 +99,7 @@ class JsPlugin: Plugin {
     }
 
     private static func parseConfigArray(_ arr: [[String: Any]]) -> [Config] {
-        arr.compactMap { dict in
+        arr.compactMap { dict -> Config? in
             guard let key = dict["key"] as? String,
                   let name = dict["name"] as? String,
                   let type = dict["type"] as? String
@@ -106,7 +113,7 @@ class JsPlugin: Plugin {
                 description: dict["description"] as? String,
                 type: ConfigType(rawValue: type)!,
                 defaultValue: dict["defaultValue"] as Any,
-                option: dict["option"] as Any?
+                options: dict["options"] as? [Any]
             )
         }
     }
@@ -151,7 +158,129 @@ class JsPlugin: Plugin {
         return fromJson(json)
     }
 
+    static func fromDataModel(_ jsPluginData: JsPluginData) -> JsPlugin? {
+        guard let metaString = jsPluginData.meta,
+              let metaData = metaString.data(using: .utf8),
+              let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any],
+              let scriptsString = jsPluginData.scripts,
+              let scriptsData = scriptsString.data(using: .utf8),
+              let scriptsJson = try? JSONSerialization.jsonObject(with: scriptsData)
+              as? [String: String]
+        else {
+            return nil
+        }
+
+        // Parse config values if they exist
+        var configValues: [ConfigValue]? = nil
+        if let configValuesString = jsPluginData.configValues,
+           let configValuesData = configValuesString.data(using: .utf8),
+           let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
+           as? [[String: Any]]
+        {
+            configValues = configValuesArray.compactMap { dict in
+                guard let key = dict["key"] as? String,
+                      let value = dict["value"]
+                else {
+                    return nil
+                }
+
+                return ConfigValue(key: key, value: value)
+            }
+        }
+
+        // Merge meta and scripts data for fromJson
+        var combinedJson = metaJson
+        combinedJson["scripts"] = scriptsJson
+
+        let plugin = fromJson(combinedJson)
+
+        // Update config values if they exist
+        if let configValues = configValues,
+           let plugin = plugin
+        {
+            plugin.setConfigValues(configValues)
+        }
+
+        return plugin
+    }
+
     // ----------- Methods -----------
+
+    override func savePlugin() throws {
+        let context = DbService.shared.getContext()
+
+        let request = JsPluginData.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id)
+
+        let existingPlugins = try context.fetch(request)
+        let jsPluginData = existingPlugins.first ?? JsPluginData(context: context)
+
+        jsPluginData.id = id
+
+        // Create meta JSON (excluding scripts)
+        let metaDict: [String: Any] = [
+            "id": id,
+            "name": name as Any,
+            "version": version as Any,
+            "description": description as Any,
+            "authors": authors,
+            "repository": repository as Any,
+            "updatesUrl": updatesUrl as Any,
+            "availableGenres": availableGenres.map { $0.rawValue },
+            "configs": configs.map { config in
+                [
+                    "key": config.key,
+                    "name": config.name,
+                    "description": config.description as Any,
+                    "type": config.type.rawValue,
+                    "defaultValue": config.defaultValue,
+                    "options": config.options as Any,
+                ]
+            },
+        ]
+
+        let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
+        jsPluginData.meta = String(data: metaData, encoding: .utf8)
+
+        // Create scripts JSON
+        let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
+            dict[pair.key.rawValue] = pair.value
+        }
+        let scriptsData = try JSONSerialization.data(withJSONObject: scriptsDict, options: [])
+        jsPluginData.scripts = String(data: scriptsData, encoding: .utf8)
+
+        // Create config values JSON
+        let configValuesArray = _configValues.values.map { configValue in
+            [
+                "key": configValue.key,
+                "value": configValue.value,
+            ]
+        }
+        let configValuesData = try JSONSerialization.data(
+            withJSONObject: configValuesArray, options: []
+        )
+        jsPluginData.configValues = String(data: configValuesData, encoding: .utf8)
+
+        // Save context
+        try DbService.shared.saveContext()
+    }
+
+    override func deletePlugin() throws {
+        let context = DbService.shared.getContext()
+
+        // Find the plugin to delete
+        let request = JsPluginData.fetchRequest()
+        request.predicate = NSPredicate(format: "id == %@", id)
+
+        let existingPlugins = try context.fetch(request)
+
+        for plugin in existingPlugins {
+            context.delete(plugin)
+        }
+
+        // Save context
+        try DbService.shared.saveContext()
+    }
 
     override func isOnline() async throws -> Bool {
         if _scripts[.isOnline] == nil {
@@ -160,7 +289,7 @@ class JsPlugin: Plugin {
 
         let script = "\(_scriptsNoExport[.isOnline]!) return await \(_funcName[.isOnline]!)();"
         print(script)
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let isOnline = result as? Bool else {
             throw NSError(
@@ -179,7 +308,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getSuggestion]!) return await \(_funcName[.getSuggestion]!)(\"\(query)\");"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let suggestions = result as? [String] else {
             throw NSError(
@@ -198,7 +327,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.search]!) return await \(_funcName[.search]!)(\"\(query)\",\(page));"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
             throw NSError(
@@ -217,7 +346,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getList]!) return await \(_funcName[.getList]!)(\(page),\"\(genre.rawValue)\",\(status.rawValue));"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
             throw NSError(
@@ -239,7 +368,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getMangas]!) return await \(_funcName[.getMangas]!)(\(idsString));"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let mangas = result as? [Any] else {
             throw NSError(
@@ -258,7 +387,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getDetailedManga]!) return await \(_funcName[.getDetailedManga]!)(\"\(id)\");"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let detailedManga = result as? [String: Any] else {
             throw NSError(
@@ -296,7 +425,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getChapter]!) return await \(_funcName[.getChapter]!)(\(mangaString),\(chapterString));"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let images = result as? [String] else {
             throw NSError(
@@ -315,7 +444,7 @@ class JsPlugin: Plugin {
 
         let script =
             "\(_scriptsNoExport[.getImage]!) return await \(_funcName[.getImage]!)(\"\(url)\");"
-        let result = try await JsRuntime.shared.execute(script, from: _id)
+        let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let imageBase64Encoded = result as? String else {
             throw NSError(

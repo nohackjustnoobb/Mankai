@@ -16,6 +16,7 @@ struct AddPluginModal: View {
     @State private var urlInput: String = ""
 
     @State private var showError: Bool = false
+    @State private var errorMessage: String = ""
 
     var body: some View {
         NavigationView {
@@ -59,10 +60,19 @@ struct AddPluginModal: View {
                                     plugin = await parsePluginFromUrl(urlInput)
                                 }
 
-                                if plugin != nil {
-                                    appState.pluginService.addPlugin(plugin!)
+                                guard let plugin = plugin else {
+                                    errorMessage = String(localized: "failedToParsePlugin")
+                                    showError = true
+                                    return
+                                }
+
+                                do {
+                                    try appState.pluginService.addPlugin(plugin)
                                     dismiss()
-                                } else {
+                                } catch {
+                                    errorMessage =
+                                        String(localized: "failedToAddPlugin") + ": "
+                                        + error.localizedDescription
                                     showError = true
                                 }
                             }
@@ -76,7 +86,7 @@ struct AddPluginModal: View {
             .alert("error", isPresented: $showError) {
                 Button("ok", role: .cancel) {}
             } message: {
-                Text("failedToAddPlugin")
+                Text(errorMessage)
             }
         }
     }

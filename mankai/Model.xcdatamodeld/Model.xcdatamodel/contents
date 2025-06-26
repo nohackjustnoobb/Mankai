@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24F74" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="JsPluginData" representedClassName="JsPluginData" syncable="YES" codeGenerationType="class">
+        <attribute name="configValues" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="String"/>
+        <attribute name="meta" optional="YES" attributeType="String"/>
+        <attribute name="scripts" optional="YES" attributeType="String"/>
+    </entity>
+</model>

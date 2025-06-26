@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
 		E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +29,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			);
 			name = mankai;
 			packageProductDependencies = (
+				E4C616462E0DA05400AC484A /* WrappingHStack */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -101,6 +104,9 @@
 			);
 			mainGroup = E40C6B2B2E05A95700AF2FC9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
 			projectDirPath = "";
@@ -340,6 +346,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/dkk/WrappingHStack";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.2.11;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E4C616462E0DA05400AC484A /* WrappingHStack */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */;
+			productName = WrappingHStack;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E40C6B2C2E05A95700AF2FC9 /* Project object */;
 }
