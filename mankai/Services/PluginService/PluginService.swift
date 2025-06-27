@@ -36,7 +36,7 @@ class PluginService: ObservableObject {
         }
     }
 
-    func getPlugin(byId id: String) -> Plugin? {
+    func getPlugin(_ id: String) -> Plugin? {
         return _plugins[id]
     }
 

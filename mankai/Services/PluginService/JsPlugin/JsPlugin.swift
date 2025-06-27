@@ -19,8 +19,25 @@ enum ScriptType: String {
     case getImage
 }
 
+struct CacheEntry {
+    let data: Any
+    let expiryTime: Date
+
+    var isExpired: Bool {
+        return Date() > expiryTime
+    }
+}
+
+struct JsPluginConstants {
+    /// Default cache expiry duration in seconds (1 hour)
+    static let defaultCacheExpiryDuration: TimeInterval = 3600
+
+    /// Maximum number of cache entries before triggering cleanup of expired entries
+    static let maxCacheSize: Int = 50
+}
+
 class JsPlugin: Plugin {
-    // ----------- Metadata -----------
+    // MARK: - Metadata
 
     private var _id: String
     private var _name: String?
@@ -42,7 +59,8 @@ class JsPlugin: Plugin {
     override var availableGenres: [Genre] { _availableGenres }
     override var configs: [Config] { _configs }
 
-    // ----------- Methods Scripts -----------
+    // MARK: - Methods Scripts
+
     var _scripts: [ScriptType: String]
     var _funcName: [ScriptType: String] = [:]
     var _scriptsNoExport: [ScriptType: String] = [:]
@@ -52,6 +70,8 @@ class JsPlugin: Plugin {
             _configValues[configValue.key] = configValue
         }
     }
+
+    // MARK: - Init
 
     init(
         id: String, name: String? = nil, version: String? = nil, description: String? = nil,
@@ -101,8 +121,8 @@ class JsPlugin: Plugin {
     private static func parseConfigArray(_ arr: [[String: Any]]) -> [Config] {
         arr.compactMap { dict -> Config? in
             guard let key = dict["key"] as? String,
-                  let name = dict["name"] as? String,
-                  let type = dict["type"] as? String
+                let name = dict["name"] as? String,
+                let type = dict["type"] as? String
             else {
                 return nil
             }
@@ -160,12 +180,8 @@ class JsPlugin: Plugin {
 
     static func fromDataModel(_ jsPluginData: JsPluginData) -> JsPlugin? {
         guard let metaString = jsPluginData.meta,
-              let metaData = metaString.data(using: .utf8),
-              let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any],
-              let scriptsString = jsPluginData.scripts,
-              let scriptsData = scriptsString.data(using: .utf8),
-              let scriptsJson = try? JSONSerialization.jsonObject(with: scriptsData)
-              as? [String: String]
+            let metaData = metaString.data(using: .utf8),
+            let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
         else {
             return nil
         }
@@ -173,13 +189,13 @@ class JsPlugin: Plugin {
         // Parse config values if they exist
         var configValues: [ConfigValue]? = nil
         if let configValuesString = jsPluginData.configValues,
-           let configValuesData = configValuesString.data(using: .utf8),
-           let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
-           as? [[String: Any]]
+            let configValuesData = configValuesString.data(using: .utf8),
+            let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
+                as? [[String: Any]]
         {
             configValues = configValuesArray.compactMap { dict in
                 guard let key = dict["key"] as? String,
-                      let value = dict["value"]
+                    let value = dict["value"]
                 else {
                     return nil
                 }
@@ -188,15 +204,11 @@ class JsPlugin: Plugin {
             }
         }
 
-        // Merge meta and scripts data for fromJson
-        var combinedJson = metaJson
-        combinedJson["scripts"] = scriptsJson
-
-        let plugin = fromJson(combinedJson)
+        let plugin = fromJson(metaJson)
 
         // Update config values if they exist
         if let configValues = configValues,
-           let plugin = plugin
+            let plugin = plugin
         {
             plugin.setConfigValues(configValues)
         }
@@ -204,7 +216,61 @@ class JsPlugin: Plugin {
         return plugin
     }
 
-    // ----------- Methods -----------
+    // MARK: Cache
+
+    private var cache: [String: CacheEntry] = [:]
+
+    private func getCacheExpiryDuration() -> TimeInterval {
+        let defaults = UserDefaults.standard
+        let duration = defaults.double(forKey: SettingsKey.cacheExpiryDuration.rawValue)
+        return duration > 0 ? duration : JsPluginConstants.defaultCacheExpiryDuration
+    }
+
+    private func getCacheKey(for method: ScriptType, with parameters: [String]) -> String {
+        // URL-encode parameters to handle special characters
+        let encodedParams = parameters.map { param in
+            param.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? param
+        }
+        let paramString = encodedParams.joined(separator: "_")
+        return "\(id)_\(method.rawValue)_\(paramString)"
+    }
+
+    private func getCachedData<T>(for key: String, as type: T.Type) -> T? {
+        // Periodically clear expired cache entries
+        if cache.count > JsPluginConstants.maxCacheSize {
+            clearExpiredCache()
+        }
+
+        guard let entry = cache[key], !entry.isExpired else {
+            // Remove expired entry
+            cache.removeValue(forKey: key)
+            return nil
+        }
+
+        return entry.data as? T
+    }
+
+    private func setCachedData(_ data: Any, for key: String) {
+        let expiryTime = Date().addingTimeInterval(getCacheExpiryDuration())
+        cache[key] = CacheEntry(data: data, expiryTime: expiryTime)
+    }
+
+    private func clearCache() {
+        cache.removeAll()
+    }
+
+    private func clearExpiredCache() {
+        cache = cache.filter { _, entry in
+            !entry.isExpired
+        }
+    }
+
+    // Public method to clear cache manually
+    func clearAllCache() {
+        clearCache()
+    }
+
+    // MARK: - Methods
 
     override func savePlugin() throws {
         let context = DbService.shared.getContext()
@@ -217,7 +283,12 @@ class JsPlugin: Plugin {
 
         jsPluginData.id = id
 
-        // Create meta JSON (excluding scripts)
+        // Create scripts dictionary
+        let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
+            dict[pair.key.rawValue] = pair.value
+        }
+
+        // Create meta JSON
         let metaDict: [String: Any] = [
             "id": id,
             "name": name as Any,
@@ -227,6 +298,7 @@ class JsPlugin: Plugin {
             "repository": repository as Any,
             "updatesUrl": updatesUrl as Any,
             "availableGenres": availableGenres.map { $0.rawValue },
+            "scripts": scriptsDict,
             "configs": configs.map { config in
                 [
                     "key": config.key,
@@ -241,13 +313,6 @@ class JsPlugin: Plugin {
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
         jsPluginData.meta = String(data: metaData, encoding: .utf8)
-
-        // Create scripts JSON
-        let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
-            dict[pair.key.rawValue] = pair.value
-        }
-        let scriptsData = try JSONSerialization.data(withJSONObject: scriptsDict, options: [])
-        jsPluginData.scripts = String(data: scriptsData, encoding: .utf8)
 
         // Create config values JSON
         let configValuesArray = _configValues.values.map { configValue in
@@ -302,6 +367,12 @@ class JsPlugin: Plugin {
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
+        // Check cache first
+        let cacheKey = getCacheKey(for: .getSuggestion, with: [query])
+        if let cachedSuggestions = getCachedData(for: cacheKey, as: [String].self) {
+            return cachedSuggestions
+        }
+
         if _scripts[.getSuggestion] == nil {
             fatalError("Script for getSuggestion is not defined")
         }
@@ -317,10 +388,19 @@ class JsPlugin: Plugin {
             )
         }
 
+        // Cache the result
+        setCachedData(suggestions, for: cacheKey)
+
         return suggestions
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
+        // Check cache first
+        let cacheKey = getCacheKey(for: .search, with: [query, String(page)])
+        if let cachedMangas = getCachedData(for: cacheKey, as: [Manga].self) {
+            return cachedMangas
+        }
+
         if _scripts[.search] == nil {
             fatalError("Script for search is not defined")
         }
@@ -336,10 +416,23 @@ class JsPlugin: Plugin {
             )
         }
 
-        return mangas.compactMap { Manga(from: $0) }
+        let mangaResults = mangas.compactMap { Manga(from: $0) }
+
+        // Cache the result
+        setCachedData(mangaResults, for: cacheKey)
+
+        return mangaResults
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+        // Check cache first
+        let cacheKey = getCacheKey(
+            for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)]
+        )
+        if let cachedMangas = getCachedData(for: cacheKey, as: [Manga].self) {
+            return cachedMangas
+        }
+
         if _scripts[.getList] == nil {
             fatalError("Script for getList is not defined")
         }
@@ -355,7 +448,12 @@ class JsPlugin: Plugin {
             )
         }
 
-        return mangas.compactMap { Manga(from: $0) }
+        let mangaResults = mangas.compactMap { Manga(from: $0) }
+
+        // Cache the result
+        setCachedData(mangaResults, for: cacheKey)
+
+        return mangaResults
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
@@ -381,6 +479,12 @@ class JsPlugin: Plugin {
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
+        // Check cache first
+        let cacheKey = getCacheKey(for: .getDetailedManga, with: [id])
+        if let cachedDetailedManga = getCachedData(for: cacheKey, as: DetailedManga.self) {
+            return cachedDetailedManga
+        }
+
         if _scripts[.getDetailedManga] == nil {
             fatalError("Script for getDetailedManga is not defined")
         }
@@ -396,8 +500,10 @@ class JsPlugin: Plugin {
             )
         }
 
-        if let detailedManga = DetailedManga(from: detailedManga) {
-            return detailedManga
+        if let detailedMangaResult = DetailedManga(from: detailedManga) {
+            // Cache the result
+            setCachedData(detailedMangaResult, for: cacheKey)
+            return detailedMangaResult
         } else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
@@ -407,6 +513,18 @@ class JsPlugin: Plugin {
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
+        // Check cache first
+        var cacheKey: String?
+
+        if let chapterId = chapter.id {
+            let mangaId = manga.id
+
+            cacheKey = getCacheKey(for: .getChapter, with: [mangaId, chapterId])
+            if let cachedImages = getCachedData(for: cacheKey!, as: [String].self) {
+                return cachedImages
+            }
+        }
+
         if _scripts[.getChapter] == nil {
             fatalError("Script for getChapter is not defined")
         }
@@ -415,7 +533,7 @@ class JsPlugin: Plugin {
         let chapterJson = try JSONEncoder().encode(chapter)
 
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
-              let chapterString = String(data: chapterJson, encoding: .utf8)
+            let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
@@ -434,10 +552,21 @@ class JsPlugin: Plugin {
             )
         }
 
+        // Cache the result
+        if cacheKey != nil {
+            setCachedData(images, for: cacheKey!)
+        }
+
         return images
     }
 
     override func getImage(_ url: String) async throws -> Data {
+        // Check cache first
+        let cacheKey = getCacheKey(for: .getImage, with: [url])
+        if let cachedImageData = getCachedData(for: cacheKey, as: Data.self) {
+            return cachedImageData
+        }
+
         if _scripts[.getImage] == nil {
             fatalError("Script for getImage is not defined")
         }
@@ -459,6 +588,9 @@ class JsPlugin: Plugin {
                 userInfo: [NSLocalizedDescriptionKey: "Invalid base64 string for image"]
             )
         }
+
+        // Cache the result
+        setCachedData(imageData, for: cacheKey)
 
         return imageData
     }
