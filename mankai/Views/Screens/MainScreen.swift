@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct MainScreen: View {
-    @EnvironmentObject var appState: AppState
-
     var body: some View {
         TabView {
             HomeTab()
@@ -18,11 +16,7 @@ struct MainScreen: View {
                 }
             LibraryTab()
                 .tabItem {
-                    Label("library", systemImage: "book")
-                }
-            SearchTab()
-                .tabItem {
-                    Label("search", systemImage: "magnifyingglass")
+                    Label("library", systemImage: "books.vertical.fill")
                 }
             SettingsTab()
                 .tabItem {

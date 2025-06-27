@@ -21,6 +21,8 @@ struct PluginSettingsScreenContent: View {
 
     var body: some View {
         List {
+            SettingsHeaderView(image: Image(systemName: "puzzlepiece.fill"), color: .red, title: String(localized: "plugins"), description: String(localized: "pluginsDescription"))
+
             ForEach(pluginService.plugins) { plugin in
                 NavigationLink(destination: {
                     PluginInfoScreen(plugin: plugin)
@@ -29,7 +31,7 @@ struct PluginSettingsScreenContent: View {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
                             if let version = plugin.version {
-                                SmallTag(text: String(localized: "v\(version)"))
+                                Text("v\(version)").smallTagStyle()
                             }
                         }
                         if let description = plugin.description {
@@ -42,8 +44,6 @@ struct PluginSettingsScreenContent: View {
                 }
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle("plugins")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {

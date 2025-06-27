@@ -34,14 +34,14 @@ struct DetailedManga: Identifiable, Codable {
         self.description = dict["description"] as? String
         self.meta = dict["meta"] as? String
 
+        // Parse status
         if let statusValue = dict["status"] {
-            if let statusUInt = statusValue as? UInt {
+            switch statusValue {
+            case let status as Status:
+                self.status = status
+            case let statusUInt as UInt:
                 self.status = Status(rawValue: statusUInt)
-            } else if let statusString = statusValue as? String,
-                      let statusUInt = UInt(statusString)
-            {
-                self.status = Status(rawValue: statusUInt)
-            } else {
+            default:
                 self.status = nil
             }
         } else {
@@ -66,12 +66,14 @@ struct DetailedManga: Identifiable, Codable {
 
         self.authors = dict["authors"] as? [String] ?? []
 
+        // Parse genres
         if let genresValue = dict["genres"] {
-            if let genresStringArray = genresValue as? [String] {
-                self.genres = genresStringArray.compactMap { Genre(rawValue: $0) }
-            } else if let genresArray = genresValue as? [Genre] {
+            switch genresValue {
+            case let genresArray as [Genre]:
                 self.genres = genresArray
-            } else {
+            case let genresStringArray as [String]:
+                self.genres = genresStringArray.compactMap { Genre(rawValue: $0) }
+            default:
                 self.genres = []
             }
         } else {

@@ -29,7 +29,7 @@ struct ConfigValue {
 }
 
 class Plugin: Identifiable, ObservableObject {
-    // ----------- Metadata -----------
+    // MARK: - Metadata
 
     var id: String {
         fatalError("Not Implemented")
@@ -67,7 +67,7 @@ class Plugin: Identifiable, ObservableObject {
         fatalError("Not Implemented")
     }
 
-    // ----------- Config Values -----------
+    // MARK: - Config Values
 
     lazy var _configValues: [String: ConfigValue] = {
         var _configValues: [String: ConfigValue] = [:]
@@ -84,7 +84,7 @@ class Plugin: Identifiable, ObservableObject {
         Array(_configValues.values)
     }
 
-    // ----------- Methods -----------
+    // MARK: - Methods
 
     func getConfig(_ key: String) -> Any {
         _configValues[key]!.value
@@ -111,7 +111,7 @@ class Plugin: Identifiable, ObservableObject {
         try savePlugin()
     }
 
-    // ----------- Abstract Methods -----------
+    // MARK: - Abstract Methods
 
     func savePlugin() throws {
         fatalError("Not Implemented")

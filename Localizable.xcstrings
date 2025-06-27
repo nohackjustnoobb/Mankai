@@ -82,6 +82,17 @@
         }
       }
     },
+    "boolean" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boolean"
+          }
+        }
+      }
+    },
     "cancel" : {
       "localizations" : {
         "en" : {
@@ -91,6 +102,9 @@
           }
         }
       }
+    },
+    "chapter %@" : {
+
     },
     "chapters" : {
       "localizations" : {
@@ -554,6 +568,16 @@
         }
       }
     },
+    "pluginsDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage your reader plugins, including adding new plugins, configuring existing ones, removing plugins, and more."
+          }
+        }
+      }
+    },
     "remove" : {
       "localizations" : {
         "en" : {
@@ -630,6 +654,27 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search"
+          }
+        }
+      }
+    },
+    "searchManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Manga"
+          }
+        }
+      }
+    },
+    "select" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select"
           }
         }
       }

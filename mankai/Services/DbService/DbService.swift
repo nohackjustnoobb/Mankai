@@ -26,7 +26,12 @@ class DbService {
     }()
 
     private var context: NSManagedObjectContext {
-        return persistentContainer.viewContext
+        let viewContext = persistentContainer.viewContext
+
+        viewContext.automaticallyMergesChangesFromParent = true
+        viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+        return viewContext
     }
 
     func saveContext() throws {

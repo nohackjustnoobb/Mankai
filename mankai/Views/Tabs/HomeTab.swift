@@ -9,8 +9,9 @@ import SwiftUI
 
 struct HomeTab: View {
     var body: some View {
-        NavigationView {
-            VStack {}.navigationTitle("home")
+        NavigationStack {
+            VStack {}
+                .navigationTitle("home")
         }
     }
 }

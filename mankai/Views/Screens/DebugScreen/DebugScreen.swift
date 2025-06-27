@@ -67,8 +67,8 @@ struct DebugScreen: View {
                                     Text(config.name)
                                         .font(.headline)
                                     Spacer()
-                                    SmallTag(
-                                        text: NSLocalizedString(config.type.rawValue, comment: ""))
+                                    Text(LocalizedStringKey(config.type.rawValue))
+                                        .smallTagStyle()
                                 }
 
                                 if let description = config.description {
@@ -186,7 +186,6 @@ struct DebugScreen: View {
                 }
             }
         }
-        .environment(\.defaultMinListHeaderHeight, 0)
         .navigationTitle("debug")
         .navigationBarTitleDisplayMode(.inline)
     }
