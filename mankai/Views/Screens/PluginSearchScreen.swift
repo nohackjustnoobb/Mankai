@@ -76,7 +76,7 @@ private struct PluginSearchScreenContent: View {
         }
     }
 
-    private func search(_ page: UInt? = nil) {
+    private func search() {
         if isLoading {
             return
         }
@@ -88,7 +88,7 @@ private struct PluginSearchScreenContent: View {
             return
         }
 
-        let page = page ?? maxPage + 1
+        let page = maxPage + 1
 
         isLoading = true
         Task {

@@ -41,14 +41,14 @@ struct AddPluginModal: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("addPlugin")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button(action: {
                         dismiss()
                     }) {
                         Text("cancel")
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button(
                         action: {
                             Task {
@@ -72,13 +72,13 @@ struct AddPluginModal: View {
                                 } catch {
                                     errorMessage =
                                         String(localized: "failedToAddPlugin") + ": "
-                                        + error.localizedDescription
+                                            + error.localizedDescription
                                     showError = true
                                 }
                             }
                         }
                     ) {
-                        Text("add").fontWeight(.semibold)
+                        Text("add")
                     }
                     .disabled(useJson ? jsonInput.isEmpty : urlInput.isEmpty)
                 }

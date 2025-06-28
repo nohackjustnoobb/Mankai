@@ -20,7 +20,7 @@ private struct SearchScreenContent: View {
     let query: String
 
     @ObservedObject var pluginService: PluginService
-    @State var pluginsSearch: [String: [Manga]]? = nil
+    @State private var pluginsSearch: [String: [Manga]]? = nil
 
     var body: some View {
         Group {
@@ -35,6 +35,7 @@ private struct SearchScreenContent: View {
                             )
                         }
                     }
+                    .padding()
                 }
             } else {
                 ProgressView()

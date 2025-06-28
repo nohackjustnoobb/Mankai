@@ -28,7 +28,7 @@ struct CacheEntry {
     }
 }
 
-struct JsPluginConstants {
+enum JsPluginConstants {
     /// Default cache expiry duration in seconds (1 hour)
     static let defaultCacheExpiryDuration: TimeInterval = 3600
 
@@ -121,8 +121,8 @@ class JsPlugin: Plugin {
     private static func parseConfigArray(_ arr: [[String: Any]]) -> [Config] {
         arr.compactMap { dict -> Config? in
             guard let key = dict["key"] as? String,
-                let name = dict["name"] as? String,
-                let type = dict["type"] as? String
+                  let name = dict["name"] as? String,
+                  let type = dict["type"] as? String
             else {
                 return nil
             }
@@ -180,8 +180,8 @@ class JsPlugin: Plugin {
 
     static func fromDataModel(_ jsPluginData: JsPluginData) -> JsPlugin? {
         guard let metaString = jsPluginData.meta,
-            let metaData = metaString.data(using: .utf8),
-            let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
+              let metaData = metaString.data(using: .utf8),
+              let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
         else {
             return nil
         }
@@ -189,13 +189,13 @@ class JsPlugin: Plugin {
         // Parse config values if they exist
         var configValues: [ConfigValue]? = nil
         if let configValuesString = jsPluginData.configValues,
-            let configValuesData = configValuesString.data(using: .utf8),
-            let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
-                as? [[String: Any]]
+           let configValuesData = configValuesString.data(using: .utf8),
+           let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
+           as? [[String: Any]]
         {
             configValues = configValuesArray.compactMap { dict in
                 guard let key = dict["key"] as? String,
-                    let value = dict["value"]
+                      let value = dict["value"]
                 else {
                     return nil
                 }
@@ -208,7 +208,7 @@ class JsPlugin: Plugin {
 
         // Update config values if they exist
         if let configValues = configValues,
-            let plugin = plugin
+           let plugin = plugin
         {
             plugin.setConfigValues(configValues)
         }
@@ -533,7 +533,7 @@ class JsPlugin: Plugin {
         let chapterJson = try JSONEncoder().encode(chapter)
 
         guard let mangaString = String(data: mangaJson, encoding: .utf8),
-            let chapterString = String(data: chapterJson, encoding: .utf8)
+              let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
             throw NSError(
                 domain: "JsPlugin", code: 2,

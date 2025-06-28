@@ -37,8 +37,25 @@ struct SmallTagModifier: ViewModifier {
     }
 }
 
-extension Text {
+struct GenreTagModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .font(.subheadline)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(.secondary)
+            .foregroundColor(.secondary)
+            .background(Color.secondary.opacity(0.1))
+            .cornerRadius(8)
+    }
+}
+
+extension View {
     func smallTagStyle() -> some View {
         self.modifier(SmallTagModifier())
+    }
+
+    func genreTagStyle() -> some View {
+        self.modifier(GenreTagModifier())
     }
 }

@@ -28,7 +28,7 @@ private struct LibraryTabContent: View {
             Group {
                 if let pluginsList = pluginsList {
                     ScrollView {
-                        LazyVStack {
+                        LazyVStack(spacing: 12) {
                             ForEach(Array(pluginsList), id: \.key) { key, mangas in
                                 MangasRowListView(
                                     mangas: mangas,
@@ -36,7 +36,9 @@ private struct LibraryTabContent: View {
                                 )
                             }
                         }
+                        .padding()
                     }
+
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
