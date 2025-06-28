@@ -52,6 +52,17 @@
         }
       }
     },
+    "all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        }
+      }
+    },
     "any" : {
       "localizations" : {
         "en" : {
@@ -104,7 +115,14 @@
       }
     },
     "chapter %@" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter %@"
+          }
+        }
+      }
     },
     "chapters" : {
       "localizations" : {
@@ -196,6 +214,16 @@
         }
       }
     },
+    "done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
     "ended" : {
       "localizations" : {
         "en" : {
@@ -272,6 +300,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed To Set Config Value"
+          }
+        }
+      }
+    },
+    "filters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filters"
+          }
+        }
+      }
+    },
+    "genre" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Genre"
           }
         }
       }

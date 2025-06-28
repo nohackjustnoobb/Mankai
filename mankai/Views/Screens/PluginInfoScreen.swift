@@ -76,12 +76,7 @@ struct PluginInfoScreen: View {
                             WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
                                 genre in
                                 Text(LocalizedStringKey(genre.rawValue))
-                                    .font(.caption)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .foregroundStyle(.secondary)
-                                    .background(Color.secondary.opacity(0.1))
-                                    .cornerRadius(8)
+                                    .genreTagStyle()
                             }
                         }
                     }

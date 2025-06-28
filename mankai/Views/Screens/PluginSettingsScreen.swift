@@ -45,7 +45,7 @@ struct PluginSettingsScreenContent: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button(action: {
                     showModal = true
                 }) {
