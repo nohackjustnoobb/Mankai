@@ -25,7 +25,6 @@ struct MangasRowListView: View {
                         PluginLibraryScreen(plugin: plugin)
                     }
                 }
-
             }) {
                 HStack(spacing: 4) {
                     Text(plugin?.name ?? pluginId)
@@ -44,10 +43,9 @@ struct MangasRowListView: View {
                 if let plugin = plugin {
                     LazyHStack(alignment: .top, spacing: 12) {
                         ForEach(mangas) { manga in
-                            Button(action: {
-                                // TODO: manga detail screen
-                                print(manga.title ?? manga.id)
-                            }) {
+                            NavigationLink(
+                                destination: MangaDetailsScreen(plugin: plugin, manga: manga)
+                            ) {
                                 MangaItemView(manga: manga, plugin: plugin)
                                     .aspectRatio(3 / 5, contentMode: .fit)
                             }
@@ -55,7 +53,7 @@ struct MangasRowListView: View {
                     }
                 }
             }
-            .frame(minHeight: 160)
+            .frame(minHeight: 200)
         }
         .onAppear {
             plugin = appState.pluginService.getPlugin(pluginId)

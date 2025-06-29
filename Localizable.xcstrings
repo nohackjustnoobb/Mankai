@@ -11,6 +11,19 @@
         }
       }
     },
+    "%lld chapters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Chapters"
+          }
+        }
+      }
+    },
+    "•" : {
+
+    },
     "action" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -134,6 +147,16 @@
         }
       }
     },
+    "close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
     "configs" : {
       "localizations" : {
         "en" : {
@@ -240,6 +263,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Error"
+          }
+        }
+      }
+    },
+    "extra" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra"
           }
         }
       }
@@ -435,6 +469,16 @@
         }
       }
     },
+    "latest" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest"
+          }
+        }
+      }
+    },
     "latestChapter" : {
       "localizations" : {
         "en" : {
@@ -626,6 +670,16 @@
         }
       }
     },
+    "read" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read"
+          }
+        }
+      }
+    },
     "remove" : {
       "localizations" : {
         "en" : {
@@ -696,6 +750,16 @@
         }
       }
     },
+    "save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
     "search" : {
       "localizations" : {
         "en" : {
@@ -723,6 +787,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select"
+          }
+        }
+      }
+    },
+    "serial" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serial"
           }
         }
       }
@@ -857,6 +932,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version"
+          }
+        }
+      }
+    },
+    "volume" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volume"
           }
         }
       }

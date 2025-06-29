@@ -219,6 +219,7 @@ class JsPlugin: Plugin {
     // MARK: Cache
 
     private var cache: [String: CacheEntry] = [:]
+    private let cacheLock = NSLock()
 
     private func getCacheExpiryDuration() -> TimeInterval {
         let defaults = UserDefaults.standard
@@ -242,24 +243,39 @@ class JsPlugin: Plugin {
         }
 
         guard let entry = cache[key], !entry.isExpired else {
-            // Remove expired entry
-            cache.removeValue(forKey: key)
+            removeExpiredEntry(for: key)
             return nil
         }
 
         return entry.data as? T
     }
 
+    private func removeExpiredEntry(for key: String) {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
+        cache.removeValue(forKey: key)
+    }
+
     private func setCachedData(_ data: Any, for key: String) {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
         let expiryTime = Date().addingTimeInterval(getCacheExpiryDuration())
         cache[key] = CacheEntry(data: data, expiryTime: expiryTime)
     }
 
     private func clearCache() {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
         cache.removeAll()
     }
 
     private func clearExpiredCache() {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+
         cache = cache.filter { _, entry in
             !entry.isExpired
         }

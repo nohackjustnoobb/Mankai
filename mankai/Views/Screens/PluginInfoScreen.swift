@@ -73,8 +73,7 @@ struct PluginInfoScreen: View {
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("availableGenres")
-                            WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
-                                genre in
+                            WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) { genre in
                                 Text(LocalizedStringKey(genre.rawValue))
                                     .genreTagStyle()
                             }
@@ -204,7 +203,7 @@ struct TextConfigView: View {
                 .onReceive(plugin.objectWillChange) {
                     updateTextValue()
                 }
-                .onChange(of: textValue) { newValue in
+                .onChange(of: textValue, initial: false) { _, newValue in
                     do {
                         try plugin.setConfig(key: config.key, value: newValue)
                     } catch {
@@ -262,7 +261,7 @@ struct NumberConfigView: View {
             .onReceive(plugin.objectWillChange) {
                 updateNumberValue()
             }
-            .onChange(of: numberValue) { newValue in
+            .onChange(of: numberValue, initial: false) { _, newValue in
                 do {
                     try plugin.setConfig(key: config.key, value: newValue)
                 } catch {
@@ -323,7 +322,7 @@ struct BooleanConfigView: View {
         .onReceive(plugin.objectWillChange) {
             updateBoolValue()
         }
-        .onChange(of: boolValue) { newValue in
+        .onChange(of: boolValue, initial: false) { _, newValue in
             do {
                 try plugin.setConfig(key: config.key, value: newValue)
             } catch {
@@ -383,7 +382,7 @@ struct SelectConfigView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .onChange(of: selectedValue) { newValue in
+                .onChange(of: selectedValue, initial: false) { _, newValue in
                     do {
                         if let newValue = newValue {
                             try plugin.setConfig(key: config.key, value: newValue)
