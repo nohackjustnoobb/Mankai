@@ -42,6 +42,7 @@ private struct SearchScreenContent: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .navigationTitle("search")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {

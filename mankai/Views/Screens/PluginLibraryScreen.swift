@@ -72,9 +72,10 @@ struct PluginLibraryScreen: View {
                     .padding(.top)
                 }
 
-                if allMangas.isEmpty && !isLoading {
+                if allMangas.isEmpty && isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
                 } else {
                     LazyVStack {
                         MangasListView(mangas: allMangas, plugin: plugin)
@@ -82,7 +83,7 @@ struct PluginLibraryScreen: View {
 
                         if isLoading {
                             ProgressView()
-                                .frame(maxWidth: .infinity)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .padding()
                         }
 
@@ -95,19 +96,16 @@ struct PluginLibraryScreen: View {
                     .padding()
                 }
             }
-            .clipped()
-            .onChange(of: selectedGenre) { _ in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    proxy.scrollTo("mangasList", anchor: .top)
-                }
+            .onChange(of: selectedGenre, initial: false) { _, _ in
+                proxy.scrollTo("mangasList", anchor: .top)
             }
-            .onChange(of: selectedStatus) { _ in
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    proxy.scrollTo("mangasList", anchor: .top)
-                }
+            .onChange(of: selectedStatus, initial: false) { _, _ in
+                proxy.scrollTo("mangasList", anchor: .top)
             }
         }
+        .navigationTitle("library")
         .navigationBarTitleDisplayMode(.inline)
+        // TODO: add searchable
         .sheet(isPresented: $showingFilters) {
             NavigationView {
                 List {
@@ -131,6 +129,15 @@ struct PluginLibraryScreen: View {
                         .pickerStyle(.menu)
                     } header: {
                         Spacer(minLength: 0)
+                    }
+
+                    Section {
+                        Button("reset",
+                               role: .destructive,
+                               action: {
+                                   resetFilters()
+                                   showingFilters = false
+                               })
                     }
                 }
                 .navigationTitle("filters")
@@ -206,7 +213,8 @@ struct PluginLibraryScreen: View {
         Task {
             do {
                 let result = try await plugin.getList(
-                    page: page, genre: selectedGenre, status: selectedStatus)
+                    page: page, genre: selectedGenre, status: selectedStatus
+                )
 
                 if mangasList[key] == nil {
                     mangasList[key] = [:]
@@ -247,5 +255,11 @@ struct PluginLibraryScreen: View {
         }
 
         loadList()
+    }
+
+    private func resetFilters() {
+        tempSelectedGenre = .all
+        tempSelectedStatus = .any
+        setFilters(genre: .all, status: .any)
     }
 }

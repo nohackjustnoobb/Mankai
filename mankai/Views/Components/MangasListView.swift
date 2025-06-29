@@ -18,10 +18,9 @@ struct MangasListView: View {
             ], spacing: 12
         ) {
             ForEach(mangas, id: \.id) { manga in
-                Button(action: {
-                    // TODO: manga detail screen
-                    print(manga.title ?? manga.id)
-                }) {
+                NavigationLink(
+                    destination: MangaDetailsScreen(plugin: plugin, manga: manga)
+                ) {
                     MangaItemView(manga: manga, plugin: plugin)
                         .aspectRatio(3 / 5, contentMode: .fit)
                 }

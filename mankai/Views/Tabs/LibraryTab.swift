@@ -61,7 +61,7 @@ private struct LibraryTabContent: View {
             .onSubmit(of: .search) {
                 performSearch()
             }
-            .onChange(of: query) { newQuery in
+            .onChange(of: query, initial: false) { _, newQuery in
                 getSearchSuggestions(for: newQuery)
             }
             .onDisappear {

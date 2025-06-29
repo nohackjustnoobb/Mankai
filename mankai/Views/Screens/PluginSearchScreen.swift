@@ -34,7 +34,7 @@ private struct PluginSearchScreenContent: View {
 
     var body: some View {
         ScrollView {
-            if allMangas.isEmpty && !isLoading {
+            if allMangas.isEmpty && isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -56,6 +56,7 @@ private struct PluginSearchScreenContent: View {
                 .padding()
             }
         }
+        .navigationTitle("search")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
