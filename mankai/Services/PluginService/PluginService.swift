@@ -16,23 +16,16 @@ class PluginService: ObservableObject {
     }
 
     init() {
+        _plugins[AppDirPlugin.shared.id] = AppDirPlugin.shared
+
         loadJsPluginsFromCoreData()
     }
 
     private func loadJsPluginsFromCoreData() {
-        let context = DbService.shared.getContext()
-        let request: NSFetchRequest<JsPluginData> = JsPluginData.fetchRequest()
+        let jsPlugins = JsPlugin.loadPlugins()
 
-        do {
-            let jsPluginDataArray = try context.fetch(request)
-
-            for jsPluginData in jsPluginDataArray {
-                if let jsPlugin = JsPlugin.fromDataModel(jsPluginData) {
-                    _plugins[jsPlugin.id] = jsPlugin
-                }
-            }
-        } catch {
-            print("Failed to load plugins from Core Data: \(error)")
+        for jsPlugin in jsPlugins {
+            _plugins[jsPlugin.id] = jsPlugin
         }
     }
 

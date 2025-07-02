@@ -104,7 +104,7 @@ class JsRuntime: NSObject {
         guard let webview else {
             throw NSError(
                 domain: "JsRuntime", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "WebView not initialized"])
+                userInfo: [NSLocalizedDescriptionKey: "webViewNotInitialized"])
         }
 
         // Inject functions
@@ -159,12 +159,12 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         guard let url = params["url"] as? String else {
             throw NSError(
                 domain: "JsRuntime", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Missing URL parameter"])
+                userInfo: [NSLocalizedDescriptionKey: "missingUrlParameter"])
         }
 
         guard let requestURL = URL(string: url) else {
             throw NSError(
-                domain: "JsRuntime", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                domain: "JsRuntime", code: 3, userInfo: [NSLocalizedDescriptionKey: "invalidUrl"])
         }
 
         var request = URLRequest(url: requestURL)
@@ -187,7 +187,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NSError(
                 domain: "JsRuntime", code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid response type"])
+                userInfo: [NSLocalizedDescriptionKey: "invalidResponseType"])
         }
 
         let responseTextBase64 = data.base64EncodedString()

@@ -25,8 +25,13 @@ struct PluginInfoScreen: View {
         Group {
             List {
                 Section("info") {
-                    LabeledContent("id") {
+                    HStack {
+                        Text("id")
+                        Spacer()
                         Text(plugin.id)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .foregroundStyle(.secondary)
                     }
 
                     if let name = plugin.name {
@@ -98,23 +103,26 @@ struct PluginInfoScreen: View {
                     }
                 }
 
-                Section("actions") {
-                    if !plugin.configs.isEmpty {
+                if !(plugin is AppDirPlugin) {
+                    Section("actions") {
+                        if !plugin.configs.isEmpty {
+                            Button(
+                                "resetConfigs",
+                                role: .destructive,
+                                action: {
+                                    showResetConfirmation = true
+                                }
+                            )
+                        }
+
                         Button(
-                            "resetConfigs",
+                            "removePlugin",
                             role: .destructive,
                             action: {
-                                showResetConfirmation = true
+                                showRemoveConfirmation = true
                             }
                         )
                     }
-                    Button(
-                        "removePlugin",
-                        role: .destructive,
-                        action: {
-                            showRemoveConfirmation = true
-                        }
-                    )
                 }
             }
         }
@@ -369,7 +377,8 @@ struct SelectConfigView: View {
             if selectedValue != nil {
                 Picker(selection: $selectedValue) {
                     ForEach(options, id: \.self) { option in
-                        Text(option).tag(option)
+                        Text(option)
+                            .tag(option)
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {

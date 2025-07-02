@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum Genre: String, Codable {
+enum Genre: String, Codable, CaseIterable {
     case all
     case action
     case romance
@@ -37,17 +37,17 @@ enum Status: UInt, Codable {
 }
 
 struct Chapter: Codable {
-    let id: String?
-    let title: String?
+    var id: String?
+    var title: String?
 }
 
 struct Manga: Identifiable, Codable {
-    let id: String
-    let title: String?
-    let cover: String?
-    let status: Status?
-    let latestChapter: Chapter?
-    let meta: String?
+    var id: String
+    var title: String?
+    var cover: String?
+    var status: Status?
+    var latestChapter: Chapter?
+    var meta: String?
 
     init?(from any: Any) {
         guard let dict = any as? [String: Any],

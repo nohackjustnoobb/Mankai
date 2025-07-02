@@ -19,7 +19,7 @@ struct MangaCoverView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             if let imageData = imageData,
-               let uiImage = UIImage(data: imageData)
+                let uiImage = UIImage(data: imageData)
             {
                 GeometryReader { proxy in
                     Image(uiImage: uiImage)
@@ -66,9 +66,9 @@ struct MangaCoverView: View {
 
     private func loadImage() {
         guard let coverUrl = coverUrl,
-              let plugin = plugin,
-              !coverUrl.isEmpty,
-              imageData == nil
+            let plugin = plugin,
+            !coverUrl.isEmpty,
+            imageData == nil
         else {
             return
         }
@@ -78,14 +78,10 @@ struct MangaCoverView: View {
         Task {
             do {
                 let data = try await plugin.getImage(coverUrl)
-                await MainActor.run {
-                    self.imageData = data
-                    self.isLoading = false
-                }
+                self.imageData = data
+                self.isLoading = false
             } catch {
-                await MainActor.run {
-                    self.isLoading = false
-                }
+                self.isLoading = false
             }
         }
     }

@@ -17,10 +17,10 @@ struct AddPluginModal: View {
 
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
+    @State private var isProcessing: Bool = false
 
     var body: some View {
         NavigationView {
-            // TODO: not what i expected but fine for now
             List {
                 Section {
                     Toggle(isOn: $useJson) {
@@ -52,6 +52,9 @@ struct AddPluginModal: View {
                     Button(
                         action: {
                             Task {
+                                isProcessing = true
+                                defer { isProcessing = false }
+
                                 let plugin: JsPlugin?
 
                                 if useJson {
@@ -71,19 +74,22 @@ struct AddPluginModal: View {
                                     dismiss()
                                 } catch {
                                     errorMessage =
-                                        String(localized: "failedToAddPlugin") + ": "
-                                            + error.localizedDescription
+                                        error.localizedDescription
                                     showError = true
                                 }
                             }
                         }
                     ) {
-                        Text("add")
+                        if isProcessing {
+                            ProgressView()
+                        } else {
+                            Text("add")
+                        }
                     }
-                    .disabled(useJson ? jsonInput.isEmpty : urlInput.isEmpty)
+                    .disabled(isProcessing || (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
                 }
             }
-            .alert("error", isPresented: $showError) {
+            .alert("failedToAddPlugin", isPresented: $showError) {
                 Button("ok", role: .cancel) {}
             } message: {
                 Text(errorMessage)

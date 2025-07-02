@@ -9,25 +9,22 @@ import SwiftUI
 
 struct MangasRowListView: View {
     let mangas: [Manga]
-    let pluginId: String
+    let plugin: Plugin
     var query: String? = nil
 
     @EnvironmentObject var appState: AppState
-    @State var plugin: Plugin? = nil
 
     var body: some View {
         VStack(alignment: .leading) {
             NavigationLink(destination: {
-                if let plugin = plugin {
-                    if let query = query {
-                        PluginSearchScreen(plugin: plugin, query: query)
-                    } else {
-                        PluginLibraryScreen(plugin: plugin)
-                    }
+                if let query = query {
+                    PluginSearchScreen(plugin: plugin, query: query)
+                } else {
+                    PluginLibraryScreen(plugin: plugin)
                 }
             }) {
                 HStack(spacing: 4) {
-                    Text(plugin?.name ?? pluginId)
+                    Text(plugin.name ?? plugin.id)
                         .font(.title3)
                         .foregroundColor(.primary)
                         .fontWeight(.semibold)
@@ -39,8 +36,13 @@ struct MangasRowListView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                if let plugin = plugin {
+            if mangas.isEmpty {
+                Text("noMangasAvailable")
+                    .foregroundColor(.secondary)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: 12) {
                         ForEach(mangas) { manga in
                             NavigationLink(
@@ -52,11 +54,8 @@ struct MangasRowListView: View {
                         }
                     }
                 }
+                .frame(minHeight: 200)
             }
-            .frame(minHeight: 200)
-        }
-        .onAppear {
-            plugin = appState.pluginService.getPlugin(pluginId)
         }
     }
 }

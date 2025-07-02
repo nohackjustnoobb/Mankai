@@ -17,32 +17,23 @@ struct LibraryTab: View {
 
 private struct LibraryTabContent: View {
     @ObservedObject var pluginService: PluginService
-    @State var pluginsList: [String: [Manga]]? = nil
+    @State var plugins: [Plugin] = []
+
     @State var query: String = ""
     @State var searchSuggestions: [String] = []
     @State var searchTask: Task<Void, Never>? = nil
     @State var navigateToSearch: Bool = false
+    @State private var isUpdateMangaModalPresented = false
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let pluginsList = pluginsList {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(Array(pluginsList), id: \.key) { key, mangas in
-                                MangasRowListView(
-                                    mangas: mangas,
-                                    pluginId: key
-                                )
-                            }
-                        }
-                        .padding()
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(plugins) { plugin in
+                        PluginListMangasRowListView(plugin: plugin)
                     }
-
-                } else {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .padding()
             }
             .navigationTitle("library")
             .onAppear {
@@ -73,40 +64,21 @@ private struct LibraryTabContent: View {
                     SearchScreen(query: query)
                 }
             )
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { isUpdateMangaModalPresented = true }) {
+                        Image(systemName: "plus.circle")
+                    }
+                }
+            }
+            .sheet(isPresented: $isUpdateMangaModalPresented) {
+                UpdateMangaModal()
+            }
         }
     }
 
     private func updatePlugins() {
-        let plugins = pluginService.plugins
-
-        var keysSet = Set(pluginsList?.keys as? [String] ?? [])
-        for plugin in plugins {
-            let key = plugin.id
-            keysSet.remove(key)
-
-            if pluginsList?[key] != nil {
-                continue
-            }
-
-            Task {
-                do {
-                    let mangas = try await plugin.getList(page: 1, genre: .all, status: .any)
-
-                    if self.pluginsList == nil {
-                        self.pluginsList = [:]
-                    }
-
-                    self.pluginsList![key] = mangas
-                } catch {
-                    // TODO: show an alert
-                    print("Failed to get list from plugin \(key): \(error)")
-                }
-            }
-        }
-
-        for key in keysSet {
-            pluginsList?.removeValue(forKey: key)
-        }
+        plugins = pluginService.plugins
     }
 
     private func getSearchSuggestions(for query: String) {
@@ -141,14 +113,42 @@ private struct LibraryTabContent: View {
 
             guard !Task.isCancelled else { return }
 
-            await MainActor.run {
-                self.searchSuggestions = Array(allSuggestions)
-            }
+            self.searchSuggestions = Array(allSuggestions)
         }
     }
 
     private func performSearch() {
         guard !query.isEmpty else { return }
         navigateToSearch = true
+    }
+}
+
+private struct PluginListMangasRowListView: View {
+    @ObservedObject var plugin: Plugin
+    @State var mangas: [Manga] = []
+
+    func loadMangas() {
+        Task {
+            do {
+                mangas = try await plugin.getList(page: 1, genre: .all, status: .any)
+
+            } catch {
+                // TODO: show an alert
+                print("Failed to load mangas for plugin \(plugin.id): \(error)")
+            }
+        }
+    }
+
+    var body: some View {
+        MangasRowListView(
+            mangas: mangas,
+            plugin: plugin
+        )
+        .onAppear {
+            loadMangas()
+        }
+        .onReceive(plugin.objectWillChange) {
+            loadMangas()
+        }
     }
 }
