@@ -21,9 +21,25 @@ struct PluginSettingsScreenContent: View {
 
     var body: some View {
         List {
-            SettingsHeaderView(image: Image(systemName: "puzzlepiece.fill"), color: .red, title: String(localized: "plugins"), description: String(localized: "pluginsDescription"))
+            SettingsHeaderView(
+                image: Image(systemName: "puzzlepiece.fill"), color: .red,
+                title: String(localized: "plugins"),
+                description: String(localized: "pluginsDescription"))
 
-            ForEach(pluginService.plugins) { plugin in
+            ForEach(
+                pluginService.plugins.sorted { plugin1, plugin2 in
+                    let isPlugin1AppFs = plugin1 is AppDirPlugin
+                    let isPlugin2AppFs = plugin2 is AppDirPlugin
+
+                    if isPlugin1AppFs && !isPlugin2AppFs {
+                        return true
+                    } else if !isPlugin1AppFs && isPlugin2AppFs {
+                        return false
+                    } else {
+                        return plugin1.name ?? plugin1.id < plugin2.name ?? plugin2.id
+                    }
+                }
+            ) { plugin in
                 NavigationLink(destination: {
                     PluginInfoScreen(plugin: plugin)
                 }) {
@@ -31,14 +47,20 @@ struct PluginSettingsScreenContent: View {
                         HStack(spacing: 8) {
                             Text(plugin.name ?? plugin.id)
                             if let version = plugin.version {
-                                Text("v\(version)").smallTagStyle()
+                                Text("v\(version)")
+                                    .smallTagStyle()
+                            }
+
+                            if let tag = plugin.tag {
+                                Text(tag)
+                                    .smallTagStyle()
                             }
                         }
                         if let description = plugin.description {
                             Text(description)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                                .lineLimit(2)
+                                .lineLimit(1)
                         }
                     }
                 }
@@ -49,7 +71,7 @@ struct PluginSettingsScreenContent: View {
                 Button(action: {
                     showModal = true
                 }) {
-                    Image(systemName: "plus.circle").foregroundColor(.accentColor)
+                    Image(systemName: "plus.circle")
                 }
             }
         }

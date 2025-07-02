@@ -216,6 +216,27 @@ class JsPlugin: Plugin {
         return plugin
     }
 
+    static func loadPlugins() -> [JsPlugin] {
+        let context = DbService.shared.getContext()
+        let request: NSFetchRequest<JsPluginData> = JsPluginData.fetchRequest()
+
+        var results: [JsPlugin] = []
+
+        do {
+            let jsPluginDataArray = try context.fetch(request)
+
+            for jsPluginData in jsPluginDataArray {
+                if let jsPlugin = JsPlugin.fromDataModel(jsPluginData) {
+                    results.append(jsPlugin)
+                }
+            }
+        } catch {
+            print("Failed to load plugins from Core Data: \(error)")
+        }
+
+        return results
+    }
+
     // MARK: Cache
 
     private var cache: [String: CacheEntry] = [:]
@@ -322,9 +343,9 @@ class JsPlugin: Plugin {
                     "description": config.description as Any,
                     "type": config.type.rawValue,
                     "defaultValue": config.defaultValue,
-                    "options": config.options as Any,
+                    "options": config.options as Any
                 ]
-            },
+            }
         ]
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
@@ -334,7 +355,7 @@ class JsPlugin: Plugin {
         let configValuesArray = _configValues.values.map { configValue in
             [
                 "key": configValue.key,
-                "value": configValue.value,
+                "value": configValue.value
             ]
         }
         let configValuesData = try JSONSerialization.data(
@@ -375,7 +396,9 @@ class JsPlugin: Plugin {
         guard let isOnline = result as? Bool else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for isOnline"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForIsOnline"
+                ]
             )
         }
 
@@ -400,7 +423,9 @@ class JsPlugin: Plugin {
         guard let suggestions = result as? [String] else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for suggestions"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForSuggestions"
+                ]
             )
         }
 
@@ -428,7 +453,9 @@ class JsPlugin: Plugin {
         guard let mangas = result as? [Any] else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for mangas"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                ]
             )
         }
 
@@ -460,7 +487,9 @@ class JsPlugin: Plugin {
         guard let mangas = result as? [Any] else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for mangas"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                ]
             )
         }
 
@@ -487,7 +516,9 @@ class JsPlugin: Plugin {
         guard let mangas = result as? [Any] else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for mangas"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                ]
             )
         }
 
@@ -512,7 +543,9 @@ class JsPlugin: Plugin {
         guard let detailedManga = result as? [String: Any] else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for DetailedManga"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga"
+                ]
             )
         }
 
@@ -523,7 +556,9 @@ class JsPlugin: Plugin {
         } else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for DetailedManga"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga"
+                ]
             )
         }
     }
@@ -553,7 +588,9 @@ class JsPlugin: Plugin {
         else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid manga or chapter format"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"
+                ]
             )
         }
 
@@ -564,7 +601,9 @@ class JsPlugin: Plugin {
         guard let images = result as? [String] else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for images"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForImages"
+                ]
             )
         }
 
@@ -594,14 +633,18 @@ class JsPlugin: Plugin {
         guard let imageBase64Encoded = result as? String else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid result format for image"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidResultFormatForImage"
+                ]
             )
         }
 
         guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
             throw NSError(
                 domain: "JsPlugin", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "Invalid base64 string for image"]
+                userInfo: [
+                    NSLocalizedDescriptionKey: "invalidBase64StringForImage"
+                ]
             )
         }
 

@@ -9,8 +9,9 @@ import SwiftUI
 
 struct ChaptersModal: View {
     let manga: DetailedManga
-    let chapterKey: String
+    let chaptersKey: String
     let chapters: [Chapter]
+    let onNavigateToChapter: (Chapter) -> Void
 
     @Environment(\.dismiss) var dismiss
     @State private var isReversed = true
@@ -20,8 +21,16 @@ struct ChaptersModal: View {
             List {
                 Section {
                     ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
-                        NavigationLink(destination: {}) {
-                            Text(chapter.title ?? chapter.id ?? "nil")
+                        Button(action: {
+                            onNavigateToChapter(chapter)
+                        }) {
+                            HStack {
+                                Text(chapter.title ?? chapter.id ?? "nil")
+                                    .foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                 } header: {
@@ -43,7 +52,7 @@ struct ChaptersModal: View {
 
                 ToolbarItem(placement: .principal) {
                     VStack {
-                        Text(LocalizedStringKey(chapterKey))
+                        Text(LocalizedStringKey(chaptersKey))
                             .font(.headline)
                         Text("\(chapters.count) chapters")
                             .font(.caption)

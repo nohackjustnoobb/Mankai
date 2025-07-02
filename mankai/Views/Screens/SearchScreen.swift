@@ -20,27 +20,16 @@ private struct SearchScreenContent: View {
     let query: String
 
     @ObservedObject var pluginService: PluginService
-    @State private var pluginsSearch: [String: [Manga]]? = nil
+    @State private var plugins: [Plugin] = []
 
     var body: some View {
-        Group {
-            if let pluginsSearch = pluginsSearch {
-                ScrollView {
-                    LazyVStack {
-                        ForEach(Array(pluginsSearch), id: \.key) { key, mangas in
-                            MangasRowListView(
-                                mangas: mangas,
-                                pluginId: key,
-                                query: query
-                            )
-                        }
-                    }
-                    .padding()
+        ScrollView {
+            LazyVStack {
+                ForEach(plugins) { plugin in
+                    PluginSearchMangasRowListView(query: query, plugin: plugin)
                 }
-            } else {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .padding()
         }
         .navigationTitle("search")
         .navigationBarTitleDisplayMode(.inline)
@@ -64,35 +53,38 @@ private struct SearchScreenContent: View {
     }
 
     private func updatePlugins() {
-        let plugins = pluginService.plugins
+        plugins = pluginService.plugins
+    }
+}
 
-        var keysSet = Set(pluginsSearch?.keys as? [String] ?? [])
-        for plugin in plugins {
-            let key = plugin.id
-            keysSet.remove(key)
+struct PluginSearchMangasRowListView: View {
+    let query: String
 
-            if pluginsSearch?[key] != nil {
-                continue
-            }
+    @ObservedObject var plugin: Plugin
+    @State var mangas: [Manga] = []
 
-            Task {
-                do {
-                    let mangas = try await plugin.search(query, page: 1)
-
-                    if self.pluginsSearch == nil {
-                        self.pluginsSearch = [:]
-                    }
-
-                    self.pluginsSearch![key] = mangas
-                } catch {
-                    // TODO: show an alert
-                    print("Failed to get list from plugin \(key): \(error)")
-                }
+    func loadMangas() {
+        Task {
+            do {
+                mangas = try await plugin.search(query, page: 1)
+            } catch {
+                // TODO: show an alert
+                print("Failed to get list from plugin \(plugin.id): \(error)")
             }
         }
+    }
 
-        for key in keysSet {
-            pluginsSearch?.removeValue(forKey: key)
+    var body: some View {
+        MangasRowListView(
+            mangas: mangas,
+            plugin: plugin,
+            query: query
+        )
+        .onAppear {
+            loadMangas()
+        }
+        .onReceive(plugin.objectWillChange) {
+            loadMangas()
         }
     }
 }

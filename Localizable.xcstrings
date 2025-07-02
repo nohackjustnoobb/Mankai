@@ -55,12 +55,53 @@
         }
       }
     },
+    "addAuthor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Author"
+          }
+        }
+      }
+    },
+    "addChapterGroup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Chapter Group"
+          }
+        }
+      }
+    },
+    "addCover" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Cover"
+          }
+        }
+      }
+    },
     "addPlugin" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Plugin"
+          }
+        }
+      }
+    },
+    "adventure" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adventure"
           }
         }
       }
@@ -82,6 +123,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Any"
+          }
+        }
+      }
+    },
+    "appFsPluginDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is a built-in plugin that enables users to store and manage manga directly within the app's local directory."
+          }
+        }
+      }
+    },
+    "appName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai"
+          }
+        }
+      }
+    },
+    "authorName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Author Name"
           }
         }
       }
@@ -117,6 +188,27 @@
         }
       }
     },
+    "boysLove" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boys Love"
+          }
+        }
+      }
+    },
+    "builtin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build-in"
+          }
+        }
+      }
+    },
     "cancel" : {
       "localizations" : {
         "en" : {
@@ -127,12 +219,43 @@
         }
       }
     },
+    "changeCover" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change Cover"
+          }
+        }
+      }
+    },
     "chapter %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chapter %@"
+          }
+        }
+      }
+    },
+    "chapterDirectoryNotFound" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter Directory Not Found"
+          }
+        }
+      }
+    },
+    "chapterGroup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group Name"
           }
         }
       }
@@ -157,6 +280,17 @@
         }
       }
     },
+    "comedy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comedy"
+          }
+        }
+      }
+    },
     "configs" : {
       "localizations" : {
         "en" : {
@@ -173,6 +307,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cover"
+          }
+        }
+      }
+    },
+    "create" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        }
+      }
+    },
+    "createManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Manga"
           }
         }
       }
@@ -203,6 +357,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default"
+          }
+        }
+      }
+    },
+    "delete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
+    },
+    "deleteManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Manga"
+          }
+        }
+      }
+    },
+    "deleteMangaConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to delete this manga?"
           }
         }
       }
@@ -247,12 +431,42 @@
         }
       }
     },
+    "editManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Manga"
+          }
+        }
+      }
+    },
     "ended" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ended"
+          }
+        }
+      }
+    },
+    "enterAuthorName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the author's name"
+          }
+        }
+      }
+    },
+    "enterChapterGroup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a name for the chapter group"
           }
         }
       }
@@ -338,6 +552,17 @@
         }
       }
     },
+    "fanFiction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fan Fiction"
+          }
+        }
+      }
+    },
     "filters" : {
       "localizations" : {
         "en" : {
@@ -386,12 +611,45 @@
     "getSuggestion" : {
 
     },
+    "harem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Harem"
+          }
+        }
+      }
+    },
+    "historical" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historical"
+          }
+        }
+      }
+    },
     "home" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Home"
+          }
+        }
+      }
+    },
+    "horror" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horror"
           }
         }
       }
@@ -432,6 +690,116 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Info"
+          }
+        }
+      }
+    },
+    "invalidBase64StringForImage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Base64 String For Image"
+          }
+        }
+      }
+    },
+    "invalidMangaOrChapterFormat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Manga Or Chapter Format"
+          }
+        }
+      }
+    },
+    "invalidResponseType" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Response Type"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForDetailedManga" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Detailed Manga"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForImage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Image"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForImages" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Images"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForIsOnline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Is Online"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForMangas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Mangas"
+          }
+        }
+      }
+    },
+    "invalidResultFormatForSuggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Result Format For Suggestions"
+          }
+        }
+      }
+    },
+    "invalidUrl" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid URL"
           }
         }
       }
@@ -499,12 +867,34 @@
         }
       }
     },
+    "magic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magic"
+          }
+        }
+      }
+    },
     "manga" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manga"
+          }
+        }
+      }
+    },
+    "mangaDirectoryNotFound" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manga Directory Not Found"
           }
         }
       }
@@ -519,12 +909,45 @@
         }
       }
     },
+    "mature" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mature"
+          }
+        }
+      }
+    },
+    "mecha" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mecha"
+          }
+        }
+      }
+    },
     "methods" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Methods"
+          }
+        }
+      }
+    },
+    "missingUrlParameter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing URL Parameter"
           }
         }
       }
@@ -569,6 +992,16 @@
         }
       }
     },
+    "noCover" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Cover"
+          }
+        }
+      }
+    },
     "noDetails" : {
       "localizations" : {
         "en" : {
@@ -585,6 +1018,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Genres Available"
+          }
+        }
+      }
+    },
+    "noMangasAvailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Mangas Available"
           }
         }
       }
@@ -626,6 +1069,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Option"
+          }
+        }
+      }
+    },
+    "ordersCountMismatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Orders Count Mismatch"
+          }
+        }
+      }
+    },
+    "Otokonoko" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otokonoko"
           }
         }
       }
@@ -690,6 +1155,26 @@
         }
       }
     },
+    "removeChapterGroup" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Chapter Group"
+          }
+        }
+      }
+    },
+    "removeChapterGroupConfirmation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to remove this chapter group? This will delete all chapters under this group."
+          }
+        }
+      }
+    },
     "removePlugin" : {
       "localizations" : {
         "en" : {
@@ -750,12 +1235,54 @@
         }
       }
     },
+    "rfs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read-only FS"
+          }
+        }
+      }
+    },
+    "romance" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romance"
+          }
+        }
+      }
+    },
+    "rwfs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read/Write FS"
+          }
+        }
+      }
+    },
     "save" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save"
+          }
+        }
+      }
+    },
+    "schoolLife" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "School Life"
           }
         }
       }
@@ -791,6 +1318,16 @@
         }
       }
     },
+    "selectedPluginNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected Plugin Not Found"
+          }
+        }
+      }
+    },
     "serial" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -812,6 +1349,28 @@
         }
       }
     },
+    "speculativeFiction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Speculative Fiction"
+          }
+        }
+      }
+    },
+    "sports" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sports"
+          }
+        }
+      }
+    },
     "status" : {
       "localizations" : {
         "en" : {
@@ -828,6 +1387,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggestions"
+          }
+        }
+      }
+    },
+    "suspense" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suspense"
           }
         }
       }
@@ -943,6 +1513,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Volume"
+          }
+        }
+      }
+    },
+    "war" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "War"
+          }
+        }
+      }
+    },
+    "webViewNotInitialized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebView Not Initialized"
+          }
+        }
+      }
+    },
+    "yuri" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yuri"
           }
         }
       }

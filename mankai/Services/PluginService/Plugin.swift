@@ -36,35 +36,39 @@ class Plugin: Identifiable, ObservableObject {
     }
 
     var name: String? {
-        fatalError("Not Implemented")
+        nil
     }
 
     var version: String? {
-        fatalError("Not Implemented")
+        nil
+    }
+
+    var tag: String? {
+        nil
     }
 
     var description: String? {
-        fatalError("Not Implemented")
+        nil
     }
 
     var authors: [String] {
-        fatalError("Not Implemented")
+        []
     }
 
     var repository: String? {
-        fatalError("Not Implemented")
+        nil
     }
 
     var updatesUrl: String? {
-        fatalError("Not Implemented")
+        nil
     }
 
     var availableGenres: [Genre] {
-        fatalError("Not Implemented")
+        []
     }
 
     var configs: [Config] {
-        fatalError("Not Implemented")
+        []
     }
 
     // MARK: - Config Values

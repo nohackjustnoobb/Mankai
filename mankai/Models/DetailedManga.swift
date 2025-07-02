@@ -8,18 +8,18 @@
 import Foundation
 
 struct DetailedManga: Identifiable, Codable {
-    let id: String
-    let title: String?
-    let cover: String?
-    let status: Status?
-    let latestChapter: Chapter?
-    let description: String?
-    let updatedAt: Date?
-    let authors: [String]
-    let genres: [Genre]
-    let chapters: [String: [Chapter]]
+    var id: String
+    var title: String?
+    var cover: String?
+    var status: Status?
+    var latestChapter: Chapter?
+    var description: String?
+    var updatedAt: Date?
+    var authors: [String]
+    var genres: [Genre]
+    var chapters: [String: [Chapter]]
 
-    let meta: String?
+    var meta: String?
 
     init?(from any: Any) {
         guard let dict = any as? [String: Any],
@@ -84,13 +84,15 @@ struct DetailedManga: Identifiable, Codable {
             var chapters: [String: [Chapter]] = [:]
 
             for (key, value) in chaptersDict {
+                chapters[key] = []
+
                 for value in value as? [Any] ?? [] {
                     if let chapterDict = value as? [String: Any] {
                         let chapter = Chapter(
                             id: chapterDict["id"] as? String,
                             title: chapterDict["title"] as? String
                         )
-                        chapters[key, default: []].append(chapter)
+                        chapters[key]!.append(chapter)
                     }
                 }
             }
@@ -129,6 +131,14 @@ struct DetailedManga: Identifiable, Codable {
             try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
 
         self.meta = try container.decodeIfPresent(String.self, forKey: .meta)
+    }
+
+    init() {
+        self.id = UUID().uuidString
+        self.authors = []
+        self.genres = []
+        self.chapters = ["serial": [], "extra": [], "volume": []]
+        self.status = .onGoing
     }
 
     func encode(to encoder: Encoder) throws {

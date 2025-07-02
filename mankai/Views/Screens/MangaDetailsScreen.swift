@@ -9,13 +9,24 @@ import SwiftUI
 import WrappingHStack
 
 struct MangaDetailsScreen: View {
-    let plugin: Plugin
+    @ObservedObject var plugin: Plugin
     let manga: Manga
 
     @State private var detailedManga: DetailedManga? = nil
     @State private var showingChaptersModal = false
     @State private var selectedChapterKey: String? = nil
     @State private var isReversed = true
+    @State private var selectedChapter: Chapter? = nil
+    @State private var showReaderScreen = false
+    @State private var isUpdateMangaModalPresented = false
+
+    @Environment(\.dismiss) private var dismiss
+
+    func navigateToChapter(_ chapter: Chapter) {
+        selectedChapter = chapter
+        showingChaptersModal = false
+        showReaderScreen = true
+    }
 
     var info: some View {
         List {
@@ -137,7 +148,9 @@ struct MangaDetailsScreen: View {
             if let detailedManga = detailedManga {
                 Section {
                     ForEach(
-                        Array(detailedManga.chapters).sorted { $0.value.count > $1.value.count },
+                        Array(detailedManga.chapters).filter { $0.value.count > 0 }.sorted {
+                            $0.value.count > $1.value.count
+                        },
                         id: \.key
                     ) { key, chapters in
                         Button(action: {
@@ -197,9 +210,18 @@ struct MangaDetailsScreen: View {
                     {
                         List {
                             Section {
-                                ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
-                                    NavigationLink(destination: {}) {
-                                        Text(chapter.title ?? chapter.id ?? "nil")
+                                ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
+                                    chapter in
+                                    Button(action: {
+                                        navigateToChapter(chapter)
+                                    }) {
+                                        HStack {
+                                            Text(chapter.title ?? chapter.id ?? "nil")
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Image(systemName: "chevron.right")
+                                                .foregroundColor(.secondary)
+                                        }
                                     }
                                 }
                             } header: {
@@ -219,8 +241,9 @@ struct MangaDetailsScreen: View {
                                         Image(
                                             systemName: isReversed
                                                 ? "arrow.counterclockwise"
-                                                : "arrow.clockwise")
-                                            .font(.headline)
+                                                : "arrow.clockwise"
+                                        )
+                                        .font(.headline)
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -242,15 +265,27 @@ struct MangaDetailsScreen: View {
         .sheet(isPresented: $showingChaptersModal) { [selectedChapterKey] in
             ChaptersModal(
                 manga: detailedManga!,
-                chapterKey: selectedChapterKey!,
-                chapters: detailedManga!.chapters[selectedChapterKey!]!
+                chaptersKey: selectedChapterKey!,
+                chapters: detailedManga!.chapters[selectedChapterKey!]!,
+                onNavigateToChapter: navigateToChapter
             )
         }
-        .apply {
-            if UIDevice.isIPad {
-                $0.toolbarBackground(.visible, for: .navigationBar)
-            } else {
-                $0
+        .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
+            if let detailedManga = detailedManga {
+                UpdateMangaModal(plugin: plugin as? ReadWriteFsPlugin, manga: detailedManga)
+            }
+        }
+        .navigationDestination(isPresented: $showReaderScreen) {
+            if let selectedChapter = selectedChapter,
+               let selectedChapterKey = selectedChapterKey,
+               let detailedManga = detailedManga
+            {
+                ReaderScreen(
+                    plugin: plugin,
+                    manga: detailedManga,
+                    chaptersKey: selectedChapterKey,
+                    chapter: selectedChapter
+                )
             }
         }
         .toolbar {
@@ -263,16 +298,43 @@ struct MangaDetailsScreen: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            if plugin is ReadWriteFsPlugin {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: { isUpdateMangaModalPresented = true }) {
+                        Image(systemName: "pencil.circle")
+                    }
+                }
+            }
+        }
+        .apply {
+            if UIDevice.isIPad {
+                $0.toolbarBackground(.visible, for: .navigationBar)
+            } else {
+                $0
+            }
         }
         .onAppear {
-            Task {
-                do {
-                    detailedManga = try await plugin.getDetailedManga(manga.id)
-                    selectedChapterKey = Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }.first?.key
-                } catch {
-                    // TODO: handle error
+            loadDetailedManga()
+        }
+        .onReceive(plugin.objectWillChange) {
+            loadDetailedManga()
+        }
+    }
+
+    private func loadDetailedManga() {
+        Task {
+            do {
+                detailedManga = try await plugin.getDetailedManga(manga.id)
+                selectedChapterKey =
+                    Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }
+                        .first?.key
+            } catch {
+                if !(plugin is ReadWriteFsPlugin) {
                     print("Failed to load detailed manga: \(error)")
                 }
+
+                dismiss()
             }
         }
     }

@@ -16,9 +16,22 @@
 		E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E4C616AF2E153A1400AC484A /* Exceptions for "mankai" folder in "mankai" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E40C6B332E05A95700AF2FC9 /* mankai */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E40C6B902E06869400AF2FC9 /* mankai */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E4C616AF2E153A1400AC484A /* Exceptions for "mankai" folder in "mankai" target */,
+			);
 			path = mankai;
 			sourceTree = "<group>";
 		};
@@ -271,6 +284,7 @@
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mankai/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mankai;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -303,6 +317,7 @@
 				DEVELOPMENT_TEAM = 27YQ6QDS2R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = mankai/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Mankai;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.books";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
