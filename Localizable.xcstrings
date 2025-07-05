@@ -65,6 +65,16 @@
         }
       }
     },
+    "addChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Chapter"
+          }
+        }
+      }
+    },
     "addChapterGroup" : {
       "localizations" : {
         "en" : {
@@ -270,6 +280,16 @@
         }
       }
     },
+    "chapterTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chapter Title"
+          }
+        }
+      }
+    },
     "close" : {
       "localizations" : {
         "en" : {
@@ -431,6 +451,46 @@
         }
       }
     },
+    "editChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Chapter"
+          }
+        }
+      }
+    },
+    "editChapters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Chapters"
+          }
+        }
+      }
+    },
+    "editChaptersInstructions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long press and drag to reorder chapters, swipe to delete."
+          }
+        }
+      }
+    },
+    "editChapterTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Chapter Title"
+          }
+        }
+      }
+    },
     "editManga" : {
       "localizations" : {
         "en" : {
@@ -471,6 +531,26 @@
         }
       }
     },
+    "enterChapterTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a title for the chapter"
+          }
+        }
+      }
+    },
+    "enterNewChapterTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a new title for the chapter"
+          }
+        }
+      }
+    },
     "error" : {
       "localizations" : {
         "en" : {
@@ -498,6 +578,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed To Add Plugin"
+          }
+        }
+      }
+    },
+    "failedToEditChapters" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Edit Chapters"
           }
         }
       }
@@ -1084,7 +1174,7 @@
         }
       }
     },
-    "Otokonoko" : {
+    "otokonoko" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

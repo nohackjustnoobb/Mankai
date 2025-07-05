@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MangasRowListView: View {
-    let mangas: [Manga]
+    let mangas: [Manga]?
     let plugin: Plugin
     var query: String? = nil
 
@@ -36,25 +36,29 @@ struct MangasRowListView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            if mangas.isEmpty {
-                Text("noMangasAvailable")
-                    .foregroundColor(.secondary)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .center)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 12) {
-                        ForEach(mangas) { manga in
-                            NavigationLink(
-                                destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                            ) {
-                                MangaItemView(manga: manga, plugin: plugin)
-                                    .aspectRatio(3 / 5, contentMode: .fit)
+            if let mangas = mangas {
+                if mangas.isEmpty {
+                    Text("noMangasAvailable")
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(alignment: .top, spacing: 12) {
+                            ForEach(mangas) { manga in
+                                NavigationLink(
+                                    destination: MangaDetailsScreen(plugin: plugin, manga: manga)
+                                ) {
+                                    MangaItemView(manga: manga, plugin: plugin)
+                                        .aspectRatio(3 / 5, contentMode: .fit)
+                                }
                             }
                         }
                     }
+                    .frame(minHeight: 200)
                 }
-                .frame(minHeight: 200)
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
             }
         }
     }

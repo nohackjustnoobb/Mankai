@@ -125,7 +125,7 @@ private struct LibraryTabContent: View {
 
 private struct PluginListMangasRowListView: View {
     @ObservedObject var plugin: Plugin
-    @State var mangas: [Manga] = []
+    @State var mangas: [Manga]? = nil
 
     func loadMangas() {
         Task {

@@ -105,9 +105,9 @@ struct UpdateMangaContent: View {
 
     private func loadCoverImage() {
         guard !isCreatingManga,
-              let coverUrl = manga.cover,
-              !coverUrl.isEmpty,
-              let plugin = plugins.first(where: { $0.id == plugin })
+            let coverUrl = manga.cover,
+            !coverUrl.isEmpty,
+            let plugin = plugins.first(where: { $0.id == plugin })
         else {
             coverImageData = nil
             return
@@ -134,7 +134,7 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            try await selectedPlugin.update(manga)
+            try await selectedPlugin.updateManga(manga)
 
             if isCoverChanged, let coverData = coverImageData {
                 try await selectedPlugin.updateCover(mangaId: manga.id, image: coverData)
@@ -192,15 +192,15 @@ struct UpdateMangaContent: View {
                 VStack(alignment: .center, spacing: 16) {
                     Group {
                         if let coverImageData = coverImageData,
-                           let uiImage = UIImage(data: coverImageData)
+                            let uiImage = UIImage(data: coverImageData)
                         {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .frame(maxWidth: .infinity)
                                 .aspectRatio(3 / 4, contentMode: .fit)
-                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         } else {
-                            RoundedRectangle(cornerRadius: 6)
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.systemGray6))
                                 .frame(maxWidth: .infinity)
                                 .aspectRatio(3 / 4, contentMode: .fit)
@@ -234,7 +234,7 @@ struct UpdateMangaContent: View {
                 TextField("title", text: title)
 
                 TextField("description", text: description, axis: .vertical)
-                    .lineLimit(3 ... 6)
+                    .lineLimit(3...6)
 
                 Picker("status", selection: status) {
                     Text("onGoing")

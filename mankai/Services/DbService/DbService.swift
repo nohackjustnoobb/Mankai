@@ -26,7 +26,7 @@ class DbService {
     }()
 
     private var context: NSManagedObjectContext {
-        let viewContext = persistentContainer.viewContext
+        let viewContext = persistentContainer.newBackgroundContext()
 
         viewContext.automaticallyMergesChangesFromParent = true
         viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
