@@ -61,7 +61,7 @@ struct PluginSearchMangasRowListView: View {
     let query: String
 
     @ObservedObject var plugin: Plugin
-    @State var mangas: [Manga] = []
+    @State var mangas: [Manga]? = nil
 
     func loadMangas() {
         Task {

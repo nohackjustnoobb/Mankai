@@ -414,18 +414,25 @@ class ReadFsPlugin: Plugin {
                 userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
         }
 
-        let contents = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-
-        let imageFiles = contents.compactMap { fileName -> (Int, String)? in
-            let nameWithoutExtension = URL(fileURLWithPath: fileName).deletingPathExtension()
-                .lastPathComponent
-            guard let number = Int(nameWithoutExtension) else { return nil }
-            return (number, "\(manga.id)/\(chapterId)/\(fileName)")
+        let metaPath = chapterPath.appendingPathComponent("meta.json")
+        guard fileManager.fileExists(atPath: metaPath.path) else {
+            return []
+        }
+        let metaData = try Data(contentsOf: metaPath)
+        guard
+            let hashes = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
+        else {
+            return []
         }
 
-        let sortedImagePaths = imageFiles.sorted { $0.0 < $1.0 }.map { $0.1 }
-
-        return sortedImagePaths
+        var imagePaths: [String] = []
+        let contents = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
+        for hash in hashes {
+            if let fileName = contents.first(where: { $0.hasPrefix(hash + ".") }) {
+                imagePaths.append("\(manga.id)/\(chapterId)/\(fileName)")
+            }
+        }
+        return imagePaths
     }
 
     override func getImage(_ url: String) async throws -> Data {

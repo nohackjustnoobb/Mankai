@@ -19,6 +19,7 @@ struct MangaDetailsScreen: View {
     @State private var selectedChapter: Chapter? = nil
     @State private var showReaderScreen = false
     @State private var isUpdateMangaModalPresented = false
+    @State private var isUpdateChaptersModalPresented = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -34,6 +35,7 @@ struct MangaDetailsScreen: View {
                 VStack {
                     MangaCoverView(coverUrl: manga.cover, plugin: plugin)
                         .aspectRatio(3 / 4, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal)
                         .padding(.horizontal)
 
@@ -64,6 +66,7 @@ struct MangaDetailsScreen: View {
                         .foregroundColor(.secondary)
                     }
                 }
+                .textCase(.none)
             }
             .listRowInsets(EdgeInsets())
             .padding(.top)
@@ -148,9 +151,7 @@ struct MangaDetailsScreen: View {
             if let detailedManga = detailedManga {
                 Section {
                     ForEach(
-                        Array(detailedManga.chapters).filter { $0.value.count > 0 }.sorted {
-                            $0.value.count > $1.value.count
-                        },
+                        Array(detailedManga.chapters).sorted { $0.value.count > $1.value.count },
                         id: \.key
                     ) { key, chapters in
                         Button(action: {
@@ -158,7 +159,7 @@ struct MangaDetailsScreen: View {
                             showingChaptersModal = UIDevice.isIPhone
                         }) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     HStack(spacing: 8) {
                                         Text(LocalizedStringKey(key))
                                             .foregroundColor(.primary)
@@ -168,7 +169,7 @@ struct MangaDetailsScreen: View {
                                     }
 
                                     if let latestChapter = chapters.last {
-                                        HStack {
+                                        HStack(spacing: 4) {
                                             Text("latest")
                                                 .font(.caption)
                                                 .foregroundColor(.primary)
@@ -210,20 +211,27 @@ struct MangaDetailsScreen: View {
                     {
                         List {
                             Section {
-                                ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
-                                    chapter in
-                                    Button(action: {
-                                        navigateToChapter(chapter)
-                                    }) {
+                                if chapters.isEmpty {
+                                    Text("noChaptersAvailable")
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
+                                        chapter in
+
                                         HStack {
                                             Text(chapter.title ?? chapter.id ?? "nil")
                                                 .foregroundColor(.primary)
                                             Spacer()
-                                            Image(systemName: "chevron.right")
-                                                .foregroundColor(.secondary)
+                                            Button(action: {
+                                                navigateToChapter(chapter)
+                                            }) {
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundColor(.secondary)
+                                            }
                                         }
                                     }
                                 }
+
                             } header: {
                                 HStack {
                                     VStack(alignment: .leading) {
@@ -235,17 +243,29 @@ struct MangaDetailsScreen: View {
 
                                     Spacer()
 
-                                    Button(action: {
-                                        isReversed.toggle()
-                                    }) {
-                                        Image(
-                                            systemName: isReversed
-                                                ? "arrow.counterclockwise"
-                                                : "arrow.clockwise"
-                                        )
-                                        .font(.headline)
+                                    HStack {
+                                        Button(action: {
+                                            isReversed.toggle()
+                                        }) {
+                                            Image(
+                                                systemName: isReversed
+                                                    ? "arrow.counterclockwise"
+                                                    : "arrow.clockwise"
+                                            )
+                                            .font(.headline)
+                                        }
+                                        .buttonStyle(.plain)
+
+                                        if plugin is ReadWriteFsPlugin {
+                                            Button(action: {
+                                                isUpdateChaptersModalPresented = true
+                                            }) {
+                                                Image(systemName: "pencil")
+                                                    .font(.headline)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
                                     }
-                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -253,6 +273,7 @@ struct MangaDetailsScreen: View {
                     } else {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.systemGroupedBackground))
                     }
                 }
             } else {
@@ -262,17 +283,35 @@ struct MangaDetailsScreen: View {
         .listSectionSpacing(0)
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle(manga.title ?? manga.id)
-        .sheet(isPresented: $showingChaptersModal) { [selectedChapterKey] in
-            ChaptersModal(
-                manga: detailedManga!,
-                chaptersKey: selectedChapterKey!,
-                chapters: detailedManga!.chapters[selectedChapterKey!]!,
-                onNavigateToChapter: navigateToChapter
-            )
+        .sheet(isPresented: $showingChaptersModal) { [detailedManga, selectedChapterKey] in
+            if let detailedManga = detailedManga,
+               let selectedChapterKey = selectedChapterKey
+            {
+                ChaptersModal(
+                    plugin: plugin,
+                    manga: detailedManga,
+                    chaptersKey: selectedChapterKey,
+                    onNavigateToChapter: navigateToChapter
+                )
+            }
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
-            if let detailedManga = detailedManga {
-                UpdateMangaModal(plugin: plugin as? ReadWriteFsPlugin, manga: detailedManga)
+            if let detailedManga = detailedManga,
+               let readWritePlugin = plugin as? ReadWriteFsPlugin
+            {
+                UpdateMangaModal(plugin: readWritePlugin, manga: detailedManga)
+            }
+        }
+        .sheet(isPresented: $isUpdateChaptersModalPresented) {
+            [detailedManga, selectedChapterKey] in
+            if let detailedManga = detailedManga,
+               let selectedChapterKey = selectedChapterKey,
+               let readWritePlugin = plugin as? ReadWriteFsPlugin
+            {
+                UpdateChaptersModal(
+                    plugin: readWritePlugin, manga: detailedManga, chaptersKey: selectedChapterKey,
+                    isRootOfSheet: true
+                )
             }
         }
         .navigationDestination(isPresented: $showReaderScreen) {
@@ -307,18 +346,18 @@ struct MangaDetailsScreen: View {
                 }
             }
         }
+        .onAppear {
+            loadDetailedManga()
+        }
+        .onReceive(plugin.objectWillChange) {
+            loadDetailedManga()
+        }
         .apply {
             if UIDevice.isIPad {
                 $0.toolbarBackground(.visible, for: .navigationBar)
             } else {
                 $0
             }
-        }
-        .onAppear {
-            loadDetailedManga()
-        }
-        .onReceive(plugin.objectWillChange) {
-            loadDetailedManga()
         }
     }
 

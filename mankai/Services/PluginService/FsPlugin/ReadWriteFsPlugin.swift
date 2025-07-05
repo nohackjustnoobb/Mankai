@@ -17,7 +17,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     // MARK: - Methods
 
-    func update(_ manga: DetailedManga) async throws {
+    func updateManga(_ manga: DetailedManga) async throws {
         let mangaPath = URL(fileURLWithPath: path).appendingPathComponent(manga.id)
         let metaPath = mangaPath.appendingPathComponent("meta.json")
         let fileManager = FileManager.default
@@ -25,7 +25,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         let mangaDirectoryExists =
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
 
         if mangaDirectoryExists {
             let mangaData = try JSONEncoder().encode(manga)
@@ -56,7 +56,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                 var isDir: ObjCBool = false
                 let chapterExists =
                     fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDir)
-                        && isDir.boolValue
+                    && isDir.boolValue
 
                 if !chapterExists {
                     try fileManager.createDirectory(
@@ -95,7 +95,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -118,7 +118,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -168,87 +168,42 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
                 userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
         }
 
-        let existingFiles = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-        let imageFiles = existingFiles.compactMap { fileName -> (Int, String)? in
-            let fileURL = URL(fileURLWithPath: fileName)
-            let nameWithoutExtension = fileURL.deletingPathExtension().lastPathComponent
-            guard let number = Int(nameWithoutExtension) else { return nil }
-            return (number, fileName)
-        }.sorted { $0.0 < $1.0 }
+        let metaPath = chapterPath.appendingPathComponent("meta.json")
+        var imageOrder: [String] = []
+        if fileManager.fileExists(atPath: metaPath.path) {
+            let metaData = try Data(contentsOf: metaPath)
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
+            {
+                imageOrder = arr
+            }
+        }
 
-        let startNumber = imageFiles.count
-
-        for (index, imageData) in images.enumerated() {
-            let imageNumber = startNumber + index
+        for imageData in images {
+            var uuid = UUID().uuidString
+            while imageOrder.contains(uuid) {
+                uuid = UUID().uuidString
+            }
             let imageFormat = NSData(data: imageData).imageFormat
-            let imagePath = chapterPath.appendingPathComponent(
-                "\(imageNumber).\(imageFormat.rawValue)")
-            try imageData.write(to: imagePath)
-        }
-    }
-
-    func removeImages(mangaId: String, chapterId: String, images: [UInt]) async throws {
-        let chapterPath = URL(fileURLWithPath: path)
-            .appendingPathComponent(mangaId)
-            .appendingPathComponent(chapterId)
-        let fileManager = FileManager.default
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
-        }
-
-        let existingFiles = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-        let imageFiles = existingFiles.compactMap { fileName -> (Int, String)? in
-            let fileURL = URL(fileURLWithPath: fileName)
-            let nameWithoutExtension = fileURL.deletingPathExtension().lastPathComponent
-            guard let number = Int(nameWithoutExtension) else { return nil }
-            return (number, fileName)
-        }.sorted { $0.0 < $1.0 }
-
-        for index in images {
-            guard index < imageFiles.count else { continue }
-            let (_, fileName) = imageFiles[Int(index)]
+            let fileName = "\(uuid).\(imageFormat.rawValue)"
             let imagePath = chapterPath.appendingPathComponent(fileName)
-            if fileManager.fileExists(atPath: imagePath.path) {
-                try fileManager.removeItem(at: imagePath)
-            }
+
+            try imageData.write(to: imagePath)
+            imageOrder.append(uuid)
         }
 
-        let remainingFiles = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-        let remainingImageFiles = remainingFiles.compactMap { fileName -> (Int, String)? in
-            let fileURL = URL(fileURLWithPath: fileName)
-            let nameWithoutExtension = fileURL.deletingPathExtension().lastPathComponent
-            guard let number = Int(nameWithoutExtension) else { return nil }
-            return (number, fileName)
-        }.sorted { $0.0 < $1.0 }
-
-        for (newIndex, (_, oldFileName)) in remainingImageFiles.enumerated() {
-            let oldPath = chapterPath.appendingPathComponent(oldFileName)
-            let fileURL = URL(fileURLWithPath: oldFileName)
-            let fileExtension = fileURL.pathExtension
-            let newFileName = "\(newIndex).\(fileExtension)"
-
-            if oldFileName != newFileName {
-                let newPath = chapterPath.appendingPathComponent(newFileName)
-                try fileManager.moveItem(at: oldPath, to: newPath)
-            }
-        }
+        let updatedMetaData = try JSONSerialization.data(
+            withJSONObject: imageOrder, options: [])
+        try updatedMetaData.write(to: metaPath)
     }
 
-    func arrangeImageOrder(mangaId: String, chapterId: String, orders: [UInt]) async throws {
+    func removeImages(mangaId: String, chapterId: String, ids: [String]) async throws {
         let chapterPath = URL(fileURLWithPath: path)
             .appendingPathComponent(mangaId)
             .appendingPathComponent(chapterId)
@@ -257,50 +212,76 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
                 userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
         }
 
-        let existingFiles = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-        let imageFiles = existingFiles.compactMap { fileName -> (Int, String)? in
-            let fileURL = URL(fileURLWithPath: fileName)
-            let nameWithoutExtension = fileURL.deletingPathExtension().lastPathComponent
-            guard let number = Int(nameWithoutExtension) else { return nil }
-            return (number, fileName)
-        }.sorted { $0.0 < $1.0 }
+        let metaPath = chapterPath.appendingPathComponent("meta.json")
+        var imageOrder: [String] = []
+        if fileManager.fileExists(atPath: metaPath.path) {
+            let metaData = try Data(contentsOf: metaPath)
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
+            {
+                imageOrder = arr
+            }
+        }
 
-        guard orders.count == imageFiles.count else {
+        for id in ids {
+            let files = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
+            for file in files {
+                if file.hasPrefix(id + ".") {
+                    let imagePath = chapterPath.appendingPathComponent(file)
+                    if fileManager.fileExists(atPath: imagePath.path) {
+                        try fileManager.removeItem(at: imagePath)
+                    }
+                }
+            }
+        }
+
+        imageOrder.removeAll { ids.contains($0) }
+        let updatedMetaData = try JSONSerialization.data(
+            withJSONObject: imageOrder, options: .prettyPrinted)
+        try updatedMetaData.write(to: metaPath)
+    }
+
+    func arrangeImageOrder(mangaId: String, chapterId: String, ids: [String]) async throws {
+        let chapterPath = URL(fileURLWithPath: path)
+            .appendingPathComponent(mangaId)
+            .appendingPathComponent(chapterId)
+        let fileManager = FileManager.default
+
+        var isDirectory: ObjCBool = false
+        guard
+            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
+                && isDirectory.boolValue
+        else {
+            throw NSError(
+                domain: "FsPlugin", code: 404,
+                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
+        }
+
+        let metaPath = chapterPath.appendingPathComponent("meta.json")
+        var imageOrder: [String] = []
+        if fileManager.fileExists(atPath: metaPath.path) {
+            let metaData = try Data(contentsOf: metaPath)
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
+            {
+                imageOrder = arr
+            }
+        }
+
+        guard ids.count == imageOrder.count else {
             throw NSError(
                 domain: "FsPlugin", code: 400,
                 userInfo: [NSLocalizedDescriptionKey: "ordersCountMismatch"])
         }
 
-        let tempPath = chapterPath.appendingPathComponent("temp_reorder")
-        try fileManager.createDirectory(
-            at: tempPath, withIntermediateDirectories: false, attributes: nil)
-
-        for (newIndex, originalIndex) in orders.enumerated() {
-            guard originalIndex < imageFiles.count else { continue }
-
-            let (_, originalFileName) = imageFiles[Int(originalIndex)]
-            let originalFilePath = chapterPath.appendingPathComponent(originalFileName)
-            let fileURL = URL(fileURLWithPath: originalFileName)
-            let fileExtension = fileURL.pathExtension
-            let tempFilePath = tempPath.appendingPathComponent("\(newIndex).\(fileExtension)")
-
-            try fileManager.moveItem(at: originalFilePath, to: tempFilePath)
-        }
-
-        let tempFiles = try fileManager.contentsOfDirectory(atPath: tempPath.path)
-        for tempFileName in tempFiles {
-            let tempFilePath = tempPath.appendingPathComponent(tempFileName)
-            let finalFilePath = chapterPath.appendingPathComponent(tempFileName)
-            try fileManager.moveItem(at: tempFilePath, to: finalFilePath)
-        }
-
-        try fileManager.removeItem(at: tempPath)
+        imageOrder = ids
+        let updatedMetaData = try JSONSerialization.data(
+            withJSONObject: imageOrder, options: .prettyPrinted)
+        try updatedMetaData.write(to: metaPath)
     }
 }

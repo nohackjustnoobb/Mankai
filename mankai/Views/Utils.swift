@@ -66,3 +66,13 @@ extension NSData {
         }
     }
 }
+
+func Copy<T: Codable>(of object: T) -> T? {
+    do {
+        let json = try JSONEncoder().encode(object)
+        return try JSONDecoder().decode(T.self, from: json)
+    } catch {
+        print(error)
+        return nil
+    }
+}

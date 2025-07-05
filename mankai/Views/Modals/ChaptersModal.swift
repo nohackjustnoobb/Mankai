@@ -8,28 +8,43 @@
 import SwiftUI
 
 struct ChaptersModal: View {
+    let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
-    let chapters: [Chapter]
     let onNavigateToChapter: (Chapter) -> Void
+
+    private let chapters: [Chapter]
+
+    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, onNavigateToChapter: @escaping (Chapter) -> Void) {
+        self.plugin = plugin
+        self.manga = manga
+        self.chaptersKey = chaptersKey
+        self.onNavigateToChapter = onNavigateToChapter
+        self.chapters = manga.chapters[chaptersKey] ?? []
+    }
 
     @Environment(\.dismiss) var dismiss
     @State private var isReversed = true
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section {
-                    ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
-                        Button(action: {
-                            onNavigateToChapter(chapter)
-                        }) {
-                            HStack {
-                                Text(chapter.title ?? chapter.id ?? "nil")
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
+                    if chapters.isEmpty {
+                        Text("noChaptersAvailable")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
+                            Button(action: {
+                                onNavigateToChapter(chapter)
+                            }) {
+                                HStack {
+                                    Text(chapter.title ?? chapter.id ?? "nil")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
                     }
@@ -38,15 +53,26 @@ struct ChaptersModal: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(LocalizedStringKey(chaptersKey))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        isReversed.toggle()
-                    }) {
-                        Image(
-                            systemName: isReversed
-                                ? "arrow.counterclockwise"
-                                : "arrow.clockwise")
+                    HStack {
+                        Button(action: {
+                            isReversed.toggle()
+                        }) {
+                            Image(
+                                systemName: isReversed
+                                    ? "arrow.counterclockwise"
+                                    : "arrow.clockwise")
+                        }
+
+                        if plugin is ReadWriteFsPlugin {
+                            NavigationLink(destination: {
+                                UpdateChaptersModal(plugin: plugin as! ReadWriteFsPlugin, manga: manga, chaptersKey: chaptersKey)
+                            }) {
+                                Image(systemName: "pencil")
+                            }
+                        }
                     }
                 }
 

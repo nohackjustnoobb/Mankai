@@ -13,7 +13,7 @@ enum Genre: String, Codable, CaseIterable {
     case romance
     case yuri
     case boysLove
-    case Otokonoko
+    case otokonoko
     case schoolLife
     case adventure
     case harem
