@@ -144,10 +144,12 @@ class ReadFsPlugin: Plugin {
 
         for (key, entry) in metaCache {
             if entry.isExpired { continue }
+
             checkedKeys.insert(key)
             if let metaDict = entry.data as? [String: Any] {
                 let title = metaDict["title"] as? String
                 let desc = metaDict["description"] as? String
+
                 if (title?.lowercased().contains(lowercasedQuery) == true)
                     || (desc?.lowercased().contains(lowercasedQuery) == true)
                 {
@@ -213,11 +215,14 @@ class ReadFsPlugin: Plugin {
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
         let limit = Int(ReadFsPluginConstants.pageLimit)
+
         let startIndex = Int((page - 1) * UInt(limit))
         let endIndex = startIndex + limit
-        let allResults = searchMetaByQuery(query: query, limit: Int.max) { metaDict in
+
+        let allResults = searchMetaByQuery(query: query, limit: endIndex + 1) { metaDict in
             Manga(from: metaDict)
         }
+
         if startIndex >= allResults.count { return [] }
         return Array(allResults[startIndex..<min(endIndex, allResults.count)])
     }
@@ -229,7 +234,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: pathURL.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             return []
         }
@@ -278,7 +283,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                        as? [String: Any]
+                            as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -335,7 +340,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                        as? [String: Any]
+                            as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -407,7 +412,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "ReadFsPlugin", code: 404,

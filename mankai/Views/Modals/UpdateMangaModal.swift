@@ -105,9 +105,9 @@ struct UpdateMangaContent: View {
 
     private func loadCoverImage() {
         guard !isCreatingManga,
-            let coverUrl = manga.cover,
-            !coverUrl.isEmpty,
-            let plugin = plugins.first(where: { $0.id == plugin })
+              let coverUrl = manga.cover,
+              !coverUrl.isEmpty,
+              let plugin = plugins.first(where: { $0.id == plugin })
         else {
             coverImageData = nil
             return
@@ -189,15 +189,15 @@ struct UpdateMangaContent: View {
             }
 
             Section("cover") {
-                VStack(alignment: .center, spacing: 16) {
+                VStack(alignment: .center, spacing: 0) {
                     Group {
                         if let coverImageData = coverImageData,
-                            let uiImage = UIImage(data: coverImageData)
+                           let uiImage = UIImage(data: coverImageData)
                         {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .frame(maxWidth: .infinity)
-                                .aspectRatio(3 / 4, contentMode: .fit)
+                                .scaledToFill()
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         } else {
                             RoundedRectangle(cornerRadius: 8)
@@ -216,6 +216,8 @@ struct UpdateMangaContent: View {
                                 }
                         }
                     }
+                    .padding(.top)
+                    .padding(.horizontal, 12)
 
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         HStack {
@@ -225,16 +227,15 @@ struct UpdateMangaContent: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
+                    .padding(.vertical)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
             }
 
             Section("info") {
                 TextField("title", text: title)
 
                 TextField("description", text: description, axis: .vertical)
-                    .lineLimit(3...6)
+                    .lineLimit(3 ... 6)
 
                 Picker("status", selection: status) {
                     Text("onGoing")
