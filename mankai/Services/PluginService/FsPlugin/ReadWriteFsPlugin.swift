@@ -25,7 +25,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         let mangaDirectoryExists =
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
 
         if mangaDirectoryExists {
             let mangaData = try JSONEncoder().encode(manga)
@@ -56,7 +56,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                 var isDir: ObjCBool = false
                 let chapterExists =
                     fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDir)
-                    && isDir.boolValue
+                        && isDir.boolValue
 
                 if !chapterExists {
                     try fileManager.createDirectory(
@@ -95,7 +95,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -118,7 +118,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -152,10 +152,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             }
 
             removeExpiredEntry(for: mangaId)
+        }
 
-            await MainActor.run {
-                objectWillChange.send()
-            }
+        await MainActor.run {
+            objectWillChange.send()
         }
     }
 
@@ -168,7 +168,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -179,8 +179,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var imageOrder: [String] = []
         if fileManager.fileExists(atPath: metaPath.path) {
             let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
-            {
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
                 imageOrder = arr
             }
         }
@@ -212,7 +211,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -223,8 +222,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var imageOrder: [String] = []
         if fileManager.fileExists(atPath: metaPath.path) {
             let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
-            {
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
                 imageOrder = arr
             }
         }
@@ -256,7 +254,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "FsPlugin", code: 404,
@@ -267,8 +265,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         var imageOrder: [String] = []
         if fileManager.fileExists(atPath: metaPath.path) {
             let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
-            {
+            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
                 imageOrder = arr
             }
         }

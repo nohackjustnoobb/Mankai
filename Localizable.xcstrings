@@ -592,6 +592,16 @@
         }
       }
     },
+    "failedToLoadChapter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed To Load Chapter"
+          }
+        }
+      }
+    },
     "failedToLoadImage" : {
       "localizations" : {
         "en" : {
@@ -1488,6 +1498,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suspense"
+          }
+        }
+      }
+    },
+    "tapToRetry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap To Retry"
           }
         }
       }

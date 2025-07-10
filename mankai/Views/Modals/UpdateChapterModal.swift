@@ -15,7 +15,7 @@ struct UpdateChapterModal: View {
     let onRename: ((String, String) -> Void)?
 
     @State var urls: [String]? = nil
-    @State var images: [String: Data] = [:]
+    @State var images: [String: UIImage] = [:]
     @State private var showingTitleAlert = false
     @State private var newTitle = ""
     @State private var selectedItems: [PhotosPickerItem] = []
@@ -40,7 +40,8 @@ struct UpdateChapterModal: View {
 
                 Task {
                     do {
-                        images[url] = try await plugin.getImage(url)
+                        let data = try await plugin.getImage(url)
+                        images[url] = UIImage(data: data)
                     } catch {
                         // TODO: error handle
                         print("Failed to load image: \(error)")
@@ -136,16 +137,13 @@ struct UpdateChapterModal: View {
 
                     ForEach(urls, id: \.self) { url in
                         Group {
-                            if let imageData = images[url],
-                                let uiImage = UIImage(data: imageData)
-                            {
-                                Image(uiImage: uiImage)
+                            if let image = images[url] {
+                                Image(uiImage: image)
                                     .resizable()
                                     .scaledToFit()
                                     .clipShape(RoundedRectangle(cornerRadius: 8))
                                     .frame(maxWidth: .infinity, maxHeight: 200)
                                     .padding()
-
                             } else {
                                 ProgressView()
                                     .frame(maxWidth: .infinity)
@@ -168,7 +166,6 @@ struct UpdateChapterModal: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-
         .navigationTitle(chapter.title ?? chapter.id ?? "nil")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
