@@ -78,7 +78,11 @@ private struct LibraryTabContent: View {
     }
 
     private func updatePlugins() {
-        plugins = pluginService.plugins
+        plugins = pluginService.plugins.sorted { plugin1, plugin2 in
+            let name1 = plugin1.name ?? plugin1.id
+            let name2 = plugin2.name ?? plugin2.id
+            return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
+        }
     }
 
     private func getSearchSuggestions(for query: String) {

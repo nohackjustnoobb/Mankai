@@ -249,8 +249,8 @@ struct MangaDetailsScreen: View {
                                         }) {
                                             Image(
                                                 systemName: isReversed
-                                                    ? "arrow.counterclockwise"
-                                                    : "arrow.clockwise"
+                                                    ? "arrow.up"
+                                                    : "arrow.down"
                                             )
                                             .font(.headline)
                                         }

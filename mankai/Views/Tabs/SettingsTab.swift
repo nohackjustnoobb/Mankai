@@ -15,10 +15,26 @@ struct SettingsTab: View {
             List {
                 Section {
                     NavigationLink(
+                        destination: GeneralSettingsScreen()
+                    ) {
+                        Label("general", systemImage: "gear")
+                            .labelStyle(ColorfulIconLabelStyle(color: .gray))
+                    }
+
+                    NavigationLink(
+                        destination: ReaderSettingsScreen()
+                    ) {
+                        Label("reader", systemImage: "book.pages.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .orange))
+                    }
+                }
+
+                Section {
+                    NavigationLink(
                         destination: PluginSettingsScreen()
                     ) {
                         Label("plugins", systemImage: "puzzlepiece.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .red))
+                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
                     }
                     NavigationLink(
                         destination: DebugScreen()

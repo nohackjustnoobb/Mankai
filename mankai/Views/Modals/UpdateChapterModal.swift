@@ -129,7 +129,7 @@ struct UpdateChapterModal: View {
                         Text("add")
                             .padding(.horizontal, 20)
                     }
-                    .onChange(of: selectedItems) { _, _ in
+                    .onChange(of: selectedItems) {
                         if !selectedItems.isEmpty {
                             addSelectedImages()
                         }

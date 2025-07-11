@@ -19,7 +19,7 @@ struct SettingsHeaderView: View {
         Section {
             VStack(alignment: .center) {
                 image
-                    .imageScale(.large)
+                    .font(.title)
                     .foregroundColor(.white)
                     .background(
                         RoundedRectangle(cornerRadius: 14).frame(

@@ -24,6 +24,86 @@
     "•" : {
 
     },
+    "1d" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Day"
+          }
+        }
+      }
+    },
+    "1h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Hour"
+          }
+        }
+      }
+    },
+    "2h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2 Hours"
+          }
+        }
+      }
+    },
+    "6h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6 Hours"
+          }
+        }
+      }
+    },
+    "12h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12 Hours"
+          }
+        }
+      }
+    },
+    "15m" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15 Minutes"
+          }
+        }
+      }
+    },
+    "30m" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 Minutes"
+          }
+        }
+      }
+    },
+    "about" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
     "action" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -177,6 +257,16 @@
         }
       }
     },
+    "auto" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto"
+          }
+        }
+      }
+    },
     "availableGenres" : {
       "localizations" : {
         "en" : {
@@ -215,6 +305,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Build-in"
+          }
+        }
+      }
+    },
+    "cacheExpiryDuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache Expiry Duration"
           }
         }
       }
@@ -577,7 +677,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Add Plugin"
+            "value" : "Failed to Add Plugin"
           }
         }
       }
@@ -587,7 +687,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Edit Chapters"
+            "value" : "Failed to Edit Chapters"
           }
         }
       }
@@ -597,7 +697,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Load Chapter"
+            "value" : "Failed to Load Chapter"
           }
         }
       }
@@ -607,7 +707,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Load Image"
+            "value" : "Failed to Load Image"
           }
         }
       }
@@ -617,7 +717,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Parse plugin"
+            "value" : "Failed to Parse plugin"
           }
         }
       }
@@ -627,7 +727,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Remove Plugin"
+            "value" : "Failed to Remove Plugin"
           }
         }
       }
@@ -637,7 +737,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Reset Configs"
+            "value" : "Failed to Reset Configs"
           }
         }
       }
@@ -647,7 +747,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed To Set Config Value"
+            "value" : "Failed to Set Config Value"
           }
         }
       }
@@ -669,6 +769,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filters"
+          }
+        }
+      }
+    },
+    "general" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
           }
         }
       }
@@ -774,6 +884,16 @@
         }
       }
     },
+    "imageLayout" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Layout"
+          }
+        }
+      }
+    },
     "imageSize" : {
       "localizations" : {
         "en" : {
@@ -800,7 +920,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Base64 String For Image"
+            "value" : "Invalid Base64 String for Image"
           }
         }
       }
@@ -811,7 +931,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Manga Or Chapter Format"
+            "value" : "Invalid Manga or Chapter Format"
           }
         }
       }
@@ -833,7 +953,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Detailed Manga"
+            "value" : "Invalid Result Format for Detailed Manga"
           }
         }
       }
@@ -844,7 +964,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Image"
+            "value" : "Invalid Result Format for Image"
           }
         }
       }
@@ -855,7 +975,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Images"
+            "value" : "Invalid Result Format for Images"
           }
         }
       }
@@ -866,7 +986,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Is Online"
+            "value" : "Invalid Result Format for Is Online"
           }
         }
       }
@@ -877,7 +997,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Mangas"
+            "value" : "Invalid Result Format for Mangas"
           }
         }
       }
@@ -888,7 +1008,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invalid Result Format For Suggestions"
+            "value" : "Invalid Result Format for Suggestions"
           }
         }
       }
@@ -957,12 +1077,32 @@
         }
       }
     },
+    "leftToRight" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Left to Right"
+          }
+        }
+      }
+    },
     "library" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Library"
+          }
+        }
+      }
+    },
+    "license" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "License"
           }
         }
       }
@@ -1051,6 +1191,9 @@
           }
         }
       }
+    },
+    "MIT License" : {
+
     },
     "name" : {
       "localizations" : {
@@ -1153,6 +1296,16 @@
         }
       }
     },
+    "onePerRow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One Per Row"
+          }
+        }
+      }
+    },
     "onGoing" : {
       "localizations" : {
         "en" : {
@@ -1230,7 +1383,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Manage your reader plugins, including adding new plugins, configuring existing ones, removing plugins, and more."
+            "value" : "Manage your plugins, including adding new plugins, configuring existing ones, removing plugins, and more."
           }
         }
       }
@@ -1241,6 +1394,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Read"
+          }
+        }
+      }
+    },
+    "reader" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reader"
+          }
+        }
+      }
+    },
+    "readerDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Customize your reader by adjusting the image layout, setting the reading direction, and more."
+          }
+        }
+      }
+    },
+    "readingDirection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading Direction"
           }
         }
       }
@@ -1341,6 +1524,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Read-only FS"
+          }
+        }
+      }
+    },
+    "rightToLeft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Right to Left"
           }
         }
       }
@@ -1507,7 +1700,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap To Retry"
+            "value" : "Tap to Retry"
           }
         }
       }
@@ -1553,12 +1746,22 @@
         }
       }
     },
+    "twoPerRow" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Two Per Row"
+          }
+        }
+      }
+    },
     "updatedAt" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Updated At"
+            "value" : "Updated at"
           }
         }
       }

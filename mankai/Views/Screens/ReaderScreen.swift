@@ -8,21 +8,62 @@
 import SwiftUI
 import UIKit
 
+enum ReaderScreenConstants {
+    static let defaultReadingDirection: ReadingDirection = .rightToLeft
+}
+
 let LOADER_VIEW_ID = 1
 let ERROR_VIEW_ID = 2
 let LOADING_IMAGE_VIEW_ID = 3
 let ERROR_IMAGE_VIEW_ID = 4
+let PAGE_INFO_BUTTON_ID = 5
+let PAGE_SLIDER_ID = 6
+let PREVIOUS_CHAPTER_BUTTON_ID = 7
+let PREVIOUS_BUTTON_ID = 8
+let NEXT_BUTTON_ID = 9
+let NEXT_CHAPTER_BUTTON_ID = 10
 
 // MARK: - ReaderViewController
 
-class ReaderViewController: UIViewController {
+class ReaderViewController: UIViewController, UIScrollViewDelegate {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
     let chapter: Chapter
 
-    let chapters: [Chapter]
-    var currentIndex: Int
+    var chapters: [Chapter]
+    private var currentChapterIndex: Int
+
+    // Image management variables
+    private var urls: [String] = []
+    private var images: [String: UIImageView?] = [:]
+    private var groups: [[String]] = []
+
+    // Reading state variables
+    private var currentPage: Int = 0
+    private var imagesCenterY: [String: CGFloat] = [:]
+    private var startY: CGFloat = 0.0
+
+    // State variables for tab bar visibility
+    var isTabBarHidden = false
+    var isTabBarAnimating = false
+
+    // State variables for navigation bar and bottom bar visibility
+    var isNavigationBarHidden = false
+    var isNavigationBarAnimating = false
+
+    // UI Components
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let containerView = UIView()
+    private let bottomBar: UIView = .init()
+
+    // Constraint references for dynamic updates
+    private var containerLeadingConstraint: NSLayoutConstraint!
+    private var containerTopConstraint: NSLayoutConstraint!
+    private var containerWidthConstraint: NSLayoutConstraint!
+    private var containerHeightConstraint: NSLayoutConstraint!
+    private var contentHeightConstraint: NSLayoutConstraint!
 
     init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter) {
         self.plugin = plugin
@@ -31,7 +72,7 @@ class ReaderViewController: UIViewController {
         self.chapter = chapter
 
         self.chapters = manga.chapters[chaptersKey] ?? []
-        self.currentIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
+        self.currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -50,6 +91,21 @@ class ReaderViewController: UIViewController {
         setupConstraints()
 
         loadChapter()
+
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(updateGrouping),
+            name: UIDevice.orientationDidChangeNotification,
+            object: nil)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateGrouping),
+            name: UserDefaults.didChangeNotification,
+            object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -75,20 +131,96 @@ class ReaderViewController: UIViewController {
         updateImageViews()
     }
 
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        return contentView
+    }
+
+    // MARK: - Observer
+
+    @objc private func updateGrouping() {
+        groupImages()
+        syncPage()
+    }
+
+    // MARK: - Scroll Event Monitoring
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // This is called continuously while scrolling
+        updateCurrentPageFromScroll()
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        // Called when scroll view stops moving after user lifts finger
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        // Called when user lifts finger, even if still decelerating
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        // Called when programmatic scrolling finishes
+    }
+
+    private func updateCurrentPageFromScroll() {
+        let zoomScale = scrollView.zoomScale
+        let scrollY = scrollView.contentOffset.y + startY
+
+        // Find which page is currently in the center of the viewport
+        let viewportCenter = scrollY + (view.bounds.height / 2)
+
+        var closestPage = 0
+        var closestDistance = CGFloat.greatestFiniteMagnitude
+
+        for (index, url) in urls.enumerated() {
+            if let centerY = imagesCenterY[url] {
+                let scaledCenterY = centerY * zoomScale
+                let distance = abs(scaledCenterY - viewportCenter)
+                if distance < closestDistance {
+                    closestDistance = distance
+                    closestPage = index
+                }
+            }
+        }
+
+        // Only update if page actually changed
+        if closestPage != currentPage {
+            currentPage = closestPage
+            updateBottomBar()
+        }
+    }
+
     // MARK: - Load Chapter
 
-    private var urls: [String] = []
-
     private func loadChapter() {
-        guard currentIndex != -1 else {
+        guard currentChapterIndex >= 0, currentChapterIndex < chapters.count else {
             addErrorView()
             return
         }
 
+        // Reset UI
+        scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
+        containerView.subviews.forEach { $0.removeFromSuperview() }
+        addLoadingView()
+
+        // Reset state
+        urls = []
+        images = [:]
+        groups = []
+        currentPage = 0
+        imagesCenterY = [:]
+        startY = 0.0
+
+        // Set title
+        let chapter = chapters[currentChapterIndex]
+        parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+
         Task {
             do {
-                urls = try await plugin.getChapter(manga: manga, chapter: chapters[currentIndex])
+                urls = try await plugin.getChapter(
+                    manga: manga, chapter: chapter)
+
                 loadImages()
+                updateBottomBar()
             } catch {
                 addErrorView()
             }
@@ -96,8 +228,6 @@ class ReaderViewController: UIViewController {
     }
 
     // MARK: - Load Images
-
-    private var images: [String: UIImageView?] = [:]
 
     private func loadImages() {
         for url in urls {
@@ -116,18 +246,99 @@ class ReaderViewController: UIViewController {
 
     // MARK: - Group Images
 
-    private var groups: [[String]] = []
-
     private func groupImages() {
         groups = []
 
-        for i in stride(from: 0, to: urls.count, by: 2) {
-            let endIndex = min(i + 2, urls.count)
-            let group = Array(urls[i ..< endIndex])
-            groups.append(group)
+        let defaults = UserDefaults.standard
+        let imageLayout =
+            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue))
+                ?? .auto
+
+        let defaultGroupSize: Int
+        switch imageLayout {
+        case .auto:
+            // Determine screen orientation
+            let isLandscape = UIDevice.current.orientation.isLandscape
+
+            // Default grouping size based on orientation
+            defaultGroupSize = isLandscape ? 2 : 1
+        case .onePerRow:
+            defaultGroupSize = 1
+        case .twoPerRow:
+            defaultGroupSize = 2
+        }
+
+        var i = 0
+        while i < urls.count {
+            let url = urls[i]
+
+            // Check if image is loaded and if it's a wide image
+            let isWideImage = isImageWide(url: url)
+
+            if isWideImage {
+                // Wide images get their own group regardless of orientation
+                groups.append([url])
+                i += 1
+            } else {
+                // Build a group of non-wide images up to defaultGroupSize
+                var group: [String] = []
+                var j = i
+
+                while j < urls.count && group.count < defaultGroupSize {
+                    let currentUrl = urls[j]
+
+                    // If we encounter a wide image while building the group, stop here
+                    if isImageWide(url: currentUrl) {
+                        break
+                    }
+
+                    group.append(currentUrl)
+                    j += 1
+                }
+
+                groups.append(group)
+                i = j
+            }
         }
 
         updateImageViews()
+    }
+
+    private func isImageWide(url: String) -> Bool {
+        guard let imageView = images[url], let image = imageView?.image else {
+            return false
+        }
+
+        return image.size.width > image.size.height
+    }
+
+    // MARK: - Page Management
+
+    private func navigateToPage(_ page: Int) {
+        guard page >= 0 && page < urls.count else { return }
+
+        let targetUrl = urls[page]
+
+        if let centerY = imagesCenterY[targetUrl] {
+            let zoomScale = scrollView.zoomScale
+            let scaledCenterY = centerY * zoomScale
+            let targetScrollY = scaledCenterY + startY - (view.bounds.height / 2)
+
+            // Limit scroll position to valid bounds
+            let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+            let clampedScrollY = max(0, min(targetScrollY, maxScrollY))
+
+            scrollView.setContentOffset(
+                CGPoint(x: 0, y: clampedScrollY),
+                animated: false)
+
+            currentPage = page
+            updateBottomBar()
+        }
+    }
+
+    private func syncPage() {
+        navigateToPage(currentPage)
     }
 
     // MARK: - Navigation Bar Appearance
@@ -151,18 +362,63 @@ class ReaderViewController: UIViewController {
     // MARK: - Tab Bar
 
     func hideTabBar() {
-        tabBarController?.setTabBarHidden(true, animated: true)
+        if #available(iOS 18.0, *) {
+            tabBarController?.setTabBarHidden(true, animated: true)
+        } else {
+            guard let tabBar = tabBarController?.tabBar else { return }
+            if isTabBarAnimating || isTabBarHidden { return }
+            isTabBarAnimating = true
+
+            DispatchQueue.main.async {
+                if let tabBarControllerView = self.tabBarController?.view {
+                    tabBarControllerView.frame = CGRect(
+                        x: tabBarControllerView.frame.origin.x,
+                        y: tabBarControllerView.frame.origin.y,
+                        width: tabBarControllerView.frame.width,
+                        height: UIScreen.main.bounds.height + tabBar.frame.height)
+                }
+            }
+
+            UIView.animate(
+                withDuration: 0.2, delay: 0, options: [.curveEaseIn],
+                animations: {
+                    tabBar.frame.origin.y = UIScreen.main.bounds.height
+                    tabBar.alpha = 0.0
+                    self.view.layoutIfNeeded()
+                }) { _ in
+                    tabBar.isHidden = true
+                    self.isTabBarAnimating = false
+                }
+            isTabBarHidden = true
+        }
     }
 
     func showTabBar() {
-        tabBarController?.setTabBarHidden(false, animated: true)
+        if #available(iOS 18.0, *) {
+            tabBarController?.setTabBarHidden(false, animated: true)
+        } else {
+            guard let tabBar = tabBarController?.tabBar else { return }
+            tabBar.isHidden = false
+            if isTabBarAnimating || !isTabBarHidden { return }
+
+            isTabBarAnimating = true
+
+            // Spring animation for a playful bounce
+            UIView.animate(
+                withDuration: 0.2, delay: 0, usingSpringWithDamping: 0.6,
+                initialSpringVelocity: 1.0, options: [.curveEaseOut],
+                animations: {
+                    tabBar.frame.origin.y = UIScreen.main.bounds.height - tabBar.frame.height
+                    tabBar.alpha = 1.0
+                    self.view.layoutIfNeeded()
+                }) { _ in
+                    self.isTabBarAnimating = false
+                }
+            isTabBarHidden = false
+        }
     }
 
     // MARK: - Navigation Bar
-
-    var isNavigationBarHidden = false
-    var isNavigationBarAnimating = false
-    var isBottomBarHidden = false
 
     func hideNavigationBar() {
         guard let navigationBar = navigationController?.navigationBar else { return }
@@ -186,7 +442,6 @@ class ReaderViewController: UIViewController {
             }
 
         isNavigationBarHidden = true
-        isBottomBarHidden = true
     }
 
     func showNavigationBar() {
@@ -210,7 +465,6 @@ class ReaderViewController: UIViewController {
             }
 
         isNavigationBarHidden = false
-        isBottomBarHidden = false
     }
 
     // MARK: - Gestures
@@ -231,9 +485,6 @@ class ReaderViewController: UIViewController {
 
     // MARK: - UI
 
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
-
     private func setupUI() {
         view.backgroundColor = .systemBackground
 
@@ -242,22 +493,35 @@ class ReaderViewController: UIViewController {
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.maximumZoomScale = 3
+        scrollView.delegate = self
 
         // Configure content view
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
+        // Configure container view
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+
         // Add views to hierarchy
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        contentView.addSubview(containerView)
 
         // Configure bottom bar
         setupBottomBar()
-
-        // Add loading view
-        addLoadingView()
     }
 
     private func setupConstraints() {
+        // Create container constraints with references
+        containerLeadingConstraint = containerView.leadingAnchor.constraint(
+            equalTo: contentView.leadingAnchor)
+        containerTopConstraint = containerView.topAnchor.constraint(equalTo: contentView.topAnchor)
+        containerWidthConstraint = containerView.widthAnchor.constraint(equalToConstant: 0)
+        containerHeightConstraint = containerView.heightAnchor.constraint(equalToConstant: 0)
+
+        // Create content height constraint with reference
+        contentHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: 0)
+
         NSLayoutConstraint.activate([
             // Scroll view constraints
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -271,6 +535,13 @@ class ReaderViewController: UIViewController {
             contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+            contentHeightConstraint,
+
+            // Container view constraints
+            containerLeadingConstraint,
+            containerTopConstraint,
+            containerWidthConstraint,
+            containerHeightConstraint,
 
             // Bottom bar constraints
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -283,12 +554,14 @@ class ReaderViewController: UIViewController {
 
     private func addLoadingView() {
         view.viewWithTag(ERROR_VIEW_ID)?.removeFromSuperview()
+        guard view.viewWithTag(LOADER_VIEW_ID) == nil else { return }
 
         // Create activity indicator
         let activityIndicator = UIActivityIndicatorView()
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.startAnimating()
         activityIndicator.tag = LOADER_VIEW_ID
+        activityIndicator.backgroundColor = .systemBackground
 
         view.addSubview(activityIndicator)
 
@@ -296,6 +569,10 @@ class ReaderViewController: UIViewController {
         NSLayoutConstraint.activate([
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            activityIndicator.topAnchor.constraint(equalTo: view.topAnchor),
+            activityIndicator.bottomAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor),
+            activityIndicator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            activityIndicator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
     }
 
@@ -303,6 +580,7 @@ class ReaderViewController: UIViewController {
 
     private func addErrorView() {
         view.viewWithTag(LOADER_VIEW_ID)?.removeFromSuperview()
+        guard view.viewWithTag(ERROR_VIEW_ID) == nil else { return }
 
         // Create error container
         let errorContainer = UIView()
@@ -365,7 +643,6 @@ class ReaderViewController: UIViewController {
     }
 
     @objc private func retryLoadChapter() {
-        addLoadingView()
         loadChapter()
     }
 
@@ -452,7 +729,7 @@ class ReaderViewController: UIViewController {
     ) {
         view.tag = tag
         updateViewFrame(view, url: url, frames: frames)
-        contentView.addSubview(view)
+        containerView.addSubview(view)
     }
 
     private func handleExistingImageView(
@@ -464,7 +741,7 @@ class ReaderViewController: UIViewController {
         case .loaded(let imageView):
             if existingView != imageView {
                 replaceView(existingView, with: imageView, tag: tag, url: url, frames: frames)
-                imageView.contentMode = .scaleAspectFit
+                imageView.contentMode = .scaleToFill
             } else {
                 updateViewFrame(existingView, url: url, frames: frames)
             }
@@ -498,6 +775,7 @@ class ReaderViewController: UIViewController {
         switch currentState {
         case .loaded(let imageView):
             addImageViewToContent(imageView, tag: tag, url: url, frames: frames)
+            imageView.contentMode = .scaleToFill
 
         case .failed:
             let errorImageView = createErrorImageView()
@@ -509,65 +787,9 @@ class ReaderViewController: UIViewController {
         }
     }
 
-    // MARK: - Image Views
-
-    private func updateImageViews() {
-        removeLoadingAndErrorViews()
-
-        let safeAreaInfo = calculateSafeAreaInfo()
-        let ratios = calculateImageRatios()
-        let mode = calculateModeRatio(from: ratios)
-        let (frames, finalY) = calculateFrames(
-            safeAreaInfo: safeAreaInfo, ratios: ratios, mode: mode)
-
-        updateImageViewsWithFrames(frames)
-        updateContentSize(finalY: finalY, safeAreaInfo: safeAreaInfo)
-    }
-
-    private func updateImageViewsWithFrames(_ frames: [String: CGRect]) {
-        for url in urls {
-            var hasher = Hasher()
-            hasher.combine(url)
-            let tag = hasher.finalize()
-
-            let existingView = contentView.viewWithTag(tag)
-
-            if let existingView = existingView {
-                handleExistingImageView(existingView, url: url, tag: tag, frames: frames)
-            } else {
-                createNewImageView(url: url, tag: tag, frames: frames)
-            }
-        }
-    }
-
-    private func updateContentSize(finalY: CGFloat, safeAreaInfo: SafeAreaInfo) {
-        contentView.frame.size.height = finalY + safeAreaInfo.bottomHeight
-        scrollView.contentSize = contentView.frame.size
-    }
-
-    // MARK: - Frame Calculation Helper Methods
-
-    private struct SafeAreaInfo {
-        let width: CGFloat
-        let topHeight: CGFloat
-        let bottomHeight: CGFloat
-        let leftWidth: CGFloat
-    }
-
     private func removeLoadingAndErrorViews() {
         view.viewWithTag(LOADER_VIEW_ID)?.removeFromSuperview()
         view.viewWithTag(ERROR_VIEW_ID)?.removeFromSuperview()
-    }
-
-    private func calculateSafeAreaInfo() -> SafeAreaInfo {
-        let window = view.window!
-        let safeFrame = window.safeAreaLayoutGuide.layoutFrame
-
-        return SafeAreaInfo(
-            width: safeFrame.width,
-            topHeight: window.safeAreaInsets.top,
-            bottomHeight: window.safeAreaInsets.bottom,
-            leftWidth: window.safeAreaInsets.left)
     }
 
     private func calculateImageRatios() -> [String: CGFloat] {
@@ -595,11 +817,18 @@ class ReaderViewController: UIViewController {
     }
 
     private func calculateFrames(
-        safeAreaInfo: SafeAreaInfo, ratios: [String: CGFloat], mode: CGFloat
+        ratios: [String: CGFloat], mode: CGFloat
     ) -> ([String: CGRect], CGFloat) {
+        let defaults = UserDefaults.standard
+        let readingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? ReaderScreenConstants.defaultReadingDirection
+
         var frames: [String: CGRect] = [:]
-        var currentY = safeAreaInfo.topHeight
-        let width = safeAreaInfo.width
+        imagesCenterY = [:]
+        var currentY = 0.0
+
+        let window = view.window!
+        let safeFrame = window.safeAreaLayoutGuide.layoutFrame
+        let width = safeFrame.width
 
         for group in groups {
             let ratiosSum: CGFloat = group.reduce(0) { result, url in
@@ -607,9 +836,9 @@ class ReaderViewController: UIViewController {
             }
 
             let height = width / ratiosSum
-            var currentX = safeAreaInfo.leftWidth
+            var currentX = 0.0
 
-            for url in group {
+            for url in readingDirection == .rightToLeft ? group.reversed() : group {
                 let imageWidth = height * ratios[url, default: mode]
 
                 let frame = CGRect(
@@ -619,6 +848,7 @@ class ReaderViewController: UIViewController {
                     height: height)
 
                 frames[url] = frame
+                imagesCenterY[url] = height / 2 + currentY
                 currentX += imageWidth
             }
 
@@ -628,9 +858,52 @@ class ReaderViewController: UIViewController {
         return (frames, currentY)
     }
 
-    // MARK: - Bottom Bar
+    // MARK: - Image Views
 
-    private let bottomBar = UIView()
+    private func updateImageViewsWithFrames(_ frames: [String: CGRect]) {
+        for url in urls {
+            var hasher = Hasher()
+            hasher.combine(url)
+            let tag = hasher.finalize()
+
+            let existingView = containerView.viewWithTag(tag)
+
+            if let existingView = existingView {
+                handleExistingImageView(existingView, url: url, tag: tag, frames: frames)
+            } else {
+                createNewImageView(url: url, tag: tag, frames: frames)
+            }
+        }
+    }
+
+    private func updateContentSize(finalY: CGFloat) {
+        guard let navigationBar = navigationController?.navigationBar else { return }
+        startY = view.safeAreaInsets.top - navigationBar.frame.height
+
+        containerLeadingConstraint.constant = view.safeAreaInsets.left
+        containerTopConstraint.constant = startY
+        containerWidthConstraint.constant = view.safeAreaLayoutGuide.layoutFrame.width
+        containerHeightConstraint.constant = finalY
+
+        contentHeightConstraint.constant =
+            finalY + startY + view.safeAreaInsets.bottom
+
+        view.layoutIfNeeded()
+    }
+
+    private func updateImageViews() {
+        removeLoadingAndErrorViews()
+
+        let ratios = calculateImageRatios()
+        let mode = calculateModeRatio(from: ratios)
+        let (frames, finalY) = calculateFrames(
+            ratios: ratios, mode: mode)
+
+        updateImageViewsWithFrames(frames)
+        updateContentSize(finalY: finalY)
+    }
+
+    // MARK: - Bottom Bar
 
     private func setupBottomBar() {
         bottomBar.translatesAutoresizingMaskIntoConstraints = false
@@ -654,15 +927,28 @@ class ReaderViewController: UIViewController {
         let bottomStackView = UIStackView()
         bottomStackView.translatesAutoresizingMaskIntoConstraints = false
         bottomStackView.axis = .horizontal
-        bottomStackView.distribution = .fillEqually
+        bottomStackView.distribution = .fillProportionally
         bottomStackView.alignment = .center
 
         // Add control buttons
+        let pageInfoButton = createBottomBarButton(title: "1 / 1")
+        pageInfoButton.tag = PAGE_INFO_BUTTON_ID
+
         let previousChapterButton = createBottomBarButton(systemImage: "chevron.left.to.line")
+        previousChapterButton.tag = PREVIOUS_CHAPTER_BUTTON_ID
+        previousChapterButton.isEnabled = false
+
         let previousButton = createBottomBarButton(systemImage: "chevron.left")
-        let pageInfoButton = createBottomBarButton(title: "1 / 20")
+        previousButton.tag = PREVIOUS_BUTTON_ID
+        previousChapterButton.isEnabled = false
+
         let nextButton = createBottomBarButton(systemImage: "chevron.right")
+        nextButton.tag = NEXT_BUTTON_ID
+        previousChapterButton.isEnabled = currentChapterIndex > 0
+
         let nextChapterButton = createBottomBarButton(systemImage: "chevron.right.to.line")
+        nextChapterButton.tag = NEXT_CHAPTER_BUTTON_ID
+        nextChapterButton.isEnabled = currentChapterIndex < chapters.count - 1
 
         // Add button actions
         previousChapterButton.addTarget(
@@ -683,9 +969,10 @@ class ReaderViewController: UIViewController {
 
         // Create slider for page navigation
         let pageSlider = UISlider()
+        pageSlider.tag = PAGE_SLIDER_ID
         pageSlider.translatesAutoresizingMaskIntoConstraints = false
         pageSlider.minimumValue = 1
-        pageSlider.maximumValue = 20 // TODO: Update with actual page count
+        pageSlider.maximumValue = 1
         pageSlider.value = 1
         pageSlider.addTarget(self, action: #selector(pageSliderValueChanged), for: .valueChanged)
 
@@ -722,37 +1009,59 @@ class ReaderViewController: UIViewController {
         return button
     }
 
+    private func updateBottomBar() {
+        guard let pageInfoButton = bottomBar.viewWithTag(PAGE_INFO_BUTTON_ID) as? UIButton,
+              let previousChapterButton = bottomBar.viewWithTag(PREVIOUS_CHAPTER_BUTTON_ID)
+              as? UIButton,
+              let previousButton = bottomBar.viewWithTag(PREVIOUS_BUTTON_ID) as? UIButton,
+              let nextButton = bottomBar.viewWithTag(NEXT_BUTTON_ID) as? UIButton,
+              let nextChapterButton = bottomBar.viewWithTag(NEXT_CHAPTER_BUTTON_ID) as? UIButton,
+              let pageSlider = bottomBar.viewWithTag(PAGE_SLIDER_ID) as? UISlider
+        else {
+            return
+        }
+
+        let totalPages = urls.count
+        pageInfoButton.setTitle("\(currentPage + 1) / \(totalPages)", for: .normal)
+        previousButton.isEnabled = currentPage != 0
+        nextButton.isEnabled = currentPage < urls.count - 1
+        previousChapterButton.isEnabled = currentChapterIndex > 0
+        nextChapterButton.isEnabled = currentChapterIndex < chapters.count - 1
+
+        pageSlider.maximumValue = Float(totalPages)
+        pageSlider.value = Float(currentPage + 1)
+    }
+
     // MARK: - Bottom Bar Actions
 
     @objc private func previousChapterButtonTapped() {
-        print("Previous chapter button tapped")
-        // TODO: Implement previous chapter navigation
+        currentChapterIndex -= 1
+        loadChapter()
     }
 
     @objc private func previousButtonTapped() {
-        print("Previous button tapped")
-        // TODO: Implement previous page/chapter navigation
+        navigateToPage(currentPage - 1)
     }
 
     @objc private func pageInfoButtonTapped() {
         print("Page info button tapped")
-        // TODO: Implement page info display or page selection
+        // TODO: Implement page info action
     }
 
     @objc private func nextButtonTapped() {
-        print("Next button tapped")
-        // TODO: Implement next page/chapter navigation
+        navigateToPage(currentPage + 1)
     }
 
     @objc private func nextChapterButtonTapped() {
-        print("Next chapter button tapped")
-        // TODO: Implement next chapter navigation
+        currentChapterIndex += 1
+        loadChapter()
     }
 
     @objc private func pageSliderValueChanged(_ sender: UISlider) {
-        let currentPage = Int(sender.value)
-        print("Page slider changed to: \(currentPage)")
-        // TODO: Implement page navigation based on slider value
+        let targetPage = Int(sender.value) - 1
+        guard targetPage >= 0 && targetPage < urls.count else { return }
+
+        navigateToPage(targetPage)
     }
 }
 
