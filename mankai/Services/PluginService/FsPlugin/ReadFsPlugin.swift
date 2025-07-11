@@ -15,8 +15,8 @@ enum ReadFsPluginConstants {
     /// Maximum number of suggestions to return
     static let suggestionLimit: UInt = 5
 
-    /// Default cache expiry duration in seconds (1 hour)
-    static let defaultCacheExpiryDuration: TimeInterval = 3600
+    /// Default cache expiry duration
+    static let defaultCacheExpiryDuration: TimeInterval = CacheDuration.oneHour.rawValue
 
     /// Maximum number of cache entries before triggering cleanup of expired entries
     static let maxCacheSize: Int = 100
@@ -234,7 +234,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: pathURL.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             return []
         }
@@ -283,7 +283,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                            as? [String: Any]
+                        as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -340,7 +340,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                            as? [String: Any]
+                        as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -412,7 +412,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
+                && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "ReadFsPlugin", code: 404,

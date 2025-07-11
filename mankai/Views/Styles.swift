@@ -9,13 +9,14 @@ import SwiftUI
 
 struct ColorfulIconLabelStyle: LabelStyle {
     var color: Color
+    var imageScale: Image.Scale = .medium
 
     func makeBody(configuration: Configuration) -> some View {
         Label {
             configuration.title
         } icon: {
             configuration.icon
-                .imageScale(.small)
+                .imageScale(self.imageScale)
                 .foregroundColor(.white)
                 .background(
                     RoundedRectangle(cornerRadius: 7).frame(
