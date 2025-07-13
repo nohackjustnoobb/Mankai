@@ -5,6 +5,7 @@
 //  Created by Travis XU on 30/6/2025.
 //
 
+import CoreData
 import SwiftUI
 import UIKit
 
@@ -25,14 +26,16 @@ let NEXT_CHAPTER_BUTTON_ID = 10
 
 // MARK: - ReaderViewController
 
-class ReaderViewController: UIViewController, UIScrollViewDelegate {
+private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
     let chapter: Chapter
 
-    var chapters: [Chapter]
+    private var chapters: [Chapter]
     private var currentChapterIndex: Int
+    private var initialPage: Int?
+    private var jumpToPage: String?
 
     // Image management variables
     private var urls: [String] = []
@@ -65,11 +68,12 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private var containerHeightConstraint: NSLayoutConstraint!
     private var contentHeightConstraint: NSLayoutConstraint!
 
-    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter) {
+    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter, initialPage: Int?) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
         self.chapter = chapter
+        self.initialPage = initialPage
 
         self.chapters = manga.chapters[chaptersKey] ?? []
         self.currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
@@ -106,11 +110,13 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        saveTimer?.invalidate()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
+        forceSaveRecord()
         showTabBar()
         showNavigationBar()
         restoreNavigationBarAppearance()
@@ -186,7 +192,83 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
         if closestPage != currentPage {
             currentPage = closestPage
             updateBottomBar()
+            saveRecord()
         }
+    }
+
+    // MARK: - Record
+
+    private var lastSavedPage: Int = -1
+    private var saveTimer: Timer?
+
+    private func saveRecord() {
+        guard currentChapterIndex >= 0, currentChapterIndex < chapters.count else { return }
+
+        if saveTimer != nil { return }
+
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+            self?.performSave()
+            self?.saveTimer = nil
+        }
+    }
+
+    private func performSave() {
+        guard currentChapterIndex >= 0, currentChapterIndex < chapters.count else { return }
+        if currentPage == lastSavedPage { return }
+
+        let context = DbService.shared.context
+        let currentChapter = chapters[currentChapterIndex]
+
+        do {
+            // Find or create MangaData
+            let mangaRequest = MangaData.fetchRequest()
+            mangaRequest.predicate = NSPredicate(
+                format: "id == %@ AND plugin == %@", manga.id, plugin.id)
+
+            let existingMangaData = try context.fetch(mangaRequest).first
+            let mangaData: MangaData
+
+            if let existingMangaData = existingMangaData {
+                mangaData = existingMangaData
+            } else {
+                mangaData = MangaData(context: context)
+                mangaData.id = manga.id
+                mangaData.plugin = plugin.id
+            }
+
+            // Update manga metadata - encode the complete DetailedManga object
+            if let mangaMetaData = try? JSONEncoder().encode(manga) {
+                mangaData.meta = String(data: mangaMetaData, encoding: .utf8)
+            }
+
+            // Find or create RecordData
+            let recordData: RecordData
+            if let existingRecord = mangaData.record {
+                recordData = existingRecord
+            } else {
+                recordData = RecordData(context: context)
+                mangaData.record = recordData
+                recordData.target = mangaData
+            }
+
+            // Update record data
+            recordData.chapterId = currentChapter.id
+            recordData.chapterTitle = currentChapter.title
+            recordData.page = NSDecimalNumber(value: currentPage)
+            recordData.date = Date()
+
+            // Save context
+            try context.save()
+            lastSavedPage = currentPage
+        } catch {
+            print("Failed to save record: \(error)")
+        }
+    }
+
+    private func forceSaveRecord() {
+        saveTimer?.invalidate()
+        saveTimer = nil
+        performSave()
     }
 
     // MARK: - Load Chapter
@@ -218,6 +300,10 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
             do {
                 urls = try await plugin.getChapter(
                     manga: manga, chapter: chapter)
+
+                if let initialPage = self.initialPage {
+                    self.jumpToPage = urls[initialPage]
+                }
 
                 loadImages()
                 updateBottomBar()
@@ -334,6 +420,7 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
             currentPage = page
             updateBottomBar()
+            saveRecord()
         }
     }
 
@@ -561,7 +648,6 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.startAnimating()
         activityIndicator.tag = LOADER_VIEW_ID
-        activityIndicator.backgroundColor = .systemBackground
 
         view.addSubview(activityIndicator)
 
@@ -569,10 +655,6 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
         NSLayoutConstraint.activate([
             activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            activityIndicator.topAnchor.constraint(equalTo: view.topAnchor),
-            activityIndicator.bottomAnchor.constraint(greaterThanOrEqualTo: view.bottomAnchor),
-            activityIndicator.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            activityIndicator.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
     }
 
@@ -653,7 +735,7 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         // Create error icon
         let errorIcon = UIImageView()
-        errorIcon.image = UIImage(systemName: "exclamationmark.circle")
+        errorIcon.image = UIImage(systemName: "photo.badge.exclamationmark")
         errorIcon.tintColor = .secondaryLabel
         errorIcon.translatesAutoresizingMaskIntoConstraints = false
         errorIcon.tag = ERROR_IMAGE_VIEW_ID
@@ -820,7 +902,10 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
         ratios: [String: CGFloat], mode: CGFloat
     ) -> ([String: CGRect], CGFloat) {
         let defaults = UserDefaults.standard
-        let readingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? ReaderScreenConstants.defaultReadingDirection
+        let readingDirection =
+            ReadingDirection(
+                rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue))
+            ?? ReaderScreenConstants.defaultReadingDirection
 
         var frames: [String: CGRect] = [:]
         imagesCenterY = [:]
@@ -889,9 +974,20 @@ class ReaderViewController: UIViewController, UIScrollViewDelegate {
             finalY + startY + view.safeAreaInsets.bottom
 
         view.layoutIfNeeded()
+
+        if let initialPage = initialPage,
+           let jumpToPage = jumpToPage,
+           images[jumpToPage] != nil
+        {
+            navigateToPage(initialPage)
+            self.initialPage = nil
+            self.jumpToPage = nil
+        }
     }
 
     private func updateImageViews() {
+        guard !images.isEmpty else { return }
+
         removeLoadingAndErrorViews()
 
         let ratios = calculateImageRatios()
@@ -1072,13 +1168,15 @@ private struct ReaderViewControllerWrapper: UIViewControllerRepresentable {
     let manga: DetailedManga
     let chaptersKey: String
     let chapter: Chapter
+    let initialPage: Int?
 
     func makeUIViewController(context: Context) -> ReaderViewController {
         return ReaderViewController(
             plugin: plugin,
             manga: manga,
             chaptersKey: chaptersKey,
-            chapter: chapter)
+            chapter: chapter,
+            initialPage: initialPage)
     }
 
     func updateUIViewController(_ uiViewController: ReaderViewController, context: Context) {
@@ -1093,6 +1191,7 @@ struct ReaderScreen: View {
     let manga: DetailedManga
     let chaptersKey: String
     let chapter: Chapter
+    var initialPage: Int? = nil
 
     var body: some View {
         NavigationStack {
@@ -1100,7 +1199,8 @@ struct ReaderScreen: View {
                 plugin: plugin,
                 manga: manga,
                 chaptersKey: chaptersKey,
-                chapter: chapter)
+                chapter: chapter,
+                initialPage: initialPage)
                 .ignoresSafeArea()
         }
     }

@@ -5,4 +5,23 @@
         <attribute name="id" attributeType="String"/>
         <attribute name="meta" attributeType="String"/>
     </entity>
+    <entity name="MangaData" representedClassName="MangaData" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="String"/>
+        <attribute name="meta" attributeType="String"/>
+        <attribute name="plugin" attributeType="String"/>
+        <relationship name="record" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RecordData" inverseName="target" inverseEntity="RecordData"/>
+        <relationship name="saved" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="SavedData" inverseName="target" inverseEntity="SavedData"/>
+    </entity>
+    <entity name="RecordData" representedClassName="RecordData" syncable="YES" codeGenerationType="class">
+        <attribute name="chapterId" optional="YES" attributeType="String"/>
+        <attribute name="chapterTitle" optional="YES" attributeType="String"/>
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="page" attributeType="Decimal" defaultValueString="0.0"/>
+        <relationship name="target" maxCount="1" deletionRule="Nullify" destinationEntity="MangaData" inverseName="record" inverseEntity="MangaData"/>
+    </entity>
+    <entity name="SavedData" representedClassName="SavedData" syncable="YES" codeGenerationType="class">
+        <attribute name="updates" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="updatesDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="target" maxCount="1" deletionRule="Nullify" destinationEntity="MangaData" inverseName="saved" inverseEntity="MangaData"/>
+    </entity>
 </model>

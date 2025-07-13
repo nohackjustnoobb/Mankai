@@ -30,24 +30,18 @@ class ReadFsPlugin: Plugin {
     private var metaCache: [String: CacheEntry] = [:]
     private let cacheLock = NSLock()
 
-    lazy var hash: String = {
-        let digest = Insecure.MD5.hash(data: Data(path.utf8))
-
-        return digest.map {
-            String(format: "%02hhx", $0)
-        }.joined()
-    }()
-
     lazy var dirName: String = URL(fileURLWithPath: path).lastPathComponent
+    private let _id: String
 
     init(_ path: String) {
         self.path = path
+        self._id = UUID().uuidString
     }
 
     // MARK: - Metadata
 
     override var id: String {
-        hash
+        _id
     }
 
     override var tag: String? {
@@ -234,7 +228,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: pathURL.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             return []
         }
@@ -283,7 +277,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                        as? [String: Any]
+                            as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -340,7 +334,7 @@ class ReadFsPlugin: Plugin {
                     let metaData = try Data(contentsOf: metaPath)
                     metaDict =
                         try JSONSerialization.jsonObject(with: metaData, options: [])
-                        as? [String: Any]
+                            as? [String: Any]
 
                     if let dict = metaDict {
                         setCachedMetaDict(dict, for: cacheKey)
@@ -412,7 +406,7 @@ class ReadFsPlugin: Plugin {
         var isDirectory: ObjCBool = false
         guard
             fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
+            && isDirectory.boolValue
         else {
             throw NSError(
                 domain: "ReadFsPlugin", code: 404,

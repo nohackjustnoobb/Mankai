@@ -421,6 +421,16 @@
         }
       }
     },
+    "continue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
     "cover" : {
       "localizations" : {
         "en" : {
@@ -843,6 +853,16 @@
         }
       }
     },
+    "history" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
+    },
     "home" : {
       "localizations" : {
         "en" : {
@@ -1057,6 +1077,16 @@
         }
       }
     },
+    "lastRead" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Read"
+          }
+        }
+      }
+    },
     "latest" : {
       "localizations" : {
         "en" : {
@@ -1265,6 +1295,9 @@
         }
       }
     },
+    "noHistory" : {
+
+    },
     "noMangasAvailable" : {
       "localizations" : {
         "en" : {
@@ -1344,6 +1377,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Otokonoko"
+          }
+        }
+      }
+    },
+    "page %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page %@"
           }
         }
       }

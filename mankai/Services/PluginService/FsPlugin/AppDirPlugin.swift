@@ -18,6 +18,10 @@ class AppDirPlugin: ReadWriteFsPlugin {
         super.init(documentsURL.path())
     }
 
+    override var id: String {
+        "mankai"
+    }
+
     override var tag: String? {
         String(localized: "builtin")
     }
