@@ -13,18 +13,46 @@ struct MangaDetailsScreen: View {
     let manga: Manga
 
     @State private var detailedManga: DetailedManga? = nil
+
     @State private var showingChaptersModal = false
     @State private var selectedChapterKey: String? = nil
     @State private var isReversed = true
-    @State private var selectedChapter: Chapter? = nil
+
+    @State private var readerChapterKey: String? = nil
+    @State private var readerChapter: Chapter? = nil
+    @State private var readerPage: Int? = nil
     @State private var showReaderScreen = false
+
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
 
     @Environment(\.dismiss) private var dismiss
 
-    func navigateToChapter(_ chapter: Chapter) {
-        selectedChapter = chapter
+    @FetchRequest
+    private var records: FetchedResults<RecordData>
+
+    private var record: RecordData? {
+        records.first
+    }
+
+    init(plugin: Plugin, manga: Manga) {
+        self.plugin = plugin
+        self.manga = manga
+
+        let predicate = NSPredicate(
+            format: "target.id == %@ AND target.plugin == %@", manga.id, plugin.id
+        )
+        self._records = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(keyPath: \RecordData.date, ascending: false)],
+            predicate: predicate
+        )
+    }
+
+    func navigateToChapter(_ chapter: Chapter, page: Int? = nil, chaptersKey: String? = nil) {
+        readerChapter = chapter
+        readerChapterKey = chaptersKey ?? selectedChapterKey
+        readerPage = page
+
         showingChaptersModal = false
         showReaderScreen = true
     }
@@ -92,10 +120,39 @@ struct MangaDetailsScreen: View {
                     .foregroundStyle(.secondary)
 
                     HStack(spacing: 12) {
-                        Button(action: {}) {
+                        Button(action: {
+                            if let record = record, let chapterId = record.chapterId {
+                                if let detailedManga = detailedManga {
+                                    for (chaptersKey, chapters) in detailedManga.chapters {
+                                        if let chapter = chapters.first(where: {
+                                            $0.id == chapterId
+                                        }) {
+                                            let page = record.page != nil
+                                                ? Int(truncating: record.page!) : nil
+                                            navigateToChapter(
+                                                chapter, page: page, chaptersKey: chaptersKey
+                                            )
+                                            break
+                                        }
+                                    }
+                                }
+                            } else {
+                                if let detailedManga = detailedManga {
+                                    let sortedChapters = Array(detailedManga.chapters).sorted {
+                                        $0.value.count > $1.value.count
+                                    }
+
+                                    if let chapters = sortedChapters.first,
+                                       let chapter = chapters.value.first
+                                    {
+                                        navigateToChapter(chapter, chaptersKey: chapters.key)
+                                    }
+                                }
+                            }
+                        }) {
                             HStack {
                                 Image(systemName: "book.pages.fill")
-                                Text("read")
+                                Text(record != nil ? "continue" : "read")
                             }
                             .frame(maxWidth: .infinity)
                         }
@@ -111,6 +168,25 @@ struct MangaDetailsScreen: View {
                         }
                         .buttonStyle(.bordered)
                         .frame(maxWidth: .infinity)
+                    }
+
+                    if let record = record {
+                        HStack(spacing: 4) {
+                            Text("lastRead")
+
+                            if let chapterTitle = record.chapterTitle {
+                                Text("•")
+                                Text(chapterTitle)
+                                    .lineLimit(1)
+                            }
+
+                            if let page = record.page as? Decimal {
+                                Text("•")
+                                Text("page \((page + 1).description)")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 8)
@@ -315,15 +391,16 @@ struct MangaDetailsScreen: View {
             }
         }
         .navigationDestination(isPresented: $showReaderScreen) {
-            if let selectedChapter = selectedChapter,
-               let selectedChapterKey = selectedChapterKey,
+            if let readerChapter = readerChapter,
+               let readerChapterKey = readerChapterKey,
                let detailedManga = detailedManga
             {
                 ReaderScreen(
                     plugin: plugin,
                     manga: detailedManga,
-                    chaptersKey: selectedChapterKey,
-                    chapter: selectedChapter
+                    chaptersKey: readerChapterKey,
+                    chapter: readerChapter,
+                    initialPage: readerPage
                 )
             }
         }

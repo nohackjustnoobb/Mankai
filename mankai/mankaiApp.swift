@@ -13,7 +13,9 @@ struct mankai: App {
 
     var body: some Scene {
         WindowGroup {
-            MainScreen().environmentObject(appState)
+            MainScreen()
+                .environmentObject(appState)
+                .environment(\.managedObjectContext, DbService.shared.context)
         }
     }
 }

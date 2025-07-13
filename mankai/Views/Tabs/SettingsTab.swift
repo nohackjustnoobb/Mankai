@@ -22,6 +22,16 @@ struct SettingsTab: View {
                     }
 
                     NavigationLink(
+                        destination: HistoryScreen()
+                    ) {
+                        Label(
+                            "history",
+                            systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90"
+                        )
+                        .labelStyle(ColorfulIconLabelStyle(color: .indigo))
+                    }
+
+                    NavigationLink(
                         destination: ReaderSettingsScreen()
                     ) {
                         Label("reader", systemImage: "book.pages.fill")

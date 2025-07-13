@@ -13,16 +13,14 @@ struct MangaCoverView: View {
     var tag: String? = nil
     var tagColor: Color? = nil
 
-    @State private var imageData: Data?
+    @State private var image: UIImage?
     @State private var isLoading = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            if let imageData = imageData,
-                let uiImage = UIImage(data: imageData)
-            {
+            if let image = image {
                 GeometryReader { proxy in
-                    Image(uiImage: uiImage)
+                    Image(uiImage: image)
                         .resizable()
                         .scaledToFill()
                         .frame(width: proxy.size.width, height: proxy.size.height)
@@ -35,7 +33,7 @@ struct MangaCoverView: View {
                     .background(Color(.systemGray6))
             } else {
                 Image(systemName: "photo.badge.exclamationmark")
-                    .font(.title)
+                    .font(.title2)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemGray6))
@@ -66,9 +64,8 @@ struct MangaCoverView: View {
 
     private func loadImage() {
         guard let coverUrl = coverUrl,
-            let plugin = plugin,
-            !coverUrl.isEmpty,
-            imageData == nil
+              let plugin = plugin,
+              image == nil
         else {
             return
         }
@@ -78,7 +75,7 @@ struct MangaCoverView: View {
         Task {
             do {
                 let data = try await plugin.getImage(coverUrl)
-                self.imageData = data
+                self.image = UIImage(data: data)
                 self.isLoading = false
             } catch {
                 self.isLoading = false

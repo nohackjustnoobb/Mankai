@@ -11,11 +11,11 @@ struct ChaptersModal: View {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
-    let onNavigateToChapter: (Chapter) -> Void
+    let onNavigateToChapter: (Chapter, Int?, String?) -> Void
 
     private let chapters: [Chapter]
 
-    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, onNavigateToChapter: @escaping (Chapter) -> Void) {
+    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
@@ -36,7 +36,7 @@ struct ChaptersModal: View {
                     } else {
                         ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
                             Button(action: {
-                                onNavigateToChapter(chapter)
+                                onNavigateToChapter(chapter, nil, chaptersKey)
                             }) {
                                 HStack {
                                     Text(chapter.title ?? chapter.id ?? "nil")
