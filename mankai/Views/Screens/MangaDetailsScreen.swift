@@ -35,16 +35,31 @@ struct MangaDetailsScreen: View {
         records.first
     }
 
+    @FetchRequest
+    private var saveds: FetchedResults<SavedData>
+
+    private var saved: SavedData? {
+        saveds.first
+    }
+
     init(plugin: Plugin, manga: Manga) {
         self.plugin = plugin
         self.manga = manga
 
-        let predicate = NSPredicate(
+        let recordPredicate = NSPredicate(
             format: "target.id == %@ AND target.plugin == %@", manga.id, plugin.id
         )
         self._records = FetchRequest(
             sortDescriptors: [NSSortDescriptor(keyPath: \RecordData.date, ascending: false)],
-            predicate: predicate
+            predicate: recordPredicate
+        )
+
+        let savedPredicate = NSPredicate(
+            format: "target.id == %@ AND target.plugin == %@", manga.id, plugin.id
+        )
+        self._saveds = FetchRequest(
+            sortDescriptors: [NSSortDescriptor(keyPath: \SavedData.updatesDate, ascending: false)],
+            predicate: savedPredicate
         )
     }
 
@@ -55,6 +70,81 @@ struct MangaDetailsScreen: View {
 
         showingChaptersModal = false
         showReaderScreen = true
+    }
+
+    func handleReadContinueAction() {
+        if let record = record, let chapterId = record.chapterId {
+            if let detailedManga = detailedManga {
+                for (chaptersKey, chapters) in detailedManga.chapters {
+                    if let chapter = chapters.first(where: {
+                        $0.id == chapterId
+                    }) {
+                        let page =
+                            record.page != nil
+                                ? Int(truncating: record.page!) : nil
+                        navigateToChapter(
+                            chapter, page: page, chaptersKey: chaptersKey
+                        )
+                        break
+                    }
+                }
+            }
+        } else {
+            if let detailedManga = detailedManga {
+                let sortedChapters = Array(detailedManga.chapters).sorted {
+                    $0.value.count > $1.value.count
+                }
+
+                if let chapters = sortedChapters.first,
+                   let chapter = chapters.value.first
+                {
+                    navigateToChapter(chapter, chaptersKey: chapters.key)
+                }
+            }
+        }
+    }
+
+    func handleBookmarkAction() {
+        let context = DbService.shared.context
+
+        do {
+            if let saved = saved {
+                context.delete(saved)
+                try context.save()
+            } else {
+                let saved = SavedData(context: context)
+
+                let mangaRequest = MangaData.fetchRequest()
+                mangaRequest.predicate = NSPredicate(
+                    format: "id == %@ AND plugin == %@", manga.id, plugin.id
+                )
+
+                let existingMangaData = try context.fetch(mangaRequest).first
+                let mangaData: MangaData
+
+                if let existingMangaData = existingMangaData {
+                    mangaData = existingMangaData
+                } else {
+                    mangaData = MangaData(context: context)
+                    mangaData.id = manga.id
+                    mangaData.plugin = plugin.id
+                }
+
+                if let mangaMetaData = try? JSONEncoder().encode(manga) {
+                    mangaData.meta = String(
+                        data: mangaMetaData, encoding: .utf8
+                    )
+                }
+
+                saved.target = mangaData
+                saved.updatesDate = Date()
+                saved.updates = false
+
+                try context.save()
+            }
+        } catch {
+            print("Failed to delete or create SavedData: \(error)")
+        }
     }
 
     var info: some View {
@@ -120,36 +210,7 @@ struct MangaDetailsScreen: View {
                     .foregroundStyle(.secondary)
 
                     HStack(spacing: 12) {
-                        Button(action: {
-                            if let record = record, let chapterId = record.chapterId {
-                                if let detailedManga = detailedManga {
-                                    for (chaptersKey, chapters) in detailedManga.chapters {
-                                        if let chapter = chapters.first(where: {
-                                            $0.id == chapterId
-                                        }) {
-                                            let page = record.page != nil
-                                                ? Int(truncating: record.page!) : nil
-                                            navigateToChapter(
-                                                chapter, page: page, chaptersKey: chaptersKey
-                                            )
-                                            break
-                                        }
-                                    }
-                                }
-                            } else {
-                                if let detailedManga = detailedManga {
-                                    let sortedChapters = Array(detailedManga.chapters).sorted {
-                                        $0.value.count > $1.value.count
-                                    }
-
-                                    if let chapters = sortedChapters.first,
-                                       let chapter = chapters.value.first
-                                    {
-                                        navigateToChapter(chapter, chaptersKey: chapters.key)
-                                    }
-                                }
-                            }
-                        }) {
+                        Button(action: handleReadContinueAction) {
                             HStack {
                                 Image(systemName: "book.pages.fill")
                                 Text(record != nil ? "continue" : "read")
@@ -159,14 +220,17 @@ struct MangaDetailsScreen: View {
                         .buttonStyle(.borderedProminent)
                         .frame(maxWidth: .infinity)
 
-                        Button(action: {}) {
+                        Button(action: handleBookmarkAction) {
                             HStack {
-                                Image(systemName: "bookmark.fill")
-                                Text("save")
+                                Image(
+                                    systemName: saved != nil
+                                        ? "bookmark.slash.fill" : "bookmark.fill")
+                                Text(saved != nil ? "remove" : "save")
                             }
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
+                        .tint(saved != nil ? nil : .accent)
                         .frame(maxWidth: .infinity)
                     }
 

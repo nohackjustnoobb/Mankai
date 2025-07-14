@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "/" : {
+
+    },
     "%lld bytes" : {
       "localizations" : {
         "en" : {
@@ -203,6 +206,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All"
+          }
+        }
+      }
+    },
+    "anUnknownErrorOccurred" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An Unknown Error Occurred"
           }
         }
       }
@@ -718,6 +731,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Load Image"
+          }
+        }
+      }
+    },
+    "failedToLoadMangaDetails" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load Manga Details"
           }
         }
       }
@@ -1296,7 +1319,14 @@
       }
     },
     "noHistory" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No History"
+          }
+        }
+      }
     },
     "noMangasAvailable" : {
       "localizations" : {
@@ -1304,6 +1334,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Mangas Available"
+          }
+        }
+      }
+    },
+    "noSavedManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Saved Manga"
+          }
+        }
+      }
+    },
+    "notRead" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Read"
           }
         }
       }
@@ -1685,6 +1735,16 @@
         }
       }
     },
+    "somethingWentWrong" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something Went Wrong"
+          }
+        }
+      }
+    },
     "speculativeFiction" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1798,6 +1858,9 @@
           }
         }
       }
+    },
+    "updated" : {
+
     },
     "updatedAt" : {
       "localizations" : {

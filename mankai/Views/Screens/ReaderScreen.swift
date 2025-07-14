@@ -97,7 +97,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         loadChapter()
 
         NotificationCenter.default.addObserver(
-            self, selector: #selector(updateGrouping),
+            self, 
+            selector: #selector(updateGrouping),
             name: UIDevice.orientationDidChangeNotification,
             object: nil)
 
