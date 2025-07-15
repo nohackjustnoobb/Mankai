@@ -130,6 +130,8 @@ private struct LibraryTabContent: View {
 private struct PluginListMangasRowListView: View {
     @ObservedObject var plugin: Plugin
     @State var mangas: [Manga]? = nil
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     func loadMangas() {
         Task {
@@ -137,8 +139,8 @@ private struct PluginListMangasRowListView: View {
                 mangas = try await plugin.getList(page: 1, genre: .all, status: .any)
 
             } catch {
-                // TODO: show an alert
-                print("Failed to load mangas for plugin \(plugin.id): \(error)")
+                errorMessage = error.localizedDescription
+                showErrorAlert = true
             }
         }
     }
@@ -153,6 +155,15 @@ private struct PluginListMangasRowListView: View {
         }
         .onReceive(plugin.objectWillChange) {
             loadMangas()
+        }
+        .alert("failedToLoadMangas", isPresented: $showErrorAlert) {
+            Button("ok") {
+                errorMessage = ""
+            }
+        } message: {
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+            }
         }
     }
 }

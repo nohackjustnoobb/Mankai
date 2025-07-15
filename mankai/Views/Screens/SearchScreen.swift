@@ -62,14 +62,16 @@ struct PluginSearchMangasRowListView: View {
 
     @ObservedObject var plugin: Plugin
     @State var mangas: [Manga]? = nil
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     func loadMangas() {
         Task {
             do {
                 mangas = try await plugin.search(query, page: 1)
             } catch {
-                // TODO: show an alert
-                print("Failed to get list from plugin \(plugin.id): \(error)")
+                errorMessage = error.localizedDescription
+                showErrorAlert = true
             }
         }
     }
@@ -85,6 +87,15 @@ struct PluginSearchMangasRowListView: View {
         }
         .onReceive(plugin.objectWillChange) {
             loadMangas()
+        }
+        .alert("failedToSearchManga", isPresented: $showErrorAlert) {
+            Button("ok") {
+                errorMessage = ""
+            }
+        } message: {
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+            }
         }
     }
 }

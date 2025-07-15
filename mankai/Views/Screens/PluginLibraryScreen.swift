@@ -10,7 +10,7 @@ import SwiftUI
 struct PluginLibraryScreen: View {
     let plugin: Plugin
 
-    @State private var selectedGenre: Genre = .all
+    @State var selectedGenre: Genre = .all
     @State private var selectedStatus: Status = .any
     @State private var showingFilters = false
 
@@ -19,6 +19,8 @@ struct PluginLibraryScreen: View {
 
     @State private var isLoading: Bool = false
     @State private var mangasList: [String: [UInt: [Manga]]] = [:]
+    @State private var showErrorAlert: Bool = false
+    @State private var errorMessage: String = ""
 
     private var hasActiveFilters: Bool {
         selectedGenre != .all || selectedStatus != .any
@@ -38,40 +40,6 @@ struct PluginLibraryScreen: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                if hasActiveFilters {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            if selectedGenre != .all {
-                                Button(action: {
-                                    setGenre(.all)
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Text(LocalizedStringKey(selectedGenre.rawValue))
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.caption)
-                                    }
-                                    .genreTagStyle()
-                                }
-                            }
-
-                            if selectedStatus != .any {
-                                Button(action: {
-                                    setStatus(.any)
-                                }) {
-                                    HStack(spacing: 4) {
-                                        Text(LocalizedStringKey(statusText(selectedStatus)))
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.caption)
-                                    }
-                                    .genreTagStyle()
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
-                }
-
                 if allMangas.isEmpty && isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -105,7 +73,6 @@ struct PluginLibraryScreen: View {
         }
         .navigationTitle("library")
         .navigationBarTitleDisplayMode(.inline)
-        // TODO: add searchable
         .sheet(isPresented: $showingFilters) {
             NavigationView {
                 List {
@@ -132,12 +99,14 @@ struct PluginLibraryScreen: View {
                     }
 
                     Section {
-                        Button("reset",
-                               role: .destructive,
-                               action: {
-                                   resetFilters()
-                                   showingFilters = false
-                               })
+                        Button(
+                            "reset",
+                            role: .destructive,
+                            action: {
+                                resetFilters()
+                                showingFilters = false
+                            }
+                        )
                     }
                 }
                 .navigationTitle("filters")
@@ -184,12 +153,26 @@ struct PluginLibraryScreen: View {
                 Button(action: {
                     showingFilters = true
                 }) {
-                    Image(systemName: "line.3.horizontal.decrease.circle")
+                    ZStack {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+
+                        if hasActiveFilters {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 8, y: -8)
+                        }
+                    }
                 }
             }
         }
         .onAppear {
             loadList()
+        }
+        .alert("failedToLoadList", isPresented: $showErrorAlert) {
+            Button("ok") {}
+        } message: {
+            Text(errorMessage)
         }
     }
 
@@ -224,9 +207,9 @@ struct PluginLibraryScreen: View {
 
                 isLoading = false
             } catch {
-                // TODO: show an alert
                 isLoading = false
-                print("GetList failed: \(error)")
+                errorMessage = error.localizedDescription
+                showErrorAlert = true
             }
         }
     }

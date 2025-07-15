@@ -15,6 +15,7 @@ struct PluginInfoScreen: View {
 
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @State private var errorTitle = ""
 
     @State private var showResetConfirmation = false
     @State private var showRemoveConfirmation = false
@@ -78,7 +79,8 @@ struct PluginInfoScreen: View {
                     } else {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("availableGenres")
-                            WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) { genre in
+                            WrappingHStack(plugin.availableGenres, id: \.self, lineSpacing: 8) {
+                                genre in
                                 Text(LocalizedStringKey(genre.rawValue))
                                     .genreTagStyle()
                             }
@@ -127,7 +129,7 @@ struct PluginInfoScreen: View {
             }
         }
         .navigationTitle(plugin.name ?? plugin.id)
-        .alert("error", isPresented: $showErrorAlert) {
+        .alert(errorTitle, isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
@@ -139,9 +141,8 @@ struct PluginInfoScreen: View {
                 do {
                     try plugin.resetConfigs()
                 } catch {
-                    errorMessage =
-                        String(localized: "failedToResetConfigs") + ": "
-                            + error.localizedDescription
+                    errorTitle = String(localized: "failedToResetConfigs")
+                    errorMessage = error.localizedDescription
                     showErrorAlert = true
                 }
             }
@@ -157,9 +158,8 @@ struct PluginInfoScreen: View {
                     try state.pluginService.removePlugin(plugin.id)
                     dismiss()
                 } catch {
-                    errorMessage =
-                        String(localized: "failedToRemovePlugin") + ": "
-                            + error.localizedDescription
+                    errorTitle = String(localized: "failedToRemovePlugin")
+                    errorMessage = error.localizedDescription
                     showErrorAlert = true
                 }
             }
@@ -215,14 +215,12 @@ struct TextConfigView: View {
                     do {
                         try plugin.setConfig(key: config.key, value: newValue)
                     } catch {
-                        errorMessage =
-                            String(localized: "failedToSetConfigValue") + ": "
-                                + error.localizedDescription
+                        errorMessage = error.localizedDescription
                         showErrorAlert = true
                     }
                 }
         }
-        .alert("error", isPresented: $showErrorAlert) {
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
@@ -273,14 +271,12 @@ struct NumberConfigView: View {
                 do {
                     try plugin.setConfig(key: config.key, value: newValue)
                 } catch {
-                    errorMessage =
-                        String(localized: "failedToSetConfigValue") + ": "
-                            + error.localizedDescription
+                    errorMessage = error.localizedDescription
                     showErrorAlert = true
                 }
             }
         }
-        .alert("error", isPresented: $showErrorAlert) {
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
@@ -334,13 +330,11 @@ struct BooleanConfigView: View {
             do {
                 try plugin.setConfig(key: config.key, value: newValue)
             } catch {
-                errorMessage =
-                    String(localized: "failedToSetConfigValue") + ": "
-                        + error.localizedDescription
+                errorMessage = error.localizedDescription
                 showErrorAlert = true
             }
         }
-        .alert("error", isPresented: $showErrorAlert) {
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)
@@ -397,9 +391,7 @@ struct SelectConfigView: View {
                             try plugin.setConfig(key: config.key, value: newValue)
                         }
                     } catch {
-                        errorMessage =
-                            String(localized: "failedToSetConfigValue") + ": "
-                                + error.localizedDescription
+                        errorMessage = error.localizedDescription
                         showErrorAlert = true
                     }
                 }
@@ -413,7 +405,7 @@ struct SelectConfigView: View {
         .onReceive(plugin.objectWillChange) {
             updateSelectedValue()
         }
-        .alert("error", isPresented: $showErrorAlert) {
+        .alert("failedToSetConfigValue", isPresented: $showErrorAlert) {
             Button("ok") {}
         } message: {
             Text(errorMessage)

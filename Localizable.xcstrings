@@ -695,12 +695,32 @@
         }
       }
     },
+    "failedToAddImages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Add Images"
+          }
+        }
+      }
+    },
     "failedToAddPlugin" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Add Plugin"
+          }
+        }
+      }
+    },
+    "failedToDeleteManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Delete Manga"
           }
         }
       }
@@ -735,12 +755,42 @@
         }
       }
     },
+    "failedToLoadList" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load List"
+          }
+        }
+      }
+    },
     "failedToLoadMangaDetails" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Load Manga Details"
+          }
+        }
+      }
+    },
+    "failedToLoadMangas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load Mangas"
+          }
+        }
+      }
+    },
+    "failedToLoadSelectedImage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Load Selected Image"
           }
         }
       }
@@ -755,12 +805,32 @@
         }
       }
     },
+    "failedToRemoveImages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Remove Images"
+          }
+        }
+      }
+    },
     "failedToRemovePlugin" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Remove Plugin"
+          }
+        }
+      }
+    },
+    "failedToReorderImages" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Reorder Images"
           }
         }
       }
@@ -775,12 +845,32 @@
         }
       }
     },
+    "failedToSearchManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Search Manga"
+          }
+        }
+      }
+    },
     "failedToSetConfigValue" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Set Config Value"
+          }
+        }
+      }
+    },
+    "failedToUpdateManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Update Manga"
           }
         }
       }
@@ -861,6 +951,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Harem"
+          }
+        }
+      }
+    },
+    "hidePlugins" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Plugins"
           }
         }
       }
@@ -1338,6 +1438,16 @@
         }
       }
     },
+    "noResultsFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results Found"
+          }
+        }
+      }
+    },
     "noSavedManga" : {
       "localizations" : {
         "en" : {
@@ -1693,6 +1803,16 @@
         }
       }
     },
+    "searchSavedManga" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Saved Manga"
+          }
+        }
+      }
+    },
     "select" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1860,7 +1980,14 @@
       }
     },
     "updated" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated"
+          }
+        }
+      }
     },
     "updatedAt" : {
       "localizations" : {
