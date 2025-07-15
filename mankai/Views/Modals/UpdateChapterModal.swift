@@ -19,14 +19,24 @@ struct UpdateChapterModal: View {
     @State private var showingTitleAlert = false
     @State private var newTitle = ""
     @State private var selectedItems: [PhotosPickerItem] = []
+    @State private var showingErrorAlert = false
+    @State private var errorTitle = ""
+    @State private var errorMessage = ""
+
+    private func showError(title: String, message: String) {
+        errorTitle = title
+        errorMessage = message
+        showingErrorAlert = true
+    }
 
     private func loadUrls() {
         Task {
             do {
                 urls = try await plugin.getChapter(manga: manga, chapter: chapter)
             } catch {
-                // TODO: error handle
-                print("Failed to load chapter: \(error)")
+                showError(
+                    title: String(localized: "failedToLoadChapter"),
+                    message: error.localizedDescription)
             }
         }
     }
@@ -43,8 +53,9 @@ struct UpdateChapterModal: View {
                         let data = try await plugin.getImage(url)
                         images[url] = UIImage(data: data)
                     } catch {
-                        // TODO: error handle
-                        print("Failed to load image: \(error)")
+                        showError(
+                            title: String(localized: "failedToLoadImage"),
+                            message: error.localizedDescription)
                     }
                 }
             }
@@ -59,12 +70,12 @@ struct UpdateChapterModal: View {
         Task {
             do {
                 try await plugin.arrangeImageOrder(
-                    mangaId: manga.id, chapterId: chapterId, ids: ids
-                )
+                    mangaId: manga.id, chapterId: chapterId, ids: ids)
                 loadUrls()
             } catch {
-                // TODO: error handle
-                print("Failed to reorder images: \(error)")
+                showError(
+                    title: String(localized: "failedToReorderImages"),
+                    message: error.localizedDescription)
             }
         }
     }
@@ -78,12 +89,12 @@ struct UpdateChapterModal: View {
         Task {
             do {
                 try await plugin.removeImages(
-                    mangaId: manga.id, chapterId: chapterId, ids: idsToRemove
-                )
+                    mangaId: manga.id, chapterId: chapterId, ids: idsToRemove)
                 loadUrls()
             } catch {
-                // TODO: error handle
-                print("Failed to load image: \(error)")
+                showError(
+                    title: String(localized: "failedToRemoveImages"),
+                    message: error.localizedDescription)
             }
         }
     }
@@ -100,20 +111,22 @@ struct UpdateChapterModal: View {
                         newImages.append(data)
                     }
                 } catch {
-                    print("Failed to load selected image: \(error)")
+                    showError(
+                        title: String(localized: "failedToLoadSelectedImage"),
+                        message: error.localizedDescription)
                 }
             }
 
             do {
                 try await plugin.addImages(
-                    mangaId: manga.id, chapterId: chapterId, images: newImages
-                )
+                    mangaId: manga.id, chapterId: chapterId, images: newImages)
 
                 loadUrls()
                 selectedItems = []
             } catch {
-                // TODO: error handle
-                print("Failed to add new images: \(error)")
+                showError(
+                    title: String(localized: "failedToAddImages"),
+                    message: error.localizedDescription)
             }
         }
     }
@@ -124,8 +137,8 @@ struct UpdateChapterModal: View {
                 Section {
                     PhotosPicker(
                         selection: $selectedItems,
-                        matching: .images
-                    ) {
+                        matching: .images)
+                    {
                         Text("add")
                             .padding(.horizontal, 20)
                     }
@@ -202,6 +215,11 @@ struct UpdateChapterModal: View {
             }
         } message: {
             Text("enterNewChapterTitle")
+        }
+        .alert(Text(errorTitle), isPresented: $showingErrorAlert) {
+            Button("ok") {}
+        } message: {
+            Text(errorMessage)
         }
         .onAppear {
             loadUrls()

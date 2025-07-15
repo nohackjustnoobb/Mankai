@@ -26,6 +26,8 @@ private struct PluginSearchScreenContent: View {
 
     @State var isLoading: Bool = false
     @State var mangas: [UInt: [Manga]] = [:]
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
 
     private var allMangas: [Manga] {
         let sortedKeys = mangas.keys.sorted()
@@ -75,6 +77,15 @@ private struct PluginSearchScreenContent: View {
         .onReceive(pluginService.objectWillChange) {
             search()
         }
+        .alert("failedToSearchManga", isPresented: $showErrorAlert) {
+            Button("ok") {
+                errorMessage = ""
+            }
+        } message: {
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+            }
+        }
     }
 
     private func search() {
@@ -99,9 +110,9 @@ private struct PluginSearchScreenContent: View {
                 mangas[page] = result
                 isLoading = false
             } catch {
-                // TODO: show an alert
+                errorMessage = error.localizedDescription
+                showErrorAlert = true
                 isLoading = false
-                print("Search failed: \(error)")
             }
         }
     }

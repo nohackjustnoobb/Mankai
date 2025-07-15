@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+private enum HomeMangaStatus: String, CaseIterable {
+    case all
+    case onGoing
+    case ended
+    case updated
+}
+
 struct HomeTab: View {
     @FetchRequest(sortDescriptors: [SortDescriptor(\SavedData.updatesDate, order: .reverse)])
     private var saveds: FetchedResults<SavedData>
@@ -18,6 +25,29 @@ struct HomeTab: View {
     @State private var records: [String: RecordData] = [:]
     @State private var savedsDict: [String: SavedData] = [:]
     @State private var orders: [String] = []
+
+    // Filter & Search
+    @State private var searchText: String = ""
+    @State private var hidePlugins: [String] = []
+    @State private var status: HomeMangaStatus = .all
+    @State private var filteredOrders: [String] = []
+    @State private var showingFilters = false
+
+    // Temp filter states for modal
+    @State private var tempHidePlugins: [String] = []
+    @State private var tempStatus: HomeMangaStatus = .all
+
+    private var hasActiveFilters: Bool {
+        !hidePlugins.isEmpty || status != .all
+    }
+
+    private var availablePlugins: [Plugin] {
+        return appState.pluginService.plugins.sorted { plugin1, plugin2 in
+            let name1 = plugin1.name ?? plugin1.id
+            let name2 = plugin2.name ?? plugin2.id
+            return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
+        }
+    }
 
     private func setupObserver() {
         NotificationCenter.default.addObserver(
@@ -49,6 +79,15 @@ struct HomeTab: View {
                     }
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if filteredOrders.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.title)
+                        Text("noResultsFound")
+                            .font(.headline)
+                    }
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVGrid(
@@ -56,9 +95,9 @@ struct HomeTab: View {
                                 GridItem(.adaptive(minimum: 110), spacing: 12)
                             ], spacing: 12
                         ) {
-                            ForEach(orders, id: \.self) { key in
+                            ForEach(filteredOrders, id: \.self) { key in
                                 if let manga = mangas[key],
-                                    let plugin = plugins[key]
+                                   let plugin = plugins[key]
                                 {
                                     NavigationLink(
                                         destination: MangaDetailsScreen(
@@ -82,6 +121,28 @@ struct HomeTab: View {
                 }
             }
             .navigationTitle("home")
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: {
+                        showingFilters = true
+                    }) {
+                        ZStack {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+
+                            if hasActiveFilters {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "searchSavedManga")
+            .onChange(of: searchText) {
+                filterManga()
+            }
             .onReceive(appState.pluginService.objectWillChange) {
                 loadSavedManga()
             }
@@ -92,7 +153,86 @@ struct HomeTab: View {
             .onDisappear {
                 removeObserver()
             }
+            .sheet(isPresented: $showingFilters) {
+                NavigationView {
+                    List {
+                        Section {
+                            Picker("status", selection: $tempStatus) {
+                                Text("all")
+                                    .tag(HomeMangaStatus.all)
+                                Text("onGoing")
+                                    .tag(HomeMangaStatus.onGoing)
+                                Text("ended")
+                                    .tag(HomeMangaStatus.ended)
+                                Text("updated")
+                                    .tag(HomeMangaStatus.updated)
+                            }
+                            .pickerStyle(.menu)
+                        } header: {
+                            Spacer(minLength: 0)
+                        }
 
+                        Section("hidePlugins") {
+                            ForEach(availablePlugins, id: \.id) { plugin in
+                                Button(action: {
+                                    if tempHidePlugins.contains(plugin.id) {
+                                        tempHidePlugins.removeAll { $0 == plugin.id }
+                                    } else {
+                                        tempHidePlugins.append(plugin.id)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text(plugin.name ?? plugin.id)
+                                            .foregroundColor(.primary)
+                                        Spacer()
+                                        if tempHidePlugins.contains(plugin.id) {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Section {
+                            Button(
+                                "reset",
+                                role: .destructive,
+                                action: {
+                                    resetFilters()
+                                    showingFilters = false
+                                }
+                            )
+                        }
+                    }
+                    .navigationTitle("filters")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: {
+                                tempHidePlugins = hidePlugins
+                                tempStatus = status
+                                showingFilters = false
+                            }) {
+                                Text("cancel")
+                            }
+                        }
+
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(action: {
+                                setFilters(hidePlugins: tempHidePlugins, status: tempStatus)
+                                showingFilters = false
+                            }) {
+                                Text("done")
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+                .onAppear {
+                    tempHidePlugins = hidePlugins
+                    tempStatus = status
+                }
+            }
         }
     }
 
@@ -104,11 +244,11 @@ struct HomeTab: View {
 
         for saved in saveds {
             guard let target = saved.target,
-                let pluginId = target.plugin,
-                let plugin = appState.pluginService.getPlugin(pluginId),
-                let metaString = target.meta,
-                let metaData = metaString.data(using: .utf8),
-                let mangaId = target.id
+                  let pluginId = target.plugin,
+                  let plugin = appState.pluginService.getPlugin(pluginId),
+                  let metaString = target.meta,
+                  let metaData = metaString.data(using: .utf8),
+                  let mangaId = target.id
             else {
                 continue
             }
@@ -161,5 +301,80 @@ struct HomeTab: View {
         }
 
         orders = sortedKeys
+        filterManga()
+    }
+
+    private func filterManga() {
+        var filtered = orders
+
+        // Filter by search text
+        if !searchText.isEmpty {
+            filtered = filtered.filter { key in
+                if let saved = savedsDict[key],
+                   let target = saved.target,
+                   let targetMeta = target.meta
+                {
+                    return targetMeta.localizedCaseInsensitiveContains(searchText)
+                }
+                return false
+            }
+        }
+
+        // Filter by hidden plugins
+        if !hidePlugins.isEmpty {
+            filtered = filtered.filter { key in
+                let pluginId = key.split(separator: "_").first.map(String.init) ?? ""
+                return !hidePlugins.contains(pluginId)
+            }
+        }
+
+        // Filter by status
+        if status != .all {
+            filtered = filtered.filter { key in
+                guard let manga = mangas[key], let saved = savedsDict[key] else { return false }
+
+                switch status {
+                case .all:
+                    return true
+                case .onGoing:
+                    return manga.status == .onGoing
+                case .ended:
+                    return manga.status == .ended
+                case .updated:
+                    return saved.updates
+                }
+            }
+        }
+
+        filteredOrders = filtered
+    }
+
+    private func setStatus(_ newStatus: HomeMangaStatus) {
+        guard newStatus != status else { return }
+        status = newStatus
+        filterManga()
+    }
+
+    private func removeHiddenPlugin(_ pluginId: String) {
+        hidePlugins.removeAll { $0 == pluginId }
+        filterManga()
+    }
+
+    private func setFilters(hidePlugins: [String], status: HomeMangaStatus) {
+        if self.hidePlugins != hidePlugins {
+            self.hidePlugins = hidePlugins
+        }
+
+        if self.status != status {
+            self.status = status
+        }
+
+        filterManga()
+    }
+
+    private func resetFilters() {
+        tempHidePlugins = []
+        tempStatus = .all
+        setFilters(hidePlugins: [], status: .all)
     }
 }

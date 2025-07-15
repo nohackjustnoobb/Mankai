@@ -26,6 +26,12 @@ struct MangaDetailsScreen: View {
     @State private var isUpdateMangaModalPresented = false
     @State private var isUpdateChaptersModalPresented = false
 
+    @State private var selectedGenre: Genre? = nil
+    @State private var showPluginLibraryScreen = false
+
+    @State private var searchQuery: String? = nil
+    @State private var showPluginSearchScreen = false
+
     @Environment(\.dismiss) private var dismiss
 
     @FetchRequest
@@ -170,7 +176,10 @@ struct MangaDetailsScreen: View {
                         HStack(spacing: 4) {
                             HStack(spacing: 4) {
                                 ForEach(authors, id: \.self) { author in
-                                    Button(action: {}) {
+                                    Button(action: {
+                                        searchQuery = author
+                                        showPluginSearchScreen = true
+                                    }) {
                                         Text(author)
                                             .foregroundStyle(.secondary)
                                     }
@@ -274,7 +283,10 @@ struct MangaDetailsScreen: View {
             {
                 Section {
                     WrappingHStack(genres, id: \.self, lineSpacing: 8) { genre in
-                        Button(action: {}) {
+                        Button(action: {
+                            selectedGenre = genre
+                            showPluginLibraryScreen = true
+                        }) {
                             Text(LocalizedStringKey(genre.rawValue))
                                 .genreTagStyle()
                         }
@@ -288,7 +300,9 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if let detailedManga = detailedManga {
+            if let detailedManga = detailedManga,
+               !detailedManga.chapters.isEmpty
+            {
                 Section {
                     ForEach(
                         Array(detailedManga.chapters).sorted { $0.value.count > $1.value.count },
@@ -466,6 +480,16 @@ struct MangaDetailsScreen: View {
                     chapter: readerChapter,
                     initialPage: readerPage
                 )
+            }
+        }
+        .navigationDestination(isPresented: $showPluginLibraryScreen) {
+            if let selectedGenre = selectedGenre {
+                PluginLibraryScreen(plugin: plugin, selectedGenre: selectedGenre)
+            }
+        }
+        .navigationDestination(isPresented: $showPluginSearchScreen) {
+            if let searchQuery = searchQuery {
+                PluginSearchScreen(plugin: plugin, query: searchQuery)
             }
         }
         .toolbar {

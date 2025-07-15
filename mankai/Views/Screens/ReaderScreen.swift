@@ -68,7 +68,10 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private var containerHeightConstraint: NSLayoutConstraint!
     private var contentHeightConstraint: NSLayoutConstraint!
 
-    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter, initialPage: Int?) {
+    init(
+        plugin: Plugin, manga: DetailedManga, chaptersKey: String, chapter: Chapter,
+        initialPage: Int?
+    ) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
@@ -97,7 +100,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         loadChapter()
 
         NotificationCenter.default.addObserver(
-            self, 
+            self,
             selector: #selector(updateGrouping),
             name: UIDevice.orientationDidChangeNotification,
             object: nil)
@@ -1108,8 +1111,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     private func updateBottomBar() {
         guard let pageInfoButton = bottomBar.viewWithTag(PAGE_INFO_BUTTON_ID) as? UIButton,
-              let previousChapterButton = bottomBar.viewWithTag(PREVIOUS_CHAPTER_BUTTON_ID)
-              as? UIButton,
+              let previousChapterButton = bottomBar.viewWithTag(PREVIOUS_CHAPTER_BUTTON_ID) as? UIButton,
               let previousButton = bottomBar.viewWithTag(PREVIOUS_BUTTON_ID) as? UIButton,
               let nextButton = bottomBar.viewWithTag(NEXT_BUTTON_ID) as? UIButton,
               let nextChapterButton = bottomBar.viewWithTag(NEXT_CHAPTER_BUTTON_ID) as? UIButton,

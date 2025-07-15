@@ -57,6 +57,7 @@ struct UpdateMangaContent: View {
 
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
+    @State private var errorTitle = ""
     @State private var isProcessing = false
     @State private var showingDeleteConfirmation = false
 
@@ -128,7 +129,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorMessage = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedPluginNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -144,6 +145,7 @@ struct UpdateMangaContent: View {
             dismiss()
 
         } catch {
+            errorTitle = String(localized: "failedToUpdateManga")
             errorMessage = error.localizedDescription
             showingErrorAlert = true
             isProcessing = false
@@ -155,7 +157,7 @@ struct UpdateMangaContent: View {
 
         do {
             guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
-                errorMessage = String(localized: "selectedPluginNotFound")
+                errorTitle = String(localized: "selectedPluginNotFound")
                 showingErrorAlert = true
                 isProcessing = false
                 return
@@ -166,6 +168,7 @@ struct UpdateMangaContent: View {
             dismiss()
 
         } catch {
+            errorTitle = String(localized: "failedToDeleteManga")
             errorMessage = error.localizedDescription
             showingErrorAlert = true
             isProcessing = false
@@ -437,12 +440,15 @@ struct UpdateMangaContent: View {
         } message: {
             Text("removeChapterGroupConfirmation")
         }
-        .alert("error", isPresented: $showingErrorAlert) {
+        .alert(errorTitle, isPresented: $showingErrorAlert) {
             Button("ok") {
                 errorMessage = ""
+                errorTitle = ""
             }
         } message: {
-            Text(LocalizedStringKey(errorMessage))
+            if !errorMessage.isEmpty {
+                Text(errorMessage)
+            }
         }
         .confirmationDialog(
             "deleteManga", isPresented: $showingDeleteConfirmation,
