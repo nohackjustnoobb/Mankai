@@ -11,6 +11,12 @@
             "state" : "translated",
             "value" : "%lld Bytes"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld位元組"
+          }
         }
       }
     },
@@ -20,6 +26,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Chapters"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld話"
           }
         }
       }
@@ -34,6 +46,12 @@
             "state" : "translated",
             "value" : "1 Day"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1日"
+          }
         }
       }
     },
@@ -43,6 +61,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 Hour"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1小時"
           }
         }
       }
@@ -54,6 +78,12 @@
             "state" : "translated",
             "value" : "2 Hours"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "2小時"
+          }
         }
       }
     },
@@ -63,6 +93,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "6 Hours"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6小時"
           }
         }
       }
@@ -74,6 +110,12 @@
             "state" : "translated",
             "value" : "12 Hours"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "12小時"
+          }
         }
       }
     },
@@ -83,6 +125,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "15 Minutes"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "15分鐘"
           }
         }
       }
@@ -94,6 +142,12 @@
             "state" : "translated",
             "value" : "30 Minutes"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30分鐘"
+          }
         }
       }
     },
@@ -103,6 +157,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "About"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於"
           }
         }
       }
@@ -115,6 +175,12 @@
             "state" : "translated",
             "value" : "Action"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動作"
+          }
         }
       }
     },
@@ -124,6 +190,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Actions"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "動作"
           }
         }
       }
@@ -135,6 +207,12 @@
             "state" : "translated",
             "value" : "Add"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增"
+          }
         }
       }
     },
@@ -144,6 +222,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Author"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增作者"
           }
         }
       }
@@ -155,6 +239,12 @@
             "state" : "translated",
             "value" : "Add Chapter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增章節"
+          }
         }
       }
     },
@@ -164,6 +254,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Chapter Group"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增章節群組"
           }
         }
       }
@@ -175,6 +271,12 @@
             "state" : "translated",
             "value" : "Add Cover"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增封面"
+          }
         }
       }
     },
@@ -184,6 +286,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Add Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增插件"
           }
         }
       }
@@ -196,6 +304,12 @@
             "state" : "translated",
             "value" : "Adventure"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "冒險"
+          }
         }
       }
     },
@@ -207,6 +321,12 @@
             "state" : "translated",
             "value" : "All"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部"
+          }
         }
       }
     },
@@ -216,6 +336,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "An Unknown Error Occurred"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發生未知錯誤"
           }
         }
       }
@@ -227,6 +353,12 @@
             "state" : "translated",
             "value" : "Any"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任意"
+          }
         }
       }
     },
@@ -237,12 +369,24 @@
             "state" : "translated",
             "value" : "This is a built-in plugin that enables users to store and manage manga directly within the app's local directory."
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這是一個內建插件，允許用戶直接在應用程式的本地目錄中儲存和管理漫畫。"
+          }
         }
       }
     },
     "appName" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mankai"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mankai"
@@ -257,6 +401,12 @@
             "state" : "translated",
             "value" : "Author Name"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者名稱"
+          }
         }
       }
     },
@@ -266,6 +416,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Authors"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作者"
           }
         }
       }
@@ -277,6 +433,12 @@
             "state" : "translated",
             "value" : "Auto"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動"
+          }
         }
       }
     },
@@ -286,6 +448,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Available Genres"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可用類型"
           }
         }
       }
@@ -298,6 +466,12 @@
             "state" : "translated",
             "value" : "Boolean"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "布林值"
+          }
         }
       }
     },
@@ -309,6 +483,12 @@
             "state" : "translated",
             "value" : "Boys Love"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "耽美"
+          }
         }
       }
     },
@@ -318,6 +498,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Build-in"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "內建"
           }
         }
       }
@@ -329,6 +515,12 @@
             "state" : "translated",
             "value" : "Cache Expiry Duration"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "快取過期時間"
+          }
         }
       }
     },
@@ -338,6 +530,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cancel"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
           }
         }
       }
@@ -349,6 +547,12 @@
             "state" : "translated",
             "value" : "Change Cover"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更換封面"
+          }
         }
       }
     },
@@ -358,6 +562,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chapter %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第%@話"
           }
         }
       }
@@ -370,6 +580,12 @@
             "state" : "translated",
             "value" : "Chapter Directory Not Found"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到章節目錄"
+          }
         }
       }
     },
@@ -379,6 +595,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Group Name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群組名稱"
           }
         }
       }
@@ -390,6 +612,12 @@
             "state" : "translated",
             "value" : "Chapters"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "章節"
+          }
         }
       }
     },
@@ -400,6 +628,12 @@
             "state" : "translated",
             "value" : "Chapter Title"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "章節標題"
+          }
         }
       }
     },
@@ -409,6 +643,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉"
           }
         }
       }
@@ -421,6 +661,12 @@
             "state" : "translated",
             "value" : "Comedy"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搞笑"
+          }
         }
       }
     },
@@ -430,6 +676,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Configs"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "配置"
           }
         }
       }
@@ -441,6 +693,12 @@
             "state" : "translated",
             "value" : "Continue"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
+          }
         }
       }
     },
@@ -450,6 +708,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cover"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "封面"
           }
         }
       }
@@ -461,6 +725,12 @@
             "state" : "translated",
             "value" : "Create"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立"
+          }
         }
       }
     },
@@ -470,6 +740,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立漫畫"
           }
         }
       }
@@ -481,6 +757,12 @@
             "state" : "translated",
             "value" : "Data Size: %lld Bytes"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資料大小：%lld位元組"
+          }
         }
       }
     },
@@ -490,6 +772,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Debug"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "偵錯"
           }
         }
       }
@@ -501,6 +789,12 @@
             "state" : "translated",
             "value" : "Default"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "預設"
+          }
         }
       }
     },
@@ -510,6 +804,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除"
           }
         }
       }
@@ -521,6 +821,12 @@
             "state" : "translated",
             "value" : "Delete Manga"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除漫畫"
+          }
         }
       }
     },
@@ -530,6 +836,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Are you sure you want to delete this manga?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您確定要刪除這部漫畫嗎？"
           }
         }
       }
@@ -541,6 +853,12 @@
             "state" : "translated",
             "value" : "Description"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "簡介"
+          }
         }
       }
     },
@@ -550,6 +868,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Detailed Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細漫畫"
           }
         }
       }
@@ -561,6 +885,12 @@
             "state" : "translated",
             "value" : "Details"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳情"
+          }
         }
       }
     },
@@ -570,6 +900,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Done"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
           }
         }
       }
@@ -581,6 +917,12 @@
             "state" : "translated",
             "value" : "Edit Chapter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯章節"
+          }
         }
       }
     },
@@ -590,6 +932,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Chapters"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯章節"
           }
         }
       }
@@ -601,6 +949,12 @@
             "state" : "translated",
             "value" : "Long press and drag to reorder chapters, swipe to delete."
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按並拖曳以重新排序章節，滑動以刪除。"
+          }
         }
       }
     },
@@ -610,6 +964,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Edit Chapter Title"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯章節標題"
           }
         }
       }
@@ -621,6 +981,12 @@
             "state" : "translated",
             "value" : "Edit Manga"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯漫畫"
+          }
         }
       }
     },
@@ -630,6 +996,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ended"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已完結"
           }
         }
       }
@@ -641,6 +1013,12 @@
             "state" : "translated",
             "value" : "Enter the author's name"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入作者姓名"
+          }
         }
       }
     },
@@ -650,6 +1028,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a name for the chapter group"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入章節群組名稱"
           }
         }
       }
@@ -661,6 +1045,12 @@
             "state" : "translated",
             "value" : "Enter a title for the chapter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入章節標題"
+          }
         }
       }
     },
@@ -671,6 +1061,12 @@
             "state" : "translated",
             "value" : "Enter a new title for the chapter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入章節的新標題"
+          }
         }
       }
     },
@@ -680,6 +1076,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Error"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "錯誤"
           }
         }
       }
@@ -692,6 +1094,12 @@
             "state" : "translated",
             "value" : "Extra"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "番外"
+          }
         }
       }
     },
@@ -701,6 +1109,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Add Images"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增圖片失敗"
           }
         }
       }
@@ -712,6 +1126,12 @@
             "state" : "translated",
             "value" : "Failed to Add Plugin"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新增插件失敗"
+          }
         }
       }
     },
@@ -721,6 +1141,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Delete Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除漫畫失敗"
           }
         }
       }
@@ -732,6 +1158,12 @@
             "state" : "translated",
             "value" : "Failed to Edit Chapters"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯章節失敗"
+          }
         }
       }
     },
@@ -742,15 +1174,21 @@
             "state" : "translated",
             "value" : "Failed to Load Chapter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入章節失敗"
+          }
         }
       }
     },
     "failedToLoadImage" : {
       "localizations" : {
-        "en" : {
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Failed to Load Image"
+            "value" : "載入圖片失敗"
           }
         }
       }
@@ -762,6 +1200,12 @@
             "state" : "translated",
             "value" : "Failed to Load List"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入清單失敗"
+          }
         }
       }
     },
@@ -771,6 +1215,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Load Manga Details"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入漫畫詳情失敗"
           }
         }
       }
@@ -782,6 +1232,12 @@
             "state" : "translated",
             "value" : "Failed to Load Mangas"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入漫畫失敗"
+          }
         }
       }
     },
@@ -791,6 +1247,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Load Selected Image"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "載入所選圖片失敗"
           }
         }
       }
@@ -802,6 +1264,12 @@
             "state" : "translated",
             "value" : "Failed to Parse plugin"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析插件失敗"
+          }
         }
       }
     },
@@ -811,6 +1279,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Remove Images"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除圖片失敗"
           }
         }
       }
@@ -822,6 +1296,12 @@
             "state" : "translated",
             "value" : "Failed to Remove Plugin"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除插件失敗"
+          }
         }
       }
     },
@@ -831,6 +1311,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Reorder Images"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新排序圖片失敗"
           }
         }
       }
@@ -842,6 +1328,12 @@
             "state" : "translated",
             "value" : "Failed to Reset Configs"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設設定失敗"
+          }
         }
       }
     },
@@ -851,6 +1343,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Search Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋漫畫失敗"
           }
         }
       }
@@ -862,6 +1360,12 @@
             "state" : "translated",
             "value" : "Failed to Set Config Value"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定值失敗"
+          }
         }
       }
     },
@@ -871,6 +1375,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Failed to Update Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新漫畫失敗"
           }
         }
       }
@@ -883,6 +1393,12 @@
             "state" : "translated",
             "value" : "Fan Fiction"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "同人"
+          }
         }
       }
     },
@@ -892,6 +1408,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filters"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "篩選"
           }
         }
       }
@@ -903,6 +1425,12 @@
             "state" : "translated",
             "value" : "General"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一般"
+          }
         }
       }
     },
@@ -913,6 +1441,12 @@
             "state" : "translated",
             "value" : "Genre"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "類型"
+          }
         }
       }
     },
@@ -922,6 +1456,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Genres"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "類型"
           }
         }
       }
@@ -952,6 +1492,12 @@
             "state" : "translated",
             "value" : "Harem"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "後宮"
+          }
         }
       }
     },
@@ -961,6 +1507,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Plugins"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱藏插件"
           }
         }
       }
@@ -973,6 +1525,12 @@
             "state" : "translated",
             "value" : "Historical"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史"
+          }
         }
       }
     },
@@ -983,6 +1541,12 @@
             "state" : "translated",
             "value" : "History"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史記錄"
+          }
         }
       }
     },
@@ -992,6 +1556,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Home"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首頁"
           }
         }
       }
@@ -1004,12 +1574,24 @@
             "state" : "translated",
             "value" : "Horror"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恐怖"
+          }
         }
       }
     },
     "id" : {
       "localizations" : {
         "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Id"
+          }
+        },
+        "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Id"
@@ -1024,6 +1606,12 @@
             "state" : "translated",
             "value" : "Image"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片"
+          }
         }
       }
     },
@@ -1033,6 +1621,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Image Layout"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片排版"
           }
         }
       }
@@ -1044,6 +1638,12 @@
             "state" : "translated",
             "value" : "Image Size"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片大小"
+          }
         }
       }
     },
@@ -1053,6 +1653,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Info"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "資訊"
           }
         }
       }
@@ -1065,6 +1671,12 @@
             "state" : "translated",
             "value" : "Invalid Base64 String for Image"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片的Base64字串無效"
+          }
         }
       }
     },
@@ -1075,6 +1687,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid Manga or Chapter Format"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫或章節格式無效"
           }
         }
       }
@@ -1087,6 +1705,12 @@
             "state" : "translated",
             "value" : "Invalid Response Type"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "回應類型無效"
+          }
         }
       }
     },
@@ -1097,6 +1721,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid Result Format for Detailed Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "詳細漫畫格式無效"
           }
         }
       }
@@ -1109,6 +1739,12 @@
             "state" : "translated",
             "value" : "Invalid Result Format for Image"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片格式無效"
+          }
         }
       }
     },
@@ -1119,6 +1755,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid Result Format for Images"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片格式無效"
           }
         }
       }
@@ -1131,6 +1773,12 @@
             "state" : "translated",
             "value" : "Invalid Result Format for Is Online"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否在線格式無效"
+          }
         }
       }
     },
@@ -1141,6 +1789,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid Result Format for Mangas"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫列表格式無效"
           }
         }
       }
@@ -1153,6 +1807,12 @@
             "state" : "translated",
             "value" : "Invalid Result Format for Suggestions"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建議格式無效"
+          }
         }
       }
     },
@@ -1163,6 +1823,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Invalid URL"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無效URL"
           }
         }
       }
@@ -1177,6 +1843,12 @@
             "state" : "translated",
             "value" : "JSON"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON"
+          }
         }
       }
     },
@@ -1186,6 +1858,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JS Runtime"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JS執行環境"
           }
         }
       }
@@ -1197,6 +1875,12 @@
             "state" : "translated",
             "value" : "Key"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "鍵"
+          }
         }
       }
     },
@@ -1206,6 +1890,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last Read"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最後閱讀"
           }
         }
       }
@@ -1217,6 +1907,12 @@
             "state" : "translated",
             "value" : "Latest"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新"
+          }
         }
       }
     },
@@ -1226,6 +1922,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Latest Chapter"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最新章節"
           }
         }
       }
@@ -1237,6 +1939,12 @@
             "state" : "translated",
             "value" : "Left to Right"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由左至右"
+          }
         }
       }
     },
@@ -1247,6 +1955,12 @@
             "state" : "translated",
             "value" : "Library"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "書櫃"
+          }
         }
       }
     },
@@ -1256,6 +1970,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "License"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "授權"
           }
         }
       }
@@ -1268,6 +1988,12 @@
             "state" : "translated",
             "value" : "Magic"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "魔法"
+          }
         }
       }
     },
@@ -1277,6 +2003,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫"
           }
         }
       }
@@ -1289,6 +2021,12 @@
             "state" : "translated",
             "value" : "Manga Directory Not Found"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到漫畫目錄"
+          }
         }
       }
     },
@@ -1298,6 +2036,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mangas"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "漫畫"
           }
         }
       }
@@ -1310,6 +2054,12 @@
             "state" : "translated",
             "value" : "Mature"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "限制級"
+          }
         }
       }
     },
@@ -1321,6 +2071,12 @@
             "state" : "translated",
             "value" : "Mecha"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "機甲"
+          }
         }
       }
     },
@@ -1330,6 +2086,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Methods"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "方法"
           }
         }
       }
@@ -1342,11 +2104,24 @@
             "state" : "translated",
             "value" : "Missing URL Parameter"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "缺少網址參數"
+          }
         }
       }
     },
     "MIT License" : {
-
+      "localizations" : {
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MIT授權"
+          }
+        }
+      }
     },
     "name" : {
       "localizations" : {
@@ -1354,6 +2129,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Name"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "名稱"
           }
         }
       }
@@ -1365,6 +2146,12 @@
             "state" : "translated",
             "value" : "Nil"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空值"
+          }
         }
       }
     },
@@ -1374,6 +2161,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Chapters Available"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可用的章節"
           }
         }
       }
@@ -1385,6 +2178,12 @@
             "state" : "translated",
             "value" : "No Config"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有設定"
+          }
         }
       }
     },
@@ -1394,6 +2193,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Cover"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有封面"
           }
         }
       }
@@ -1405,6 +2210,12 @@
             "state" : "translated",
             "value" : "No Details"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有詳細資訊"
+          }
         }
       }
     },
@@ -1414,6 +2225,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Genres Available"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可用的類型"
           }
         }
       }
@@ -1425,6 +2242,12 @@
             "state" : "translated",
             "value" : "No History"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有歷史紀錄"
+          }
         }
       }
     },
@@ -1434,6 +2257,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Mangas Available"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有可用的漫畫"
           }
         }
       }
@@ -1445,6 +2274,12 @@
             "state" : "translated",
             "value" : "No Results Found"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到結果"
+          }
         }
       }
     },
@@ -1455,6 +2290,12 @@
             "state" : "translated",
             "value" : "No Saved Manga"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有已儲存的漫畫"
+          }
         }
       }
     },
@@ -1464,6 +2305,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not Read"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未閱讀"
           }
         }
       }
@@ -1476,6 +2323,12 @@
             "state" : "translated",
             "value" : "Number"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數字"
+          }
         }
       }
     },
@@ -1485,6 +2338,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定"
           }
         }
       }
@@ -1496,6 +2355,12 @@
             "state" : "translated",
             "value" : "One Per Row"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每行一頁"
+          }
         }
       }
     },
@@ -1506,6 +2371,12 @@
             "state" : "translated",
             "value" : "On Going"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連載中"
+          }
         }
       }
     },
@@ -1515,6 +2386,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Option"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選項"
           }
         }
       }
@@ -1527,6 +2404,12 @@
             "state" : "translated",
             "value" : "Orders Count Mismatch"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "排序數量不一致"
+          }
         }
       }
     },
@@ -1538,6 +2421,12 @@
             "state" : "translated",
             "value" : "Otokonoko"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "偽娘"
+          }
         }
       }
     },
@@ -1547,6 +2436,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Page %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %@ 頁"
           }
         }
       }
@@ -1558,6 +2453,12 @@
             "state" : "translated",
             "value" : "Parse"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "解析"
+          }
         }
       }
     },
@@ -1567,6 +2468,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件"
           }
         }
       }
@@ -1578,6 +2485,12 @@
             "state" : "translated",
             "value" : "Plugins"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "插件程式"
+          }
         }
       }
     },
@@ -1587,6 +2500,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Manage your plugins, including adding new plugins, configuring existing ones, removing plugins, and more."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "管理你的插件程式，包括新增、設定、移除等操作。"
           }
         }
       }
@@ -1598,6 +2517,12 @@
             "state" : "translated",
             "value" : "Read"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀"
+          }
         }
       }
     },
@@ -1607,6 +2532,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reader"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀器"
           }
         }
       }
@@ -1618,6 +2549,12 @@
             "state" : "translated",
             "value" : "Customize your reader by adjusting the image layout, setting the reading direction, and more."
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自訂你的閱讀器，調整圖片排列方式、閱讀方向等設定。"
+          }
         }
       }
     },
@@ -1627,6 +2564,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reading Direction"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閱讀方向"
           }
         }
       }
@@ -1638,6 +2581,12 @@
             "state" : "translated",
             "value" : "Remove"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除"
+          }
         }
       }
     },
@@ -1647,6 +2596,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove Chapter Group"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除章節群組"
           }
         }
       }
@@ -1658,6 +2613,12 @@
             "state" : "translated",
             "value" : "Are you sure you want to remove this chapter group? This will delete all chapters under this group."
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除這個章節群組嗎？此操作將會刪除該群組下的所有章節。"
+          }
         }
       }
     },
@@ -1667,6 +2628,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove Plugin"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移除插件"
           }
         }
       }
@@ -1678,6 +2645,12 @@
             "state" : "translated",
             "value" : "Are you sure you want to remove this plugin?"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你確定要移除這個插件嗎？"
+          }
         }
       }
     },
@@ -1687,6 +2660,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Repository"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存庫"
           }
         }
       }
@@ -1698,6 +2677,12 @@
             "state" : "translated",
             "value" : "Reset"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設"
+          }
         }
       }
     },
@@ -1707,6 +2692,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset Configs"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設設定"
           }
         }
       }
@@ -1718,6 +2709,12 @@
             "state" : "translated",
             "value" : "Are you sure you want to reset all configs?"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要重設所有設定嗎？"
+          }
         }
       }
     },
@@ -1728,6 +2725,12 @@
             "state" : "translated",
             "value" : "Read-only FS"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "唯讀檔案系統"
+          }
         }
       }
     },
@@ -1737,6 +2740,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Right to Left"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "由右至左"
           }
         }
       }
@@ -1749,6 +2758,12 @@
             "state" : "translated",
             "value" : "Romance"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "愛情"
+          }
         }
       }
     },
@@ -1759,6 +2774,12 @@
             "state" : "translated",
             "value" : "Read/Write FS"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "可讀寫檔案系統"
+          }
         }
       }
     },
@@ -1768,6 +2789,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存"
           }
         }
       }
@@ -1780,6 +2807,12 @@
             "state" : "translated",
             "value" : "School Life"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "校園"
+          }
         }
       }
     },
@@ -1789,6 +2822,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋"
           }
         }
       }
@@ -1800,6 +2839,12 @@
             "state" : "translated",
             "value" : "Search Manga"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋漫畫"
+          }
         }
       }
     },
@@ -1809,6 +2854,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search Saved Manga"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋已儲存的漫畫"
           }
         }
       }
@@ -1821,6 +2872,12 @@
             "state" : "translated",
             "value" : "Select"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選取"
+          }
         }
       }
     },
@@ -1830,6 +2887,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selected Plugin Not Found"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到所選插件"
           }
         }
       }
@@ -1842,6 +2905,12 @@
             "state" : "translated",
             "value" : "Serial"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連載"
+          }
         }
       }
     },
@@ -1852,6 +2921,12 @@
             "state" : "translated",
             "value" : "Settings"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定"
+          }
         }
       }
     },
@@ -1861,6 +2936,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Something Went Wrong"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "發生錯誤"
           }
         }
       }
@@ -1873,6 +2954,12 @@
             "state" : "translated",
             "value" : "Speculative Fiction"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "奇幻"
+          }
         }
       }
     },
@@ -1884,6 +2971,12 @@
             "state" : "translated",
             "value" : "Sports"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "運動"
+          }
         }
       }
     },
@@ -1894,6 +2987,12 @@
             "state" : "translated",
             "value" : "Status"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態"
+          }
         }
       }
     },
@@ -1903,6 +3002,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suggestions"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建議"
           }
         }
       }
@@ -1915,6 +3020,12 @@
             "state" : "translated",
             "value" : "Suspense"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "懸疑"
+          }
         }
       }
     },
@@ -1925,6 +3036,12 @@
             "state" : "translated",
             "value" : "Tap to Retry"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點擊重試"
+          }
         }
       }
     },
@@ -1934,6 +3051,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Test JS"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "測試JS"
           }
         }
       }
@@ -1946,6 +3069,12 @@
             "state" : "translated",
             "value" : "Text"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字"
+          }
         }
       }
     },
@@ -1955,6 +3084,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Title"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標題"
           }
         }
       }
@@ -1966,6 +3101,12 @@
             "state" : "translated",
             "value" : "Total Chapters"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "總話數"
+          }
         }
       }
     },
@@ -1975,6 +3116,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Two Per Row"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每行二頁"
           }
         }
       }
@@ -1986,6 +3133,12 @@
             "state" : "translated",
             "value" : "Updated"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已更新"
+          }
         }
       }
     },
@@ -1995,6 +3148,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Updated at"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新於"
           }
         }
       }
@@ -2006,6 +3165,12 @@
             "state" : "translated",
             "value" : "Updates Url"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新網址"
+          }
         }
       }
     },
@@ -2015,6 +3180,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "URL"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網址"
           }
         }
       }
@@ -2026,6 +3197,12 @@
             "state" : "translated",
             "value" : "URLS"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "網址"
+          }
         }
       }
     },
@@ -2035,6 +3212,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use JSON"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用JSON"
           }
         }
       }
@@ -2049,6 +3232,12 @@
             "state" : "translated",
             "value" : "Version"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "版本"
+          }
         }
       }
     },
@@ -2059,6 +3248,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Volume"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "卷"
           }
         }
       }
@@ -2071,6 +3266,12 @@
             "state" : "translated",
             "value" : "War"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "戰爭"
+          }
         }
       }
     },
@@ -2082,6 +3283,12 @@
             "state" : "translated",
             "value" : "WebView Not Initialized"
           }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WebView尚未初始化"
+          }
         }
       }
     },
@@ -2092,6 +3299,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yuri"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "百合"
           }
         }
       }
