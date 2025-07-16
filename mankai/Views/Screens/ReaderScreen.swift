@@ -23,6 +23,10 @@ let PREVIOUS_CHAPTER_BUTTON_ID = 7
 let PREVIOUS_BUTTON_ID = 8
 let NEXT_BUTTON_ID = 9
 let NEXT_CHAPTER_BUTTON_ID = 10
+let TOP_OVERSCROLL_ARROW_TAG = 11
+let TOP_OVERSCROLL_TEXT_TAG = 12
+let BOTTOM_OVERSCROLL_ARROW_TAG = 13
+let BOTTOM_OVERSCROLL_TEXT_TAG = 14
 
 // MARK: - ReaderViewController
 
@@ -59,7 +63,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let containerView = UIView()
-    private let bottomBar: UIView = .init()
+    private let bottomBar = UIView()
+    private let overscrollView = UIView()
+    private let bottomOverscrollView = UIView()
 
     // Constraint references for dynamic updates
     private var containerLeadingConstraint: NSLayoutConstraint!
@@ -155,20 +161,26 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - Scroll Event Monitoring
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        // This is called continuously while scrolling
         updateCurrentPageFromScroll()
     }
 
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        // Called when scroll view stops moving after user lifts finger
-    }
-
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        // Called when user lifts finger, even if still decelerating
-    }
+        guard decelerate else { return }
 
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        // Called when programmatic scrolling finishes
+        let offsetY = scrollView.contentOffset.y
+        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + 125
+
+        if offsetY < -125 {
+            if currentChapterIndex > 0 {
+                currentChapterIndex -= 1
+                loadChapter()
+            }
+        } else if offsetY > maxScrollY {
+            if currentChapterIndex < chapters.count - 1 {
+                currentChapterIndex += 1
+                loadChapter()
+            }
+        }
     }
 
     private func updateCurrentPageFromScroll() {
@@ -287,6 +299,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
         containerView.subviews.forEach { $0.removeFromSuperview() }
         addLoadingView()
+        updateOverscrollViewsVisibility()
+        bottomOverscrollView.isHidden = true
+        overscrollView.isHidden = true
 
         // Reset state
         urls = []
@@ -404,7 +419,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Page Management
 
-    private func navigateToPage(_ page: Int) {
+    private func navigateToPage(_ page: Int, animated: Bool = false) {
         guard page >= 0 && page < urls.count else { return }
 
         let targetUrl = urls[page]
@@ -420,7 +435,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
             scrollView.setContentOffset(
                 CGPoint(x: 0, y: clampedScrollY),
-                animated: false)
+                animated: animated)
 
             currentPage = page
             updateBottomBar()
@@ -561,16 +576,27 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - Gestures
 
     private func setupGestures() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(scrollViewTapped))
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleScreenTap(_:)))
         scrollView.addGestureRecognizer(tapGesture)
     }
 
-    @objc private func scrollViewTapped() {
-        // Toggle navigation bar and bottom bar visibility
-        if isNavigationBarHidden {
-            showNavigationBar()
+    @objc private func handleScreenTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: scrollView)
+        let width = scrollView.bounds.width
+
+        if location.x < width / 3 {
+            // Left third: previous page
+            navigateToPage(currentPage - 1, animated: true)
+        } else if location.x > width * 2 / 3 {
+            // Right third: next page
+            navigateToPage(currentPage + 1, animated: true)
         } else {
-            hideNavigationBar()
+            // Middle third: toggle navigation bar
+            if isNavigationBarHidden {
+                showNavigationBar()
+            } else {
+                hideNavigationBar()
+            }
         }
     }
 
@@ -587,6 +613,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         scrollView.maximumZoomScale = 3
         scrollView.delegate = self
 
+        // Configure overscroll view
+        overscrollView.translatesAutoresizingMaskIntoConstraints = false
+        setupOverscrollView()
+
+        // Configure bottom overscroll view
+        bottomOverscrollView.translatesAutoresizingMaskIntoConstraints = false
+        setupBottomOverscrollView()
+
         // Configure content view
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -596,6 +630,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         // Add views to hierarchy
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        scrollView.addSubview(overscrollView)
+        scrollView.addSubview(bottomOverscrollView)
         contentView.addSubview(containerView)
 
         // Configure bottom bar
@@ -633,6 +669,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             containerTopConstraint,
             containerWidthConstraint,
             containerHeightConstraint,
+
+            // Overscroll view constraints
+            overscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            overscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -20),
+
+            // Bottom overscroll view constraints
+            bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
+            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 20),
 
             // Bottom bar constraints
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -977,6 +1021,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         contentHeightConstraint.constant =
             finalY + startY + view.safeAreaInsets.bottom
 
+        if overscrollView.isHidden {
+            overscrollView.isHidden = false
+            bottomOverscrollView.isHidden = false
+        }
+
         view.layoutIfNeeded()
 
         if let initialPage = initialPage,
@@ -1161,6 +1210,104 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         guard targetPage >= 0 && targetPage < urls.count else { return }
 
         navigateToPage(targetPage)
+    }
+
+    // MARK: - Overscroll Views
+
+    private func setupOverscrollView() {
+        // Create arrow image view
+        let arrowImageView = UIImageView(image: UIImage(systemName: "chevron.up"))
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        arrowImageView.tintColor = .secondaryLabel
+        arrowImageView.contentMode = .scaleAspectFit
+        arrowImageView.tag = TOP_OVERSCROLL_ARROW_TAG
+
+        // Create text label
+        let textLabel = UILabel()
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        textLabel.text = String(localized: "releaseToLoadPreviousChapter")
+        textLabel.textColor = .secondaryLabel
+        textLabel.textAlignment = .center
+        textLabel.tag = TOP_OVERSCROLL_TEXT_TAG
+
+        // Add subviews
+        overscrollView.addSubview(arrowImageView)
+        overscrollView.addSubview(textLabel)
+
+        // Set up constraints
+        NSLayoutConstraint.activate([
+            arrowImageView.topAnchor.constraint(equalTo: overscrollView.topAnchor, constant: 8),
+            arrowImageView.centerXAnchor.constraint(equalTo: overscrollView.centerXAnchor),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 48),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 48),
+
+            textLabel.topAnchor.constraint(equalTo: arrowImageView.bottomAnchor, constant: 8),
+            textLabel.leadingAnchor.constraint(equalTo: overscrollView.leadingAnchor, constant: 8),
+            textLabel.trailingAnchor.constraint(equalTo: overscrollView.trailingAnchor, constant: -8),
+            textLabel.bottomAnchor.constraint(equalTo: overscrollView.bottomAnchor, constant: -8),
+        ])
+    }
+
+    private func setupBottomOverscrollView() {
+        // Create arrow image view (pointing down for bottom)
+        let arrowImageView = UIImageView(image: UIImage(systemName: "chevron.down"))
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        arrowImageView.tintColor = .secondaryLabel
+        arrowImageView.contentMode = .scaleAspectFit
+        arrowImageView.tag = BOTTOM_OVERSCROLL_ARROW_TAG
+
+        // Create text label
+        let textLabel = UILabel()
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        textLabel.text = String(localized: "releaseToLoadNextChapter")
+        textLabel.textColor = .secondaryLabel
+        textLabel.textAlignment = .center
+        textLabel.tag = BOTTOM_OVERSCROLL_TEXT_TAG
+
+        // Add subviews
+        bottomOverscrollView.addSubview(arrowImageView)
+        bottomOverscrollView.addSubview(textLabel)
+
+        // Set up constraints
+        NSLayoutConstraint.activate([
+            textLabel.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor, constant: 20),
+            textLabel.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
+            textLabel.trailingAnchor.constraint(equalTo: bottomOverscrollView.trailingAnchor, constant: -8),
+            textLabel.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
+
+            arrowImageView.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 8),
+            arrowImageView.centerXAnchor.constraint(equalTo: bottomOverscrollView.centerXAnchor),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 48),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 48),
+        ])
+    }
+
+    private func updateOverscrollViewsVisibility() {
+        // Update top overscroll view
+        if let arrowImageView = overscrollView.viewWithTag(TOP_OVERSCROLL_ARROW_TAG) as? UIImageView,
+           let textLabel = overscrollView.viewWithTag(TOP_OVERSCROLL_TEXT_TAG) as? UILabel
+        {
+            if currentChapterIndex > 0 {
+                arrowImageView.image = UIImage(systemName: "chevron.up")
+                textLabel.text = String(localized: "releaseToLoadPreviousChapter")
+            } else {
+                arrowImageView.image = UIImage(systemName: "xmark")
+                textLabel.text = String(localized: "noPreviousChapter")
+            }
+        }
+
+        // Update bottom overscroll view
+        if let arrowImageView = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_ARROW_TAG) as? UIImageView,
+           let textLabel = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_TEXT_TAG) as? UILabel
+        {
+            if currentChapterIndex < chapters.count - 1 {
+                arrowImageView.image = UIImage(systemName: "chevron.down")
+                textLabel.text = String(localized: "releaseToLoadNextChapter")
+            } else {
+                arrowImageView.image = UIImage(systemName: "xmark")
+                textLabel.text = String(localized: "noNextChapter")
+            }
+        }
     }
 }
 
