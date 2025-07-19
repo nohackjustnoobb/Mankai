@@ -5,6 +5,7 @@
 //  Created by Travis XU on 20/6/2025.
 //
 
+import GRDB
 import SwiftUI
 
 private enum HomeMangaStatus: String, CaseIterable {
@@ -15,15 +16,12 @@ private enum HomeMangaStatus: String, CaseIterable {
 }
 
 struct HomeTab: View {
-    @FetchRequest(sortDescriptors: [SortDescriptor(\SavedData.updatesDate, order: .reverse)])
-    private var saveds: FetchedResults<SavedData>
-
-    @EnvironmentObject var appState: AppState
+    private let pluginService = PluginService.shared
 
     @State private var mangas: [String: Manga] = [:]
     @State private var plugins: [String: Plugin] = [:]
-    @State private var records: [String: RecordData] = [:]
-    @State private var savedsDict: [String: SavedData] = [:]
+    @State private var records: [String: RecordModel] = [:]
+    @State private var saveds: [String: SavedModel] = [:]
     @State private var orders: [String] = []
 
     // Filter & Search
@@ -42,29 +40,11 @@ struct HomeTab: View {
     }
 
     private var availablePlugins: [Plugin] {
-        return appState.pluginService.plugins.sorted { plugin1, plugin2 in
+        return pluginService.plugins.sorted { plugin1, plugin2 in
             let name1 = plugin1.name ?? plugin1.id
             let name2 = plugin2.name ?? plugin2.id
             return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending
         }
-    }
-
-    private func setupObserver() {
-        NotificationCenter.default.addObserver(
-            forName: .NSManagedObjectContextObjectsDidChange,
-            object: DbService.shared.context,
-            queue: .main
-        ) { _ in
-            loadSavedManga()
-        }
-    }
-
-    private func removeObserver() {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .NSManagedObjectContextObjectsDidChange,
-            object: DbService.shared.context
-        )
     }
 
     var body: some View {
@@ -108,7 +88,7 @@ struct HomeTab: View {
                                             manga: manga,
                                             plugin: plugin,
                                             record: records[key],
-                                            saved: savedsDict[key],
+                                            saved: saveds[key],
                                             showNotRead: true
                                         )
                                         .aspectRatio(3 / 5, contentMode: .fit)
@@ -143,15 +123,18 @@ struct HomeTab: View {
             .onChange(of: searchText) {
                 filterManga()
             }
-            .onReceive(appState.pluginService.objectWillChange) {
-                loadSavedManga()
-            }
             .onAppear {
-                loadSavedManga()
-                setupObserver()
+                updateSaved()
             }
-            .onDisappear {
-                removeObserver()
+            .onReceive(pluginService.objectWillChange) {
+                updateSaved()
+            }
+
+            .onReceive(SavedService.shared.objectWillChange) {
+                updateSaved()
+            }
+            .onReceive(HistoryService.shared.objectWillChange) {
+                updateRecord()
             }
             .sheet(isPresented: $showingFilters) {
                 NavigationView {
@@ -236,43 +219,49 @@ struct HomeTab: View {
         }
     }
 
-    private func loadSavedManga() {
+    private func updateSaved() {
         var mangas: [String: Manga] = [:]
         var plugins: [String: Plugin] = [:]
-        var savedsDict: [String: SavedData] = [:]
-        var records: [String: RecordData] = [:]
+        var saveds: [String: SavedModel] = [:]
 
-        for saved in saveds {
-            guard let target = saved.target,
-                  let pluginId = target.plugin,
-                  let plugin = appState.pluginService.getPlugin(pluginId),
-                  let metaString = target.meta,
-                  let metaData = metaString.data(using: .utf8),
-                  let mangaId = target.id
-            else {
-                continue
-            }
+        let savedList: [SavedModel] = SavedService.shared.getAll()
+        for saved in savedList {
+            let key = "\(saved.pluginId)_\(saved.mangaId)"
 
-            do {
-                let manga = try JSONDecoder().decode(Manga.self, from: metaData)
-
-                let key = "\(pluginId)_\(mangaId)"
-                savedsDict[key] = saved
+            if let plugin = pluginService.getPlugin(saved.pluginId) {
                 plugins[key] = plugin
-                mangas[key] = manga
-
-                if let record = target.record {
-                    records[key] = record
-                }
-
-            } catch {
-                print("Failed to decode saved manga: \(error)")
             }
+
+            if let mangaModel = try? DbService.shared.appDb?.read({ db in
+                try saved.manga.fetchOne(db)
+            }) {
+                if let mangaData = mangaModel.info.data(using: .utf8),
+                   let mangaDict = try? JSONSerialization.jsonObject(with: mangaData) as? [String: Any],
+                   let manga = Manga(from: mangaDict)
+                {
+                    mangas[key] = manga
+                }
+            }
+
+            saveds[key] = saved
         }
 
         self.mangas = mangas
         self.plugins = plugins
-        self.savedsDict = savedsDict
+        self.saveds = saveds
+
+        updateRecord()
+    }
+
+    private func updateRecord() {
+        var records: [String: RecordModel] = [:]
+
+        for (key, saved) in saveds {
+            if let record = HistoryService.shared.get(mangaId: saved.mangaId, pluginId: saved.pluginId) {
+                records[key] = record
+            }
+        }
+
         self.records = records
 
         sortSaved()
@@ -282,10 +271,10 @@ struct HomeTab: View {
         let keys = mangas.keys
 
         let sortedKeys = keys.sorted { key1, key2 in
-            let savedDate1 = savedsDict[key1]?.updatesDate
-            let recordDate1 = records[key1]?.date
-            let savedDate2 = savedsDict[key2]?.updatesDate
-            let recordDate2 = records[key2]?.date
+            let savedDate1 = saveds[key1]?.datetime
+            let recordDate1 = records[key1]?.datetime
+            let savedDate2 = saveds[key2]?.datetime
+            let recordDate2 = records[key2]?.datetime
 
             let newerDate1 = [savedDate1, recordDate1].compactMap { $0 }.max()
             let newerDate2 = [savedDate2, recordDate2].compactMap { $0 }.max()
@@ -310,13 +299,7 @@ struct HomeTab: View {
         // Filter by search text
         if !searchText.isEmpty {
             filtered = filtered.filter { key in
-                if let saved = savedsDict[key],
-                   let target = saved.target,
-                   let targetMeta = target.meta
-                {
-                    return targetMeta.localizedCaseInsensitiveContains(searchText)
-                }
-                return false
+                mangas[key]?.title?.localizedCaseInsensitiveContains(searchText) ?? false
             }
         }
 
@@ -331,7 +314,7 @@ struct HomeTab: View {
         // Filter by status
         if status != .all {
             filtered = filtered.filter { key in
-                guard let manga = mangas[key], let saved = savedsDict[key] else { return false }
+                guard let manga = mangas[key], let saved = saveds[key] else { return false }
 
                 switch status {
                 case .all:

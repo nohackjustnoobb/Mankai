@@ -5,11 +5,11 @@
 //  Created by Travis XU on 12/7/2025.
 //
 
-import CoreData
+import GRDB
 import SwiftUI
 
 struct HistoryScreen: View {
-    @State private var records: [RecordData] = []
+    @State private var records: [RecordModel] = []
     @State private var isLoading = false
     @State private var hasLoadedAll = false
 
@@ -30,12 +30,10 @@ struct HistoryScreen: View {
                 } else {
                     List {
                         Section {
-                            ForEach(records, id: \.objectID) { record in
+                            ForEach(Array(records.enumerated()), id: \.offset) { index, record in
                                 HistoryItemView(record: record)
                                     .onAppear {
-                                        if record.objectID == records.last?.objectID
-                                            && !hasLoadedAll
-                                        {
+                                        if index == records.count - 1 && !hasLoadedAll {
                                             loadMoreRecords()
                                         }
                                     }
@@ -57,10 +55,9 @@ struct HistoryScreen: View {
                 if records.isEmpty {
                     loadInitialRecords()
                 }
-                setupObserver()
             }
-            .onDisappear {
-                removeObserver()
+            .onReceive(HistoryService.shared.objectWillChange) {
+                refreshRecords()
             }
         }
     }
@@ -76,65 +73,25 @@ struct HistoryScreen: View {
 
         isLoading = true
 
-        let request: NSFetchRequest<RecordData> = RecordData.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \RecordData.date, ascending: false)]
-        request.fetchLimit = batchSize
-        request.fetchOffset = records.count
+        let newRecords = HistoryService.shared.getAll(limit: batchSize, offset: records.count)
 
-        do {
-            let newRecords = try DbService.shared.context.fetch(request)
-
-            records.append(contentsOf: newRecords)
-            hasLoadedAll = newRecords.count < batchSize
-            isLoading = false
-        } catch {
-            print("Failed to fetch records: \(error)")
-            isLoading = false
-        }
+        records.append(contentsOf: newRecords)
+        hasLoadedAll = newRecords.count < batchSize
+        isLoading = false
     }
 
-    private func refreshRecords() async {
-        let request: NSFetchRequest<RecordData> = RecordData.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \RecordData.date, ascending: false)]
-        request.fetchLimit = records.count
-
-        do {
-            let newRecords = try DbService.shared.context.fetch(request)
-            records = newRecords
-        } catch {
-            print("Failed to refresh records: \(error)")
-        }
-    }
-
-    private func setupObserver() {
-        NotificationCenter.default.addObserver(
-            forName: .NSManagedObjectContextObjectsDidChange,
-            object: DbService.shared.context,
-            queue: .main
-        ) { _ in
-            Task {
-                await refreshRecords()
-            }
-        }
-    }
-
-    private func removeObserver() {
-        NotificationCenter.default.removeObserver(
-            self,
-            name: .NSManagedObjectContextObjectsDidChange,
-            object: DbService.shared.context
-        )
+    private func refreshRecords() {
+        let newRecords = HistoryService.shared.getAll(limit: records.count)
+        records = newRecords
     }
 }
 
 struct HistoryItemView: View {
-    @ObservedObject var record: RecordData
+    var record: RecordModel
 
     @State private var manga: Manga?
     @State private var plugin: Plugin?
     @State private var isLoading: Bool = true
-
-    @EnvironmentObject var appState: AppState
 
     var body: some View {
         Group {
@@ -157,7 +114,7 @@ struct HistoryItemView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(manga?.title ?? record.target?.id ?? "nil")
+                            Text(manga?.title ?? record.mangaId)
                                 .font(.headline)
                                 .lineLimit(1)
 
@@ -169,20 +126,16 @@ struct HistoryItemView: View {
                                     Text("chapter \(chapterId)")
                                 }
 
-                                if let page = record.page as? Decimal {
-                                    Text("•")
-                                    Text("page \((page + 1).description)")
-                                }
+                                Text("•")
+                                Text("page \(record.page + 1)")
                             }
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                            if let date = record.date {
-                                Text(date.formatted())
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
+                            Text(record.datetime.formatted())
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
                         }
                     }
                 }
@@ -195,22 +148,27 @@ struct HistoryItemView: View {
     }
 
     private func loadMangaData() {
-        guard let target = record.target else { return }
+        plugin = PluginService.shared.getPlugin(record.pluginId)
 
-        if let pluginId = target.plugin {
-            plugin = appState.pluginService.getPlugin(pluginId)
-        }
-
-        if let metaString = target.meta,
-           let metaData = metaString.data(using: .utf8)
+        // Try to get manga from DbService
+        if let mangaModel = getMangaModel(mangaId: record.mangaId, pluginId: record.pluginId),
+           let infoData = mangaModel.info.data(using: .utf8)
         {
             do {
-                manga = try JSONDecoder().decode(Manga.self, from: metaData)
+                manga = try JSONDecoder().decode(Manga.self, from: infoData)
             } catch {
                 print("Failed to decode manga data: \(error)")
             }
         }
 
         isLoading = false
+    }
+
+    private func getMangaModel(mangaId: String, pluginId: String) -> MangaModel? {
+        return try? DbService.shared.appDb?.read { db in
+            try MangaModel
+                .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+                .fetchOne(db)
+        }
     }
 }

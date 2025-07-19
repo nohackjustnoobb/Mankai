@@ -10,19 +10,7 @@ import SwiftUI
 struct PluginSearchScreen: View {
     let plugin: Plugin
     let query: String
-
-    @EnvironmentObject var appState: AppState
-
-    var body: some View {
-        PluginSearchScreenContent(
-            plugin: plugin, query: query, pluginService: appState.pluginService)
-    }
-}
-
-private struct PluginSearchScreenContent: View {
-    let plugin: Plugin
-    let query: String
-    @ObservedObject var pluginService: PluginService
+    let pluginService = PluginService.shared
 
     @State var isLoading: Bool = false
     @State var mangas: [UInt: [Manga]] = [:]

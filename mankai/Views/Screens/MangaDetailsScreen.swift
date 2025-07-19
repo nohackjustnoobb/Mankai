@@ -34,42 +34,23 @@ struct MangaDetailsScreen: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @FetchRequest
-    private var records: FetchedResults<RecordData>
-
-    private var record: RecordData? {
-        records.first
-    }
-
-    @FetchRequest
-    private var saveds: FetchedResults<SavedData>
-
-    private var saved: SavedData? {
-        saveds.first
-    }
+    @State private var record: RecordModel? = nil
+    @State private var saved: SavedModel? = nil
 
     init(plugin: Plugin, manga: Manga) {
         self.plugin = plugin
         self.manga = manga
-
-        let recordPredicate = NSPredicate(
-            format: "target.id == %@ AND target.plugin == %@", manga.id, plugin.id
-        )
-        self._records = FetchRequest(
-            sortDescriptors: [NSSortDescriptor(keyPath: \RecordData.date, ascending: false)],
-            predicate: recordPredicate
-        )
-
-        let savedPredicate = NSPredicate(
-            format: "target.id == %@ AND target.plugin == %@", manga.id, plugin.id
-        )
-        self._saveds = FetchRequest(
-            sortDescriptors: [NSSortDescriptor(keyPath: \SavedData.updatesDate, ascending: false)],
-            predicate: savedPredicate
-        )
     }
 
-    func navigateToChapter(_ chapter: Chapter, page: Int? = nil, chaptersKey: String? = nil) {
+    private func updateRecord() {
+        record = HistoryService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+    }
+
+    private func updateSaved() {
+        saved = SavedService.shared.get(mangaId: manga.id, pluginId: plugin.id)
+    }
+
+    private func navigateToChapter(_ chapter: Chapter, page: Int? = nil, chaptersKey: String? = nil) {
         readerChapter = chapter
         readerChapterKey = chaptersKey ?? selectedChapterKey
         readerPage = page
@@ -78,18 +59,15 @@ struct MangaDetailsScreen: View {
         showReaderScreen = true
     }
 
-    func handleReadContinueAction() {
+    private func handleReadContinueAction() {
         if let record = record, let chapterId = record.chapterId {
             if let detailedManga = detailedManga {
                 for (chaptersKey, chapters) in detailedManga.chapters {
                     if let chapter = chapters.first(where: {
                         $0.id == chapterId
                     }) {
-                        let page =
-                            record.page != nil
-                                ? Int(truncating: record.page!) : nil
                         navigateToChapter(
-                            chapter, page: page, chaptersKey: chaptersKey
+                            chapter, page: record.page, chaptersKey: chaptersKey
                         )
                         break
                     }
@@ -110,46 +88,37 @@ struct MangaDetailsScreen: View {
         }
     }
 
-    func handleBookmarkAction() {
-        let context = DbService.shared.context
+    private func handleBookmarkAction() {
+        let result: Bool?
 
-        do {
-            if let saved = saved {
-                context.delete(saved)
-                try context.save()
+        if saved != nil {
+            result = SavedService.shared.delete(mangaId: manga.id, pluginId: plugin.id)
+        } else {
+            let newSaved = SavedModel(
+                mangaId: manga.id,
+                pluginId: plugin.id,
+                datetime: Date(),
+                updates: false
+            )
+
+            let mangaInfo: String
+            if let mangaData = try? JSONEncoder().encode(manga) {
+                mangaInfo = String(data: mangaData, encoding: .utf8) ?? "{}"
             } else {
-                let saved = SavedData(context: context)
-
-                let mangaRequest = MangaData.fetchRequest()
-                mangaRequest.predicate = NSPredicate(
-                    format: "id == %@ AND plugin == %@", manga.id, plugin.id
-                )
-
-                let existingMangaData = try context.fetch(mangaRequest).first
-                let mangaData: MangaData
-
-                if let existingMangaData = existingMangaData {
-                    mangaData = existingMangaData
-                } else {
-                    mangaData = MangaData(context: context)
-                    mangaData.id = manga.id
-                    mangaData.plugin = plugin.id
-                }
-
-                if let mangaMetaData = try? JSONEncoder().encode(manga) {
-                    mangaData.meta = String(
-                        data: mangaMetaData, encoding: .utf8
-                    )
-                }
-
-                saved.target = mangaData
-                saved.updatesDate = Date()
-                saved.updates = false
-
-                try context.save()
+                mangaInfo = "{}"
             }
-        } catch {
-            print("Failed to delete or create SavedData: \(error)")
+
+            let mangaModel = MangaModel(
+                mangaId: manga.id,
+                pluginId: plugin.id,
+                info: mangaInfo
+            )
+
+            result = SavedService.shared.update(saved: newSaved, manga: mangaModel)
+        }
+
+        if result == nil || !result! {
+            print("Failed to delete or create SavedData")
         }
     }
 
@@ -157,13 +126,13 @@ struct MangaDetailsScreen: View {
         List {
             Section {} header: {
                 VStack {
-                    MangaCoverView(coverUrl: manga.cover, plugin: plugin)
+                    MangaCoverView(coverUrl: detailedManga?.title ?? manga.cover, plugin: plugin)
                         .aspectRatio(3 / 4, contentMode: .fit)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .padding(.horizontal)
                         .padding(.horizontal)
 
-                    Text(manga.title ?? manga.id)
+                    Text(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
                         .font(.title2)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
@@ -251,12 +220,14 @@ struct MangaDetailsScreen: View {
                                 Text("•")
                                 Text(chapterTitle)
                                     .lineLimit(1)
+                            } else if let chapterId = record.chapterId {
+                                Text("•")
+                                Text("chapter \(chapterId)")
+                                    .lineLimit(1)
                             }
 
-                            if let page = record.page as? Decimal {
-                                Text("•")
-                                Text("page \((page + 1).description)")
-                            }
+                            Text("•")
+                            Text("page \((record.page + 1).description)")
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -436,7 +407,7 @@ struct MangaDetailsScreen: View {
         }
         .listSectionSpacing(0)
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle(manga.title ?? manga.id)
+        .navigationTitle(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
         .sheet(isPresented: $showingChaptersModal) { [detailedManga, selectedChapterKey] in
             if let detailedManga = detailedManga,
                let selectedChapterKey = selectedChapterKey
@@ -495,7 +466,7 @@ struct MangaDetailsScreen: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack {
-                    Text(manga.title ?? manga.id)
+                    Text(detailedManga?.title ?? detailedManga?.id ?? manga.title ?? manga.id)
                         .font(.headline)
                     Text(plugin.name ?? plugin.id)
                         .font(.caption)
@@ -513,9 +484,17 @@ struct MangaDetailsScreen: View {
         }
         .onAppear {
             loadDetailedManga()
+            updateRecord()
+            updateSaved()
         }
         .onReceive(plugin.objectWillChange) {
             loadDetailedManga()
+        }
+        .onReceive(SavedService.shared.objectWillChange) {
+            updateSaved()
+        }
+        .onReceive(HistoryService.shared.objectWillChange) {
+            updateRecord()
         }
         .apply {
             if UIDevice.isIPad {

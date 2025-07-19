@@ -8,15 +8,7 @@
 import SwiftUI
 
 struct LibraryTab: View {
-    @EnvironmentObject var appState: AppState
-
-    var body: some View {
-        LibraryTabContent(pluginService: appState.pluginService)
-    }
-}
-
-private struct LibraryTabContent: View {
-    @ObservedObject var pluginService: PluginService
+    let pluginService = PluginService.shared
     @State var plugins: [Plugin] = []
 
     @State var query: String = ""
@@ -96,7 +88,7 @@ private struct LibraryTabContent: View {
 
         searchTask = Task {
             // Add debouncing delay
-            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+            try? await Task.sleep(nanoseconds: 300_000_000)  // 300ms
 
             guard !Task.isCancelled else { return }
 

@@ -10,8 +10,8 @@ import SwiftUI
 struct MangaItemView: View {
     let manga: Manga
     let plugin: Plugin
-    var record: RecordData? = nil
-    var saved: SavedData? = nil
+    var record: RecordModel? = nil
+    var saved: SavedModel? = nil
     var showNotRead: Bool = false
 
     var body: some View {

@@ -9,16 +9,18 @@ import CoreData
 import Foundation
 
 class PluginService: ObservableObject {
+    static let shared = PluginService()
+
+    private init() {
+        _plugins[AppDirPlugin.shared.id] = AppDirPlugin.shared
+
+        loadJsPluginsFromCoreData()
+    }
+
     private var _plugins: [String: Plugin] = [:]
 
     var plugins: [Plugin] {
         return Array(_plugins.values)
-    }
-
-    init() {
-        _plugins[AppDirPlugin.shared.id] = AppDirPlugin.shared
-
-        loadJsPluginsFromCoreData()
     }
 
     private func loadJsPluginsFromCoreData() {

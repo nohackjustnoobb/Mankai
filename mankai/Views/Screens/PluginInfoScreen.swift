@@ -10,7 +10,6 @@ import SwiftUI
 import WrappingHStack
 
 struct PluginInfoScreen: View {
-    @EnvironmentObject var state: AppState
     @ObservedObject var plugin: Plugin
 
     @State private var showErrorAlert = false
@@ -155,7 +154,7 @@ struct PluginInfoScreen: View {
         ) {
             Button("remove", role: .destructive) {
                 do {
-                    try state.pluginService.removePlugin(plugin.id)
+                    try PluginService.shared.removePlugin(plugin.id)
                     dismiss()
                 } catch {
                     errorTitle = String(localized: "failedToRemovePlugin")
@@ -184,7 +183,7 @@ struct ConfigTextFieldStyle: TextFieldStyle {
 }
 
 struct TextConfigView: View {
-    @ObservedObject var plugin: Plugin
+    let plugin: Plugin
     let config: Config
 
     @State private var textValue: String = ""
@@ -237,7 +236,7 @@ struct TextConfigView: View {
 }
 
 struct NumberConfigView: View {
-    @ObservedObject var plugin: Plugin
+    let plugin: Plugin
     let config: Config
 
     @State private var numberValue: Double = 0
@@ -302,7 +301,7 @@ struct NumberConfigView: View {
 }
 
 struct BooleanConfigView: View {
-    @ObservedObject var plugin: Plugin
+    let plugin: Plugin
     let config: Config
 
     @State private var boolValue: Bool = false
@@ -351,7 +350,7 @@ struct BooleanConfigView: View {
 }
 
 struct SelectConfigView: View {
-    @ObservedObject var plugin: Plugin
+    let plugin: Plugin
     let config: Config
 
     @State private var selectedValue: String? = nil

@@ -9,13 +9,9 @@ import SwiftUI
 
 @main
 struct mankai: App {
-    @StateObject private var appState = AppState()
-
     var body: some Scene {
         WindowGroup {
             MainScreen()
-                .environmentObject(appState)
-                .environment(\.managedObjectContext, DbService.shared.context)
         }
     }
 }
