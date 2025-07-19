@@ -9,7 +9,6 @@ import PhotosUI
 import SwiftUI
 
 struct UpdateMangaModal: View {
-    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
 
     var plugin: ReadWriteFsPlugin? = nil
@@ -19,7 +18,7 @@ struct UpdateMangaModal: View {
         NavigationView {
             UpdateMangaContent(
                 plugin: plugin, manga: manga,
-                plugins: appState.pluginService.plugins.filter { $0 is ReadWriteFsPlugin }
+                plugins: PluginService.shared.plugins.filter { $0 is ReadWriteFsPlugin }
                     as! [ReadWriteFsPlugin]
             )
             .toolbar {

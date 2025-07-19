@@ -103,6 +103,14 @@ struct DetailedManga: Identifiable, Codable {
         }
     }
 
+    init() {
+        self.id = UUID().uuidString
+        self.authors = []
+        self.genres = []
+        self.chapters = ["serial": [], "extra": [], "volume": []]
+        self.status = .onGoing
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, title, cover, status, latestChapter, description, updatedAt, authors, genres,
              chapters, meta
@@ -131,14 +139,6 @@ struct DetailedManga: Identifiable, Codable {
             try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
 
         self.meta = try container.decodeIfPresent(String.self, forKey: .meta)
-    }
-
-    init() {
-        self.id = UUID().uuidString
-        self.authors = []
-        self.genres = []
-        self.chapters = ["serial": [], "extra": [], "volume": []]
-        self.status = .onGoing
     }
 
     func encode(to encoder: Encoder) throws {

@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct SettingsTab: View {
-    @EnvironmentObject var appState: AppState
-
     var body: some View {
         NavigationStack {
             List {

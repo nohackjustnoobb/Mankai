@@ -1,0 +1,29 @@
+//
+//  JsPluginModel.swift
+//  mankai
+//
+//  Created by Travis XU on 19/7/2025.
+//
+
+import GRDB
+
+struct JsPluginModel {
+    var id: String
+    var meta: String
+    var configValues: String
+
+    static func createTable(_ db: Database) throws {
+        try db.create(table: "jsplugin", ifNotExists: true) {
+            $0.primaryKey("id", .text)
+
+            $0.column("meta", .text).notNull()
+            $0.column("configValues", .text).notNull()
+        }
+    }
+}
+
+extension JsPluginModel: TableRecord {
+    static let databaseTableName = "jsplugin"
+}
+
+extension JsPluginModel: Codable, FetchableRecord, PersistableRecord {}

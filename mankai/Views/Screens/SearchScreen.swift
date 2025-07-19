@@ -9,17 +9,8 @@ import SwiftUI
 
 struct SearchScreen: View {
     let query: String
-    @EnvironmentObject var appState: AppState
+    let pluginService = PluginService.shared
 
-    var body: some View {
-        SearchScreenContent(query: query, pluginService: appState.pluginService)
-    }
-}
-
-private struct SearchScreenContent: View {
-    let query: String
-
-    @ObservedObject var pluginService: PluginService
     @State private var plugins: [Plugin] = []
 
     var body: some View {

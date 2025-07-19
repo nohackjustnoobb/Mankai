@@ -9,7 +9,6 @@ import SwiftUI
 
 struct AddPluginModal: View {
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var appState: AppState
 
     @State private var useJson = false
     @State private var jsonInput: String = ""
@@ -70,7 +69,7 @@ struct AddPluginModal: View {
                                 }
 
                                 do {
-                                    try appState.pluginService.addPlugin(plugin)
+                                    try PluginService.shared.addPlugin(plugin)
                                     dismiss()
                                 } catch {
                                     errorMessage =

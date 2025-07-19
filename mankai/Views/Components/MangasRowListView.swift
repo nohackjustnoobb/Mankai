@@ -12,8 +12,6 @@ struct MangasRowListView: View {
     let plugin: Plugin
     var query: String? = nil
 
-    @EnvironmentObject var appState: AppState
-
     var body: some View {
         VStack(alignment: .leading) {
             NavigationLink(destination: {

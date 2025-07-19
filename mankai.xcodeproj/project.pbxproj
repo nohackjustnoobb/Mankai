@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E42E15032E2A9951006F8B98 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = E42E15022E2A9951006F8B98 /* GRDB */; };
 		E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */ = {isa = PBXBuildFile; productRef = E4C616462E0DA05400AC484A /* WrappingHStack */; };
 		E4FD1E772E0AC5C6000E430F /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E4FD1E762E0AC5C6000E430F /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
@@ -43,6 +44,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E4C616472E0DA05400AC484A /* WrappingHStack in Frameworks */,
+				E42E15032E2A9951006F8B98 /* GRDB in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			name = mankai;
 			packageProductDependencies = (
 				E4C616462E0DA05400AC484A /* WrappingHStack */,
+				E42E15022E2A9951006F8B98 /* GRDB */,
 			);
 			productName = mankai;
 			productReference = E40C6B342E05A95700AF2FC9 /* mankai.app */;
@@ -119,6 +122,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */,
+				E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E40C6B352E05A95700AF2FC9 /* Products */;
@@ -363,6 +367,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/dkk/WrappingHStack";
@@ -374,6 +386,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E42E15022E2A9951006F8B98 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E42E15012E2A9951006F8B98 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
 		E4C616462E0DA05400AC484A /* WrappingHStack */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E4C616452E0DA05400AC484A /* XCRemoteSwiftPackageReference "WrappingHStack" */;

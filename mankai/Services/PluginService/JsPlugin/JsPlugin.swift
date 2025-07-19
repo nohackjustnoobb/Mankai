@@ -5,8 +5,8 @@
 //  Created by Travis XU on 21/6/2025.
 //
 
-import CoreData
 import Foundation
+import GRDB
 
 enum ScriptType: String {
     case isOnline
@@ -178,9 +178,8 @@ class JsPlugin: Plugin {
         return fromJson(json)
     }
 
-    static func fromDataModel(_ jsPluginData: JsPluginData) -> JsPlugin? {
-        guard let metaString = jsPluginData.meta,
-              let metaData = metaString.data(using: .utf8),
+    static func fromDataModel(_ jsPluginModel: JsPluginModel) -> JsPlugin? {
+        guard let metaData = jsPluginModel.meta.data(using: .utf8),
               let metaJson = try? JSONSerialization.jsonObject(with: metaData) as? [String: Any]
         else {
             return nil
@@ -188,8 +187,7 @@ class JsPlugin: Plugin {
 
         // Parse config values if they exist
         var configValues: [ConfigValue]? = nil
-        if let configValuesString = jsPluginData.configValues,
-           let configValuesData = configValuesString.data(using: .utf8),
+        if let configValuesData = jsPluginModel.configValues.data(using: .utf8),
            let configValuesArray = try? JSONSerialization.jsonObject(with: configValuesData)
            as? [[String: Any]]
         {
@@ -217,21 +215,25 @@ class JsPlugin: Plugin {
     }
 
     static func loadPlugins() -> [JsPlugin] {
-        let context = DbService.shared.context
-        let request: NSFetchRequest<JsPluginData> = JsPluginData.fetchRequest()
+        guard let dbPool = DbService.shared.appDb else {
+            print("Database not available")
+            return []
+        }
 
         var results: [JsPlugin] = []
 
         do {
-            let jsPluginDataArray = try context.fetch(request)
+            try dbPool.read { db in
+                let jsPluginModels = try JsPluginModel.fetchAll(db)
 
-            for jsPluginData in jsPluginDataArray {
-                if let jsPlugin = JsPlugin.fromDataModel(jsPluginData) {
-                    results.append(jsPlugin)
+                for jsPluginModel in jsPluginModels {
+                    if let jsPlugin = JsPlugin.fromDataModel(jsPluginModel) {
+                        results.append(jsPlugin)
+                    }
                 }
             }
         } catch {
-            print("Failed to load plugins from Core Data: \(error)")
+            print("Failed to load plugins from GRDB: \(error)")
         }
 
         return results
@@ -310,15 +312,12 @@ class JsPlugin: Plugin {
     // MARK: - Methods
 
     override func savePlugin() throws {
-        let context = DbService.shared.context
-
-        let request = JsPluginData.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id)
-
-        let existingPlugins = try context.fetch(request)
-        let jsPluginData = existingPlugins.first ?? JsPluginData(context: context)
-
-        jsPluginData.id = id
+        guard let dbPool = DbService.shared.appDb else {
+            throw NSError(
+                domain: "JsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
+        }
 
         // Create scripts dictionary
         let scriptsDict = _scripts.reduce(into: [String: String]()) { dict, pair in
@@ -349,7 +348,12 @@ class JsPlugin: Plugin {
         ]
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
-        jsPluginData.meta = String(data: metaData, encoding: .utf8)
+        guard let metaString = String(data: metaData, encoding: .utf8) else {
+            throw NSError(
+                domain: "JsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "failedToEncodeMetaData"]
+            )
+        }
 
         // Create config values JSON
         let configValuesArray = _configValues.values.map { configValue in
@@ -361,27 +365,38 @@ class JsPlugin: Plugin {
         let configValuesData = try JSONSerialization.data(
             withJSONObject: configValuesArray, options: []
         )
-        jsPluginData.configValues = String(data: configValuesData, encoding: .utf8)
+        guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
+            throw NSError(
+                domain: "JsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "failedToEncodeConfigValuesData"]
+            )
+        }
 
-        // Save context
-        try context.save()
+        // Save to database
+        try dbPool.write { db in
+            let jsPluginModel = JsPluginModel(
+                id: id,
+                meta: metaString,
+                configValues: configValuesString
+            )
+            try jsPluginModel.save(db)
+        }
     }
 
     override func deletePlugin() throws {
-        let context = DbService.shared.context
-
-        // Find the plugin to delete
-        let request = JsPluginData.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %@", id)
-
-        let existingPlugins = try context.fetch(request)
-
-        for plugin in existingPlugins {
-            context.delete(plugin)
+        guard let dbPool = DbService.shared.appDb else {
+            throw NSError(
+                domain: "JsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
-        // Save context
-        try context.save()
+        try dbPool.write { db in
+            _ =
+                try JsPluginModel
+                    .filter(Column("id") == id)
+                    .deleteAll(db)
+        }
     }
 
     override func isOnline() async throws -> Bool {

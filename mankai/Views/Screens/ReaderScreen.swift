@@ -5,7 +5,6 @@
 //  Created by Travis XU on 30/6/2025.
 //
 
-import CoreData
 import SwiftUI
 import UIKit
 
@@ -232,52 +231,33 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         guard currentChapterIndex >= 0, currentChapterIndex < chapters.count else { return }
         if currentPage == lastSavedPage { return }
 
-        let context = DbService.shared.context
         let currentChapter = chapters[currentChapterIndex]
 
-        do {
-            // Find or create MangaData
-            let mangaRequest = MangaData.fetchRequest()
-            mangaRequest.predicate = NSPredicate(
-                format: "id == %@ AND plugin == %@", manga.id, plugin.id)
+        // Create manga info
+        let mangaInfo: String
+        if let mangaData = try? JSONEncoder().encode(manga) {
+            mangaInfo = String(data: mangaData, encoding: .utf8) ?? "{}"
+        } else {
+            mangaInfo = "{}"
+        }
 
-            let existingMangaData = try context.fetch(mangaRequest).first
-            let mangaData: MangaData
+        let mangaModel = MangaModel(
+            mangaId: manga.id,
+            pluginId: plugin.id,
+            info: mangaInfo)
 
-            if let existingMangaData = existingMangaData {
-                mangaData = existingMangaData
-            } else {
-                mangaData = MangaData(context: context)
-                mangaData.id = manga.id
-                mangaData.plugin = plugin.id
-            }
+        let recordModel = RecordModel(
+            mangaId: manga.id,
+            pluginId: plugin.id,
+            datetime: Date(),
+            chapterId: currentChapter.id,
+            chapterTitle: currentChapter.title,
+            page: currentPage)
 
-            // Update manga metadata - encode the complete DetailedManga object
-            if let mangaMetaData = try? JSONEncoder().encode(manga) {
-                mangaData.meta = String(data: mangaMetaData, encoding: .utf8)
-            }
-
-            // Find or create RecordData
-            let recordData: RecordData
-            if let existingRecord = mangaData.record {
-                recordData = existingRecord
-            } else {
-                recordData = RecordData(context: context)
-                mangaData.record = recordData
-                recordData.target = mangaData
-            }
-
-            // Update record data
-            recordData.chapterId = currentChapter.id
-            recordData.chapterTitle = currentChapter.title
-            recordData.page = NSDecimalNumber(value: currentPage)
-            recordData.date = Date()
-
-            // Save context
-            try context.save()
+        if let result = HistoryService.shared.update(record: recordModel, manga: mangaModel), result {
             lastSavedPage = currentPage
-        } catch {
-            print("Failed to save record: \(error)")
+        } else {
+            print("Failed to save record")
         }
     }
 

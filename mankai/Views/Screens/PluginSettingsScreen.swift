@@ -8,32 +8,25 @@
 import SwiftUI
 
 struct PluginSettingsScreen: View {
-    @EnvironmentObject var appState: AppState
-
-    var body: some View {
-        PluginSettingsScreenContent(pluginService: appState.pluginService)
-    }
-}
-
-struct PluginSettingsScreenContent: View {
     @State private var showModal = false
-    @ObservedObject var pluginService: PluginService
+    @ObservedObject var pluginService: PluginService = PluginService.shared
 
     var body: some View {
         List {
             SettingsHeaderView(
                 image: Image(systemName: "puzzlepiece.fill"), color: .red,
                 title: String(localized: "plugins"),
-                description: String(localized: "pluginsDescription"))
+                description: String(localized: "pluginsDescription")
+            )
 
             ForEach(
                 pluginService.plugins.sorted { plugin1, plugin2 in
                     let isPlugin1AppFs = plugin1 is AppDirPlugin
                     let isPlugin2AppFs = plugin2 is AppDirPlugin
 
-                    if isPlugin1AppFs && !isPlugin2AppFs {
+                    if isPlugin1AppFs, !isPlugin2AppFs {
                         return true
-                    } else if !isPlugin1AppFs && isPlugin2AppFs {
+                    } else if !isPlugin1AppFs, isPlugin2AppFs {
                         return false
                     } else {
                         return plugin1.name ?? plugin1.id < plugin2.name ?? plugin2.id
