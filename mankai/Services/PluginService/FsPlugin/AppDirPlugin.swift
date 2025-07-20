@@ -11,11 +11,17 @@ class AppDirPlugin: ReadWriteFsPlugin {
     static var shared = AppDirPlugin()
 
     private init() {
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-            .first!
-        print("AppDirPlugin initialized with documents URL: \(documentsURL.path())")
+        let fileManager = FileManager.default
+        let mangaDir = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
+            .first!.appendingPathComponent("mangas")
 
-        super.init(documentsURL.path())
+        if !fileManager.fileExists(atPath: mangaDir.path) {
+            try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
+        }
+
+        print("AppDirPlugin initialized with PATH: \(mangaDir.path())")
+
+        super.init(mangaDir.path())
     }
 
     override var id: String {

@@ -13,7 +13,7 @@ struct MangaModel {
     var info: String
 
     static func createTable(_ db: Database) throws {
-        try db.create(table: "manga", ifNotExists: true) {
+        try db.create(table: MangaModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "pluginId"])
 
             $0.column("mangaId", .text).notNull()

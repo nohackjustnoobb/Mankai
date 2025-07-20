@@ -7,6 +7,7 @@
 
 import CryptoKit
 import Foundation
+import GRDB
 
 enum ReadFsPluginConstants {
     /// Maximum number of search/list results per page
@@ -14,12 +15,6 @@ enum ReadFsPluginConstants {
 
     /// Maximum number of suggestions to return
     static let suggestionLimit: UInt = 5
-
-    /// Default cache expiry duration
-    static let defaultCacheExpiryDuration: TimeInterval = CacheDuration.oneHour.rawValue
-
-    /// Maximum number of cache entries before triggering cleanup of expired entries
-    static let maxCacheSize: Int = 100
 }
 
 class ReadFsPlugin: Plugin {
@@ -27,11 +22,14 @@ class ReadFsPlugin: Plugin {
 
     // MARK: - Cache
 
-    private var metaCache: [String: CacheEntry] = [:]
-    private let cacheLock = NSLock()
-
-    lazy var dirName: String = URL(fileURLWithPath: path).lastPathComponent
+    private lazy var dirName: String = URL(fileURLWithPath: path).lastPathComponent
+    lazy var _dbPath: String = URL(fileURLWithPath: path).appendingPathComponent("data.db").path()
     private let _id: String
+
+    private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: true)
+    var db: DatabasePool? {
+        _db
+    }
 
     init(_ path: String) {
         self.path = path
@@ -56,64 +54,6 @@ class ReadFsPlugin: Plugin {
         Genre.allCases
     }
 
-    // MARK: - Cache Methods
-
-    private func getCacheExpiryDuration() -> TimeInterval {
-        let defaults = UserDefaults.standard
-        let duration = defaults.double(forKey: SettingsKey.cacheExpiryDuration.rawValue)
-        return duration > 0 ? duration : ReadFsPluginConstants.defaultCacheExpiryDuration
-    }
-
-    private func getCacheKey(for mangaId: String) -> String {
-        return mangaId
-    }
-
-    private func getCachedMetaDict(for key: String) -> [String: Any]? {
-        // Periodically clear expired cache entries
-        if metaCache.count > ReadFsPluginConstants.maxCacheSize {
-            clearExpiredCache()
-        }
-
-        guard let entry = metaCache[key], !entry.isExpired else {
-            removeExpiredEntry(for: key)
-            return nil
-        }
-
-        return entry.data as? [String: Any]
-    }
-
-    private func setCachedMetaDict(_ data: [String: Any], for key: String) {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        let expiryTime = Date().addingTimeInterval(getCacheExpiryDuration())
-        metaCache[key] = CacheEntry(data: data, expiryTime: expiryTime)
-    }
-
-    func removeExpiredEntry(for key: String) {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        metaCache.removeValue(forKey: key)
-    }
-
-    private func clearExpiredCache() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        metaCache = metaCache.filter { _, entry in
-            !entry.isExpired
-        }
-    }
-
-    // Public method to clear cache manually
-    func clearAllCache() {
-        cacheLock.lock()
-        defer { cacheLock.unlock() }
-
-        metaCache.removeAll()
-    }
-
     // MARK: - Override Methods
 
     override func savePlugin() throws {
@@ -125,313 +65,241 @@ class ReadFsPlugin: Plugin {
     }
 
     override func isOnline() async throws -> Bool {
-        // TODO: may have remote source
-        true
+        db != nil
     }
 
-    private func searchMetaByQuery<T>(
-        query: String, limit: Int, map: @escaping ([String: Any]) -> T?
-    ) -> [T] {
-        let lowercasedQuery = query.lowercased()
-        var results: [T] = []
-        var checkedKeys: Set<String> = []
+    // MARK: - Helper Functions
 
-        for (key, entry) in metaCache {
-            if entry.isExpired { continue }
+    private func convertToManga(_ mangaModel: FsMangaModel, db: Database) throws -> Manga? {
+        let cover = try mangaModel.cover.fetchOne(db)
+        let latestChapter = try mangaModel.latestChapter.fetchOne(db)
 
-            checkedKeys.insert(key)
-            if let metaDict = entry.data as? [String: Any] {
-                let title = metaDict["title"] as? String
-                let desc = metaDict["description"] as? String
+        var mangaDict: [String: Any] = [
+            "id": mangaModel.id,
+        ]
 
-                if (title?.lowercased().contains(lowercasedQuery) == true)
-                    || (desc?.lowercased().contains(lowercasedQuery) == true)
-                {
-                    if let mapped = map(metaDict) { results.append(mapped) }
-                }
-            }
-
-            if results.count >= limit { break }
+        if let title = mangaModel.title {
+            mangaDict["title"] = title
         }
 
-        if results.count < limit {
-            let fileManager = FileManager.default
-            let pathURL = URL(fileURLWithPath: path)
-            let contents = try? fileManager.contentsOfDirectory(atPath: pathURL.path)
-            let mangaDirectories =
-                contents?.filter { item in
-                    var isDir: ObjCBool = false
-                    let itemURL = pathURL.appendingPathComponent(item)
-                    return fileManager.fileExists(atPath: itemURL.path, isDirectory: &isDir)
-                        && isDir.boolValue
-                } ?? []
-
-            for mangaId in mangaDirectories {
-                let cacheKey = getCacheKey(for: mangaId)
-                if checkedKeys.contains(cacheKey) { continue }
-
-                let mangaPath = pathURL.appendingPathComponent(mangaId)
-                let metaPath = mangaPath.appendingPathComponent("meta.json")
-                guard fileManager.fileExists(atPath: metaPath.path) else { continue }
-
-                do {
-                    let metaData = try Data(contentsOf: metaPath)
-                    if let metaDict = try JSONSerialization.jsonObject(with: metaData, options: [])
-                        as? [String: Any]
-                    {
-                        setCachedMetaDict(metaDict, for: cacheKey)
-
-                        let title = metaDict["title"] as? String
-                        let desc = metaDict["description"] as? String
-
-                        if (title?.lowercased().contains(lowercasedQuery) == true)
-                            || (desc?.lowercased().contains(lowercasedQuery) == true)
-                        {
-                            if let mapped = map(metaDict) { results.append(mapped) }
-                        }
-                    }
-
-                } catch { continue }
-
-                if results.count >= limit { break }
-            }
+        if let coverPath = cover?.path {
+            mangaDict["cover"] = coverPath
         }
 
-        return Array(results.prefix(limit))
+        if let status = mangaModel.status {
+            mangaDict["status"] = UInt(status)
+        }
+
+        if let chapter = latestChapter {
+            mangaDict["latestChapter"] = [
+                "id": chapter.id.flatMap { String($0) },
+                "title": chapter.title,
+            ]
+        }
+
+        return Manga(from: mangaDict)
+    }
+
+    private func convertToDetailedManga(_ mangaModel: FsMangaModel, db: Database) throws -> DetailedManga? {
+        let cover = try mangaModel.cover.fetchOne(db)
+        let latestChapter = try mangaModel.latestChapter.fetchOne(db)
+        let chapterGroups = try mangaModel.chapters.fetchAll(db)
+
+        var mangaDict: [String: Any] = [
+            "id": mangaModel.id,
+        ]
+
+        if let title = mangaModel.title {
+            mangaDict["title"] = title
+        }
+
+        if let coverPath = cover?.path {
+            mangaDict["cover"] = coverPath
+        }
+
+        if let status = mangaModel.status {
+            mangaDict["status"] = UInt(status)
+        }
+
+        if let description = mangaModel.description {
+            mangaDict["description"] = description
+        }
+
+        if let updatedAt = mangaModel.updatedAt {
+            mangaDict["updatedAt"] = Int64(updatedAt.timeIntervalSince1970 * 1000)
+        }
+
+        let authors = mangaModel.authors.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        mangaDict["authors"] = authors
+
+        let genres = mangaModel.genres.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        mangaDict["genres"] = genres
+
+        if let chapter = latestChapter {
+            mangaDict["latestChapter"] = [
+                "id": chapter.id.flatMap { String($0) },
+                "title": chapter.title,
+            ]
+        }
+
+        var chaptersDict: [String: [[String: Any?]]] = [:]
+        for group in chapterGroups {
+            let chapters = try group.chapters.fetchAll(db)
+            let chaptersArray = chapters.map { chapter in
+                [
+                    "id": String(chapter.id!),
+                    "title": chapter.title,
+                ] as [String: Any?]
+            }
+
+            // Build a dictionary for fast lookup
+            let chapterDict = Dictionary(
+                uniqueKeysWithValues: chaptersArray.compactMap { item in
+                    (item["id"] as! String, item)
+                })
+            let orderIds = group.order.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+            let sortedChaptersArray = orderIds.compactMap { chapterDict[$0] }
+            chaptersDict[group.title] = sortedChaptersArray
+        }
+        mangaDict["chapters"] = chaptersDict
+
+        return DetailedManga(from: mangaDict)
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
-        let suggestionLimit = Int(ReadFsPluginConstants.suggestionLimit)
-        return searchMetaByQuery(query: query, limit: suggestionLimit) { metaDict in
-            metaDict["title"] as? String
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+        }
+
+        return try await db.read { db in
+            let searchQuery = "%\(query.lowercased())%"
+            let mangas =
+                try FsMangaModel
+                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                    .limit(Int(ReadFsPluginConstants.suggestionLimit))
+                    .fetchAll(db)
+
+            return mangas.compactMap { $0.title }
         }
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
-        let limit = Int(ReadFsPluginConstants.pageLimit)
-
-        let startIndex = Int((page - 1) * UInt(limit))
-        let endIndex = startIndex + limit
-
-        let allResults = searchMetaByQuery(query: query, limit: endIndex + 1) { metaDict in
-            Manga(from: metaDict)
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        if startIndex >= allResults.count { return [] }
-        return Array(allResults[startIndex..<min(endIndex, allResults.count)])
+        return try await db.read { db in
+            let searchQuery = "%\(query.lowercased())%"
+            let offset = Int((page - 1) * ReadFsPluginConstants.pageLimit)
+            let limit = Int(ReadFsPluginConstants.pageLimit)
+
+            let mangas =
+                try FsMangaModel
+                    .filter(sql: "LOWER(title) LIKE ?", arguments: [searchQuery])
+                    .limit(limit, offset: offset)
+                    .fetchAll(db)
+
+            return try mangas.compactMap { mangaModel in
+                try self.convertToManga(mangaModel, db: db)
+            }
+        }
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: pathURL.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            return []
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        let contents = try fileManager.contentsOfDirectory(atPath: pathURL.path)
-        var mangaDirectories: [String] = []
+        return try await db.read { db in
+            let offset = Int((page - 1) * ReadFsPluginConstants.pageLimit)
+            let limit = Int(ReadFsPluginConstants.pageLimit)
 
-        for item in contents {
-            let itemURL = pathURL.appendingPathComponent(item)
-            var itemIsDirectory: ObjCBool = false
-            if fileManager.fileExists(atPath: itemURL.path, isDirectory: &itemIsDirectory)
-                && itemIsDirectory.boolValue
-            {
-                mangaDirectories.append(item)
+            var query = FsMangaModel.all()
+
+            // Filter by genre if not "all"
+            if genre != .all {
+                let genreQuery = "%\(genre.rawValue)%"
+                query = query.filter(sql: "LOWER(genres) LIKE ?", arguments: [genreQuery])
+            }
+
+            // Filter by status if not "any"
+            if status != .any {
+                query = query.filter(Column("status") == Int(status.rawValue))
+            }
+
+            let mangas =
+                try query
+                    .limit(limit, offset: offset)
+                    .fetchAll(db)
+
+            return try mangas.compactMap { mangaModel in
+                try self.convertToManga(mangaModel, db: db)
             }
         }
-
-        mangaDirectories.sort()
-
-        let limit = ReadFsPluginConstants.pageLimit
-        let startIndex = Int((page - 1) * limit)
-        let endIndex = min(startIndex + Int(limit), mangaDirectories.count)
-
-        guard startIndex < mangaDirectories.count else {
-            return []
-        }
-
-        let pageDirectories = Array(mangaDirectories[startIndex..<endIndex])
-        var mangas: [Manga] = []
-
-        for mangaId in pageDirectories {
-            let mangaPath = pathURL.appendingPathComponent(mangaId)
-            let metaPath = mangaPath.appendingPathComponent("meta.json")
-
-            guard fileManager.fileExists(atPath: metaPath.path) else {
-                continue
-            }
-
-            let cacheKey = getCacheKey(for: mangaId)
-            var metaDict: [String: Any]?
-
-            if let cachedDict = getCachedMetaDict(for: cacheKey) {
-                metaDict = cachedDict
-            } else {
-                do {
-                    let metaData = try Data(contentsOf: metaPath)
-                    metaDict =
-                        try JSONSerialization.jsonObject(with: metaData, options: [])
-                            as? [String: Any]
-
-                    if let dict = metaDict {
-                        setCachedMetaDict(dict, for: cacheKey)
-                    }
-                } catch {
-                    continue
-                }
-            }
-
-            if let metaDict = metaDict, let manga = Manga(from: metaDict) {
-                if genre != .all {
-                    if let metaGenres = metaDict["genres"] as? [String] {
-                        if !metaGenres.contains(genre.rawValue) {
-                            continue
-                        }
-                    } else {
-                        continue
-                    }
-                }
-
-                if status != .any {
-                    if manga.status != status {
-                        continue
-                    }
-                }
-
-                mangas.append(manga)
-            }
-        }
-
-        return mangas
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
-        let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-        var mangas: [Manga] = []
-
-        for mangaId in ids {
-            let cacheKey = getCacheKey(for: mangaId)
-            var metaDict: [String: Any]?
-
-            if let cachedDict = getCachedMetaDict(for: cacheKey) {
-                metaDict = cachedDict
-            } else {
-                let mangaPath = pathURL.appendingPathComponent(mangaId)
-                let metaPath = mangaPath.appendingPathComponent("meta.json")
-
-                guard fileManager.fileExists(atPath: metaPath.path) else {
-                    continue
-                }
-
-                do {
-                    let metaData = try Data(contentsOf: metaPath)
-                    metaDict =
-                        try JSONSerialization.jsonObject(with: metaData, options: [])
-                            as? [String: Any]
-
-                    if let dict = metaDict {
-                        setCachedMetaDict(dict, for: cacheKey)
-                    }
-                } catch {
-                    continue
-                }
-            }
-
-            if let metaDict = metaDict, let manga = Manga(from: metaDict) {
-                mangas.append(manga)
-            }
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        return mangas
+        return try await db.read { db in
+            let mangas =
+                try FsMangaModel
+                    .filter(ids.contains(Column("id")))
+                    .fetchAll(db)
+
+            return try mangas.compactMap { mangaModel in
+                try self.convertToManga(mangaModel, db: db)
+            }
+        }
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
-        let cacheKey = getCacheKey(for: id)
-        var metaDict: [String: Any]?
-
-        if let cachedDict = getCachedMetaDict(for: cacheKey) {
-            metaDict = cachedDict
-        } else {
-            let fileManager = FileManager.default
-            let pathURL = URL(fileURLWithPath: path)
-            let mangaPath = pathURL.appendingPathComponent(id)
-            let metaPath = mangaPath.appendingPathComponent("meta.json")
-
-            guard fileManager.fileExists(atPath: metaPath.path) else {
-                throw NSError(
-                    domain: "ReadFsPlugin", code: 404,
-                    userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"])
-            }
-
-            do {
-                let metaData = try Data(contentsOf: metaPath)
-                metaDict =
-                    try JSONSerialization.jsonObject(with: metaData, options: []) as? [String: Any]
-
-                if let dict = metaDict {
-                    setCachedMetaDict(dict, for: cacheKey)
-                }
-            } catch {
-                throw error
-            }
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        guard let metaDict = metaDict, let detailedManga = DetailedManga(from: metaDict) else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga"])
-        }
+        return try await db.read { db in
+            guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
+                throw NSError(domain: "ReadFsPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"])
+            }
 
-        return detailedManga
+            guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
+                throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "failedToLoadMangaDetails"])
+            }
+
+            return detailedManga
+        }
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
-        guard let chapterId = chapter.id else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"])
+        guard let db = db else {
+            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-        let chapterPath = pathURL.appendingPathComponent(manga.id).appendingPathComponent(chapterId)
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "ReadFsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
+        guard let chapterId = chapter.id, let chapterIdInt = Int(chapterId) else {
+            throw NSError(domain: "ReadFsPlugin", code: 400, userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"])
         }
 
-        let metaPath = chapterPath.appendingPathComponent("meta.json")
-        guard fileManager.fileExists(atPath: metaPath.path) else {
-            return []
-        }
-        let metaData = try Data(contentsOf: metaPath)
-        guard
-            let hashes = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String]
-        else {
-            return []
-        }
-
-        var imagePaths: [String] = []
-        let contents = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-        for hash in hashes {
-            if let fileName = contents.first(where: { $0.hasPrefix(hash + ".") }) {
-                imagePaths.append("\(manga.id)/\(chapterId)/\(fileName)")
+        return try await db.read { db in
+            guard let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) else {
+                throw NSError(domain: "ReadFsPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
             }
+
+            let imageIds = chapterModel.order.components(separatedBy: "|")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .compactMap { Int($0) }
+
+            let images =
+                try FsImageModel
+                    .filter(Column("chapterId") == chapterIdInt)
+                    .fetchAll(db)
+
+            let imageDict = Dictionary(uniqueKeysWithValues: images.map { ($0.id, $0.path) })
+
+            return imageIds.compactMap { imageDict[$0] }
         }
-        return imagePaths
     }
 
     override func getImage(_ url: String) async throws -> Data {
