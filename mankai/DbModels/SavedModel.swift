@@ -15,7 +15,7 @@ struct SavedModel {
     var updates: Bool
 
     static func createTable(_ db: Database) throws {
-        try db.create(table: "saved", ifNotExists: true) {
+        try db.create(table: SavedModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "pluginId"])
 
             $0.column("mangaId", .text).notNull()
@@ -23,7 +23,7 @@ struct SavedModel {
             $0.column("datetime", .datetime).notNull()
             $0.column("updates", .boolean).notNull()
 
-            $0.foreignKey(["mangaId", "pluginId"], references: "manga", onDelete: .cascade)
+            $0.foreignKey(["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

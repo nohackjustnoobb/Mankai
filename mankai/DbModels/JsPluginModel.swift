@@ -13,7 +13,7 @@ struct JsPluginModel {
     var configValues: String
 
     static func createTable(_ db: Database) throws {
-        try db.create(table: "jsplugin", ifNotExists: true) {
+        try db.create(table: JsPluginModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey("id", .text)
 
             $0.column("meta", .text).notNull()

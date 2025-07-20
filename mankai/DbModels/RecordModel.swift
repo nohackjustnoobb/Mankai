@@ -17,7 +17,7 @@ struct RecordModel {
     var page: Int
 
     static func createTable(_ db: Database) throws {
-        try db.create(table: "record", ifNotExists: true) {
+        try db.create(table: RecordModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "pluginId"])
 
             $0.column("mangaId", .text).notNull()
@@ -27,7 +27,7 @@ struct RecordModel {
             $0.column("chapterId", .text)
             $0.column("chapterTitle", .text)
 
-            $0.foreignKey(["mangaId", "pluginId"], references: "manga", onDelete: .cascade)
+            $0.foreignKey(["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade)
         }
     }
 }

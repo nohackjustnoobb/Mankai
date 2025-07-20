@@ -7,81 +7,193 @@
 
 import CryptoKit
 import Foundation
+import GRDB
+import UIKit
 
 class ReadWriteFsPlugin: ReadFsPlugin {
+    private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: false)
+    override var db: DatabasePool? {
+        return _db
+    }
+
     // MARK: - Metadata
 
     override var tag: String? {
         String(localized: "rwfs")
     }
 
+    // MARK: - Helper Methods
+
+    private func getImageInfo(from imageData: Data) -> (format: String, width: Int, height: Int) {
+        let format = NSData(data: imageData).imageFormat.rawValue
+
+        if let uiImage = UIImage(data: imageData) {
+            return (format, Int(uiImage.size.width), Int(uiImage.size.height))
+        }
+
+        return (format, 0, 0)
+    }
+
     // MARK: - Methods
 
     func updateManga(_ manga: DetailedManga) async throws {
-        let mangaPath = URL(fileURLWithPath: path).appendingPathComponent(manga.id)
-        let metaPath = mangaPath.appendingPathComponent("meta.json")
-        let fileManager = FileManager.default
-
-        var isDirectory: ObjCBool = false
-        let mangaDirectoryExists =
-            fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-                && isDirectory.boolValue
-
-        if mangaDirectoryExists {
-            let mangaData = try JSONEncoder().encode(manga)
-            try mangaData.write(to: metaPath)
-
-            let existingItems = try fileManager.contentsOfDirectory(atPath: mangaPath.path)
-            let existingChapterDirectories = existingItems.filter { item in
-                let itemPath = mangaPath.appendingPathComponent(item)
-                var isDir: ObjCBool = false
-                return fileManager.fileExists(atPath: itemPath.path, isDirectory: &isDir)
-                    && isDir.boolValue && item != "meta.json"
-            }
-
-            let validChapterIds = Set(
-                manga.chapters.values.flatMap { chapters in
-                    chapters.compactMap { $0.id }
-                })
-
-            for chapterDirectory in existingChapterDirectories {
-                if !validChapterIds.contains(chapterDirectory) {
-                    let chapterPath = mangaPath.appendingPathComponent(chapterDirectory)
-                    try fileManager.removeItem(at: chapterPath)
-                }
-            }
-
-            for chapterId in validChapterIds {
-                let chapterPath = mangaPath.appendingPathComponent(chapterId)
-                var isDir: ObjCBool = false
-                let chapterExists =
-                    fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDir)
-                        && isDir.boolValue
-
-                if !chapterExists {
-                    try fileManager.createDirectory(
-                        at: chapterPath, withIntermediateDirectories: false, attributes: nil)
-                }
-            }
-        } else {
-            try fileManager.createDirectory(
-                at: mangaPath, withIntermediateDirectories: true, attributes: nil)
-            let mangaData = try JSONEncoder().encode(manga)
-            try mangaData.write(to: metaPath)
-
-            let validChapterIds = Set(
-                manga.chapters.values.flatMap { chapters in
-                    chapters.compactMap { $0.id }
-                })
-
-            for chapterId in validChapterIds {
-                let chapterPath = mangaPath.appendingPathComponent(chapterId)
-                try fileManager.createDirectory(
-                    at: chapterPath, withIntermediateDirectories: false, attributes: nil)
-            }
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        removeExpiredEntry(for: manga.id)
+        try await db.write { db in
+            let latestChapterId: Int? = {
+                if let latestChapter = manga.latestChapter,
+                   let latestId = latestChapter.id,
+                   let latestIdInt = Int(latestId)
+                {
+                    return latestIdInt
+                }
+
+                return nil
+            }()
+
+            var mangaModel = FsMangaModel(
+                id: manga.id,
+                title: manga.title,
+                status: manga.status.map { Int($0.rawValue) },
+                description: manga.description,
+                updatedAt: manga.updatedAt,
+                authors: manga.authors.joined(separator: "|"),
+                genres: manga.genres.map { $0.rawValue }.joined(separator: "|"),
+                latestChapterId: latestChapterId
+            )
+
+            try mangaModel.upsert(db)
+
+            // Delete chapters
+            let chaptersId = manga.chapters.flatMap { _, chapters in
+                chapters.compactMap { chapter in
+                    chapter.id.flatMap { String($0) }
+                }
+            }
+            let chapterIdsToDelete: [Int] =
+                try FsChapterModel
+                    .filter(!chaptersId.contains(Column("id")))
+                    .fetchAll(db)
+                    .map { $0.id! }
+            try FsChapterModel
+                .filter(keys: chapterIdsToDelete)
+                .deleteAll(db)
+
+            let fileManager = FileManager.default
+            let pathURL = URL(fileURLWithPath: self.path)
+                .appendingPathComponent(manga.id)
+            for chapterId in chapterIdsToDelete {
+                let chapterDir =
+                    pathURL
+                        .appendingPathComponent("chapters")
+                        .appendingPathComponent(String(chapterId))
+
+                if fileManager.fileExists(atPath: chapterDir.path) {
+                    try? fileManager.removeItem(at: chapterDir)
+                }
+            }
+
+            // Create or update chapter groups
+            let chapterKeys = Set(manga.chapters.map { $0.key })
+
+            let chapterKeysToDelete: [Int] =
+                try FsChapterGroupModel
+                    .filter(!chapterKeys.contains(Column("title")) && Column("mangaId") == manga.id)
+                    .fetchAll(db)
+                    .map { $0.id! }
+
+            let existingChapterGroupTitles: [String] =
+                try FsChapterGroupModel
+                    .filter(Column("mangaId") == manga.id)
+                    .fetchAll(db)
+                    .map { $0.title }
+            let missingChapterGroupKeys = chapterKeys.filter { !existingChapterGroupTitles.contains($0) }
+
+            for key in missingChapterGroupKeys {
+                let chapterGroup = FsChapterGroupModel(
+                    mangaId: manga.id,
+                    title: key,
+                    order: ""
+                )
+                try chapterGroup.insert(db)
+            }
+
+            // Update chapters
+            let allChapterGroups =
+                try FsChapterGroupModel
+                    .filter(Column("mangaId") == manga.id)
+                    .fetchAll(db)
+            var chapterGroupIdByKey: [String: Int] = [:]
+            for group in allChapterGroups {
+                if let groupId = group.id {
+                    chapterGroupIdByKey[group.title] = groupId
+                }
+            }
+
+            var chapterInfoById: [Int: (title: String, chapterKey: String)] = [:]
+            var chapterIdsByKey: [String: [Int]] = [:]
+            for (chapterKey, chapters) in manga.chapters {
+                for chapter in chapters {
+                    if let chapterIdStr = chapter.id, let chapterId = Int(chapterIdStr) {
+                        chapterInfoById[chapterId] = (chapter.title ?? "", chapterKey)
+                        chapterIdsByKey[chapterKey, default: []].append(chapterId)
+                    } else {
+                        let groupId = chapterGroupIdByKey[chapterKey]!
+                        var newChapter = FsChapterModel(
+                            title: chapter.title ?? "",
+                            order: "",
+                            chapterGroupId: groupId
+                        )
+                        newChapter = try newChapter.insertAndFetch(db)
+
+                        if let newId = newChapter.id {
+                            chapterInfoById[newId] = (chapter.title ?? "", chapterKey)
+                            chapterIdsByKey[chapterKey, default: []].append(newId)
+
+                            if manga.latestChapter?.title == chapter.title {
+                                mangaModel.latestChapterId = newId
+                                try mangaModel.update(db)
+                            }
+                        }
+                    }
+                }
+            }
+
+            let existingChapters =
+                try FsChapterModel
+                    .filter(chaptersId.contains(Column("id")))
+                    .fetchAll(db)
+            for var existingChapter in existingChapters {
+                if let info = chapterInfoById[existingChapter.id ?? -1],
+                   let groupId = chapterGroupIdByKey[info.chapterKey]
+                {
+                    existingChapter.title = info.title
+                    existingChapter.chapterGroupId = groupId
+                    try existingChapter.update(db)
+                }
+            }
+
+            // Delete chapter groups that are no longer needed
+            try FsChapterGroupModel
+                .filter(keys: chapterKeysToDelete)
+                .deleteAll(db)
+
+            // Update the order of chapters in each group
+            for (chapterKey, chapterIds) in chapterIdsByKey {
+                if let groupId = chapterGroupIdByKey[chapterKey] {
+                    let chapterOrder = chapterIds.map { String($0) }.joined(separator: "|")
+                    let chapterGroup = FsChapterGroupModel(
+                        id: groupId,
+                        mangaId: manga.id,
+                        title: chapterKey,
+                        order: chapterOrder
+                    )
+                    try chapterGroup.update(db)
+                }
+            }
+        }
 
         await MainActor.run {
             objectWillChange.send()
@@ -89,22 +201,23 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func deleteManga(_ mangaId: String) async throws {
-        let mangaPath = URL(fileURLWithPath: path).appendingPathComponent(mangaId)
-        let fileManager = FileManager.default
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"])
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        try fileManager.removeItem(at: mangaPath)
+        let _ = try await db.write { db in
+            try FsMangaModel
+                .filter(Column("id") == mangaId)
+                .deleteAll(db)
+        }
 
-        removeExpiredEntry(for: mangaId)
+        let fileManager = FileManager.default
+        let pathURL = URL(fileURLWithPath: path)
+        let mangaDir = pathURL.appendingPathComponent(mangaId)
+
+        if fileManager.fileExists(atPath: mangaDir.path) {
+            try? fileManager.removeItem(at: mangaDir)
+        }
 
         await MainActor.run {
             objectWillChange.send()
@@ -112,46 +225,56 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func updateCover(mangaId: String, image: Data) async throws {
-        let mangaPath = URL(fileURLWithPath: path).appendingPathComponent(mangaId)
-        let fileManager = FileManager.default
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: mangaPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"])
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        let imageFormat = NSData(data: image).imageFormat
-        let newCoverFileName = "cover.\(imageFormat.rawValue)"
-        let coverPath = mangaPath.appendingPathComponent(newCoverFileName)
+        let fileManager = FileManager.default
+        let pathURL = URL(fileURLWithPath: path)
+        let mangaCoverDir = pathURL.appendingPathComponent(mangaId)
 
-        let existingFiles = try fileManager.contentsOfDirectory(atPath: mangaPath.path)
-        let existingCover = existingFiles.first(where: { $0.hasPrefix("cover.") })
-        let coverFileChanged = (existingCover != newCoverFileName)
+        let imageInfo = getImageInfo(from: image)
+        let coverFileName = "cover.\(imageInfo.format)"
+
+        if !fileManager.fileExists(atPath: mangaCoverDir.path) {
+            try fileManager.createDirectory(at: mangaCoverDir, withIntermediateDirectories: true)
+        }
+
+        let coverPath = mangaCoverDir.appendingPathComponent(coverFileName)
+        let relativeCoverPath = "\(mangaId)/\(coverFileName)"
+
+        let existingCover = try await db.read { db in
+            try FsImageModel
+                .filter(Column("mangaId") == mangaId && Column("chapterId") == nil)
+                .fetchOne(db)
+        }
+
         if let existingCover = existingCover {
-            let existingCoverPath = mangaPath.appendingPathComponent(existingCover)
-            try? fileManager.removeItem(at: existingCoverPath)
+            let oldCoverPath = pathURL.appendingPathComponent(existingCover.path)
+            if fileManager.fileExists(atPath: oldCoverPath.path) {
+                try fileManager.removeItem(at: oldCoverPath)
+            }
         }
 
         try image.write(to: coverPath)
 
-        let metaPath = mangaPath.appendingPathComponent("meta.json")
-        if coverFileChanged, fileManager.fileExists(atPath: metaPath.path) {
-            let metaData = try Data(contentsOf: metaPath)
-            if var metaDict = try JSONSerialization.jsonObject(with: metaData, options: [])
-                as? [String: Any]
-            {
-                metaDict["cover"] = "\(mangaId)/\(newCoverFileName)"
-                let updatedMetaData = try JSONSerialization.data(
-                    withJSONObject: metaDict, options: .prettyPrinted)
-                try updatedMetaData.write(to: metaPath)
+        try await db.write { db in
+            if let existingCover = existingCover {
+                var updatedCover = existingCover
+                updatedCover.path = relativeCoverPath
+                updatedCover.width = imageInfo.width
+                updatedCover.height = imageInfo.height
+                try updatedCover.update(db)
+            } else {
+                let coverImage = FsImageModel(
+                    path: relativeCoverPath,
+                    width: imageInfo.width,
+                    height: imageInfo.height,
+                    mangaId: mangaId,
+                    chapterId: nil
+                )
+                try coverImage.insert(db)
             }
-
-            removeExpiredEntry(for: mangaId)
         }
 
         await MainActor.run {
@@ -160,125 +283,135 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func addImages(mangaId: String, chapterId: String, images: [Data]) async throws {
-        let chapterPath = URL(fileURLWithPath: path)
-            .appendingPathComponent(mangaId)
-            .appendingPathComponent(chapterId)
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+        }
+
         let fileManager = FileManager.default
+        let pathURL = URL(fileURLWithPath: path)
+        let chapterDir =
+            pathURL
+                .appendingPathComponent(mangaId)
+                .appendingPathComponent("chapters")
+                .appendingPathComponent(chapterId)
 
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
+        if !fileManager.fileExists(atPath: chapterDir.path) {
+            try fileManager.createDirectory(at: chapterDir, withIntermediateDirectories: true)
         }
 
-        let metaPath = chapterPath.appendingPathComponent("meta.json")
-        var imageOrder: [String] = []
-        if fileManager.fileExists(atPath: metaPath.path) {
-            let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
-                imageOrder = arr
+        var writtenFiles: [URL] = []
+        var imagePaths: [(String, String, Int, Int)] = []
+
+        do {
+            for imageData in images {
+                let imageInfo = getImageInfo(from: imageData)
+                let imageFileName = "\(UUID().uuidString).\(imageInfo.format)"
+
+                let imagePath = chapterDir.appendingPathComponent(imageFileName)
+                let relativeImagePath = "\(mangaId)/chapters/\(chapterId)/\(imageFileName)"
+
+                try imageData.write(to: imagePath)
+                writtenFiles.append(imagePath)
+                imagePaths.append((relativeImagePath, imageFileName, imageInfo.width, imageInfo.height))
             }
-        }
 
-        for imageData in images {
-            var uuid = UUID().uuidString
-            while imageOrder.contains(uuid) {
-                uuid = UUID().uuidString
+            let pathsToInsert = imagePaths
+            try await db.write { db in
+                var imageIds: [String] = []
+
+                for (relativeImagePath, _, width, height) in pathsToInsert {
+                    var imageModel = FsImageModel(
+                        path: relativeImagePath,
+                        width: width,
+                        height: height,
+                        mangaId: nil,
+                        chapterId: Int(chapterId)
+                    )
+                    imageModel = try imageModel.insertAndFetch(db)
+
+                    imageIds.append(String(imageModel.id!))
+                }
+
+                if let chapterIdInt = Int(chapterId) {
+                    if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                        var updatedChapter = chapterModel
+                        let existingIds = chapterModel.order.isEmpty ? [] : chapterModel.order.components(separatedBy: "|")
+                        let newOrder = existingIds + imageIds
+                        updatedChapter.order = newOrder.joined(separator: "|")
+                        try updatedChapter.update(db)
+                    }
+                }
             }
-            let imageFormat = NSData(data: imageData).imageFormat
-            let fileName = "\(uuid).\(imageFormat.rawValue)"
-            let imagePath = chapterPath.appendingPathComponent(fileName)
-
-            try imageData.write(to: imagePath)
-            imageOrder.append(uuid)
+        } catch {
+            for fileURL in writtenFiles {
+                try? fileManager.removeItem(at: fileURL)
+            }
+            throw error
         }
 
-        let updatedMetaData = try JSONSerialization.data(
-            withJSONObject: imageOrder, options: [])
-        try updatedMetaData.write(to: metaPath)
+        await MainActor.run {
+            objectWillChange.send()
+        }
     }
 
     func removeImages(mangaId: String, chapterId: String, ids: [String]) async throws {
-        let chapterPath = URL(fileURLWithPath: path)
-            .appendingPathComponent(mangaId)
-            .appendingPathComponent(chapterId)
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+        }
+
         let fileManager = FileManager.default
+        let pathURL = URL(fileURLWithPath: path)
 
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
+        let imageModels = try await db.read { db in
+            let imageIds = ids.compactMap { Int($0) }
+            return try FsImageModel.filter(keys: imageIds).fetchAll(db)
         }
 
-        let metaPath = chapterPath.appendingPathComponent("meta.json")
-        var imageOrder: [String] = []
-        if fileManager.fileExists(atPath: metaPath.path) {
-            let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
-                imageOrder = arr
-            }
-        }
+        try await db.write { db in
+            let imageIds = ids.compactMap { Int($0) }
+            try FsImageModel.filter(keys: imageIds).deleteAll(db)
 
-        for id in ids {
-            let files = try fileManager.contentsOfDirectory(atPath: chapterPath.path)
-            for file in files {
-                if file.hasPrefix(id + ".") {
-                    let imagePath = chapterPath.appendingPathComponent(file)
-                    if fileManager.fileExists(atPath: imagePath.path) {
-                        try fileManager.removeItem(at: imagePath)
-                    }
+            if let chapterIdInt = Int(chapterId) {
+                if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                    let currentIds = chapterModel.order.components(separatedBy: "|")
+                        .filter { !ids.contains($0) && !$0.isEmpty }
+
+                    var updatedChapter = chapterModel
+                    updatedChapter.order = currentIds.joined(separator: "|")
+                    try updatedChapter.update(db)
                 }
             }
         }
 
-        imageOrder.removeAll { ids.contains($0) }
-        let updatedMetaData = try JSONSerialization.data(
-            withJSONObject: imageOrder, options: .prettyPrinted)
-        try updatedMetaData.write(to: metaPath)
-    }
-
-    func arrangeImageOrder(mangaId: String, chapterId: String, ids: [String]) async throws {
-        let chapterPath = URL(fileURLWithPath: path)
-            .appendingPathComponent(mangaId)
-            .appendingPathComponent(chapterId)
-        let fileManager = FileManager.default
-
-        var isDirectory: ObjCBool = false
-        guard
-            fileManager.fileExists(atPath: chapterPath.path, isDirectory: &isDirectory)
-            && isDirectory.boolValue
-        else {
-            throw NSError(
-                domain: "FsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
-        }
-
-        let metaPath = chapterPath.appendingPathComponent("meta.json")
-        var imageOrder: [String] = []
-        if fileManager.fileExists(atPath: metaPath.path) {
-            let metaData = try Data(contentsOf: metaPath)
-            if let arr = try? JSONSerialization.jsonObject(with: metaData, options: []) as? [String] {
-                imageOrder = arr
+        for imageModel in imageModels {
+            let imagePath = pathURL.appendingPathComponent(imageModel.path)
+            if fileManager.fileExists(atPath: imagePath.path) {
+                try? fileManager.removeItem(at: imagePath)
             }
         }
 
-        guard ids.count == imageOrder.count else {
-            throw NSError(
-                domain: "FsPlugin", code: 400,
-                userInfo: [NSLocalizedDescriptionKey: "ordersCountMismatch"])
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    func arrangeImageOrder(mangaId: String, chapterId: String, ids: [String]) async throws {
+        guard let db = db else {
+            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
         }
 
-        imageOrder = ids
-        let updatedMetaData = try JSONSerialization.data(
-            withJSONObject: imageOrder, options: .prettyPrinted)
-        try updatedMetaData.write(to: metaPath)
+        try await db.write { db in
+            if let chapterIdInt = Int(chapterId) {
+                if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                    var updatedChapter = chapterModel
+                    updatedChapter.order = ids.joined(separator: "|")
+                    try updatedChapter.update(db)
+                }
+            }
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
     }
 }

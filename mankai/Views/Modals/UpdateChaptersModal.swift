@@ -140,7 +140,7 @@ struct UpdateChaptersModal: View {
             Button("add") {
                 let trimmedName = newChapterName.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmedName.isEmpty {
-                    let newChapter = Chapter(id: UUID().uuidString, title: trimmedName)
+                    let newChapter = Chapter(title: trimmedName)
                     chapters.append(newChapter)
                     update()
                 }

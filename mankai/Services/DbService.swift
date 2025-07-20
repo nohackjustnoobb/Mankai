@@ -31,4 +31,28 @@ class DbService {
 
         return dbPool
     }()
+
+    private var fsDb: [String: DatabasePool] = [:]
+
+    func openFsDb(_ path: String, readOnly: Bool) -> DatabasePool? {
+        var config = Configuration()
+        config.readonly = readOnly
+
+        let pool = try? DatabasePool(path: path, configuration: config)
+
+        try? pool?.write { db in
+            try FsMangaModel.createTable(db)
+            try FsChapterGroupModel.createTable(db)
+            try FsChapterModel.createTable(db)
+            try FsImageModel.createTable(db)
+        }
+
+        fsDb[path] = pool
+
+        return pool
+    }
+
+    func getFsDb(_ path: String) -> DatabasePool? {
+        return fsDb[path]
+    }
 }

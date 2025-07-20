@@ -633,8 +633,21 @@ class JsPlugin: Plugin {
     override func getImage(_ url: String) async throws -> Data {
         // Check cache first
         let cacheKey = getCacheKey(for: .getImage, with: [url])
-        if let cachedImageData = getCachedData(for: cacheKey, as: Data.self) {
-            return cachedImageData
+
+        let fileManager = FileManager.default
+        let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
+
+        let pluginCacheDir = cacheDir.appendingPathComponent(_id)
+        if !fileManager.fileExists(atPath: pluginCacheDir.path) {
+            try? fileManager.createDirectory(at: pluginCacheDir, withIntermediateDirectories: true, attributes: nil)
+        }
+
+        // Try to read from disk cache
+        let imageCacheFile = pluginCacheDir.appendingPathComponent(cacheKey)
+        if fileManager.fileExists(atPath: imageCacheFile.path) {
+            if let data = try? Data(contentsOf: imageCacheFile) {
+                return data
+            }
         }
 
         if _scripts[.getImage] == nil {
@@ -663,8 +676,8 @@ class JsPlugin: Plugin {
             )
         }
 
-        // Cache the result
-        setCachedData(imageData, for: cacheKey)
+        // Write to disk cache
+        try? imageData.write(to: imageCacheFile)
 
         return imageData
     }
