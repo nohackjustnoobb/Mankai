@@ -57,31 +57,31 @@ struct Manga: Identifiable, Codable {
         }
 
         self.id = id
-        self.title = dict["title"] as? String
-        self.cover = dict["cover"] as? String
-        self.meta = dict["meta"] as? String
+        title = dict["title"] as? String
+        cover = dict["cover"] as? String
+        meta = dict["meta"] as? String
 
         if let statusValue = dict["status"] {
             if let statusUInt = statusValue as? UInt {
-                self.status = Status(rawValue: statusUInt)
+                status = Status(rawValue: statusUInt)
             } else if let statusString = statusValue as? String,
                       let statusUInt = UInt(statusString)
             {
-                self.status = Status(rawValue: statusUInt)
+                status = Status(rawValue: statusUInt)
             } else {
-                self.status = nil
+                status = nil
             }
         } else {
-            self.status = nil
+            status = nil
         }
 
         if let chapterDict = dict["latestChapter"] as? [String: Any] {
-            self.latestChapter = Chapter(
+            latestChapter = Chapter(
                 id: chapterDict["id"] as? String,
                 title: chapterDict["title"] as? String
             )
         } else {
-            self.latestChapter = nil
+            latestChapter = nil
         }
     }
 }

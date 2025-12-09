@@ -15,7 +15,10 @@ class DbService {
     private init() {}
 
     lazy var appDb: DatabasePool? = {
-        guard let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        guard
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            .first
+        else {
             return nil
         }
         let fullUrl = documentsURL.appendingPathComponent("db.sqlite3")

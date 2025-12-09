@@ -48,11 +48,10 @@ struct GeneralSettingsScreen: View {
 
     private var appVersion: String {
         if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-            let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+           let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         {
             return "\(version) (\(build))"
-        } else if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-        {
+        } else if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
             return version
         } else {
             return String(localized: "nil")

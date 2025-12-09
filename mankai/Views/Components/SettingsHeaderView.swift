@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-import SwiftUI
-
 struct SettingsHeaderView: View {
     let image: Image
     let color: Color
@@ -24,7 +22,8 @@ struct SettingsHeaderView: View {
                     .background(
                         RoundedRectangle(cornerRadius: 14).frame(
                             width: 56, height: 56
-                        ).foregroundColor(self.color))
+                        ).foregroundColor(self.color)
+                    )
                     .padding(.top, 12)
                 Text(title)
                     .font(.title3)

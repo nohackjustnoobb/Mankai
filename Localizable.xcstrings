@@ -1501,22 +1501,6 @@
         }
       }
     },
-    "hidePlugins" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hide Plugins"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "隱藏插件"
-          }
-        }
-      }
-    },
     "historical" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2981,6 +2965,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        }
+      }
+    },
+    "showPlugins" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Plugins"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "顯示插件"
           }
         }
       }

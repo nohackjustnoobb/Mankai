@@ -1,5 +1,5 @@
 //
-//  mankai.swift
+//  mankaiApp.swift
 //  mankai
 //
 //  Created by Travis XU on 20/6/2025.

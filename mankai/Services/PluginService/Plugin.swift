@@ -78,7 +78,8 @@ class Plugin: Identifiable, ObservableObject {
 
         for config in configs {
             _configValues[config.key] = ConfigValue(
-                key: config.key, value: config.defaultValue)
+                key: config.key, value: config.defaultValue
+            )
         }
 
         return _configValues
@@ -107,7 +108,8 @@ class Plugin: Identifiable, ObservableObject {
 
         for config in configs {
             _configValues[config.key] = ConfigValue(
-                key: config.key, value: config.defaultValue)
+                key: config.key, value: config.defaultValue
+            )
         }
 
         objectWillChange.send()
@@ -129,31 +131,31 @@ class Plugin: Identifiable, ObservableObject {
         fatalError("Not Implemented")
     }
 
-    func getSuggestions(_ query: String) async throws -> [String] {
+    func getSuggestions(_: String) async throws -> [String] {
         fatalError("Not Implemented")
     }
 
-    func search(_ query: String, page: UInt) async throws -> [Manga] {
+    func search(_: String, page _: UInt) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
-    func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+    func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
-    func getMangas(_ ids: [String]) async throws -> [Manga] {
+    func getMangas(_: [String]) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
-    func getDetailedManga(_ id: String) async throws -> DetailedManga {
+    func getDetailedManga(_: String) async throws -> DetailedManga {
         fatalError("Not Implemented")
     }
 
-    func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
+    func getChapter(manga _: DetailedManga, chapter _: Chapter) async throws -> [String] {
         fatalError("Not Implemented")
     }
 
-    func getImage(_ url: String) async throws -> Data {
+    func getImage(_: String) async throws -> Data {
         fatalError("Not Implemented")
     }
 }

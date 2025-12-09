@@ -50,6 +50,6 @@ extension FsMangaModel: Codable, FetchableRecord, PersistableRecord {
     }
 
     var latestChapter: QueryInterfaceRequest<FsChapterModel> {
-        FsChapterModel.filter(key: self.latestChapterId)
+        FsChapterModel.filter(key: latestChapterId)
     }
 }

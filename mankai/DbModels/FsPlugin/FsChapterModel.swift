@@ -21,7 +21,9 @@ struct FsChapterModel {
             $0.column("order", .text).notNull()
             $0.column("chapterGroupId", .integer).notNull()
 
-            $0.foreignKey(["chapterGroupId"], references: FsChapterGroupModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["chapterGroupId"], references: FsChapterGroupModel.databaseTableName, onDelete: .cascade
+            )
         }
     }
 }

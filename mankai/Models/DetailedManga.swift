@@ -29,10 +29,10 @@ struct DetailedManga: Identifiable, Codable {
         }
 
         self.id = id
-        self.title = dict["title"] as? String
-        self.cover = dict["cover"] as? String
-        self.description = dict["description"] as? String
-        self.meta = dict["meta"] as? String
+        title = dict["title"] as? String
+        cover = dict["cover"] as? String
+        description = dict["description"] as? String
+        meta = dict["meta"] as? String
 
         // Parse status
         if let statusValue = dict["status"] {
@@ -40,44 +40,44 @@ struct DetailedManga: Identifiable, Codable {
             case let status as Status:
                 self.status = status
             case let statusUInt as UInt:
-                self.status = Status(rawValue: statusUInt)
+                status = Status(rawValue: statusUInt)
             default:
-                self.status = nil
+                status = nil
             }
         } else {
-            self.status = nil
+            status = nil
         }
 
         if let chapterDict = dict["latestChapter"] as? [String: Any] {
-            self.latestChapter = Chapter(
+            latestChapter = Chapter(
                 id: chapterDict["id"] as? String,
                 title: chapterDict["title"] as? String
             )
         } else {
-            self.latestChapter = nil
+            latestChapter = nil
         }
 
         if let updatedAtMilliseconds = dict["updatedAt"] as? Int64 {
-            self.updatedAt = Date(
+            updatedAt = Date(
                 timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0)
         } else {
-            self.updatedAt = nil
+            updatedAt = nil
         }
 
-        self.authors = dict["authors"] as? [String] ?? []
+        authors = dict["authors"] as? [String] ?? []
 
         // Parse genres
         if let genresValue = dict["genres"] {
             switch genresValue {
             case let genresArray as [Genre]:
-                self.genres = genresArray
+                genres = genresArray
             case let genresStringArray as [String]:
-                self.genres = genresStringArray.compactMap { Genre(rawValue: $0) }
+                genres = genresStringArray.compactMap { Genre(rawValue: $0) }
             default:
-                self.genres = []
+                genres = []
             }
         } else {
-            self.genres = []
+            genres = []
         }
 
         if let chaptersDict = dict["chapters"] as? [String: Any] {
@@ -99,16 +99,16 @@ struct DetailedManga: Identifiable, Codable {
 
             self.chapters = chapters
         } else {
-            self.chapters = [:]
+            chapters = [:]
         }
     }
 
     init() {
-        self.id = UUID().uuidString
-        self.authors = []
-        self.genres = []
-        self.chapters = ["serial": [], "extra": [], "volume": []]
-        self.status = .onGoing
+        id = UUID().uuidString
+        authors = []
+        genres = []
+        chapters = ["serial": [], "extra": [], "volume": []]
+        status = .onGoing
     }
 
     enum CodingKeys: String, CodingKey {
@@ -119,26 +119,26 @@ struct DetailedManga: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        self.id = try container.decode(String.self, forKey: .id)
-        self.title = try container.decodeIfPresent(String.self, forKey: .title)
-        self.cover = try container.decodeIfPresent(String.self, forKey: .cover)
-        self.status = try container.decodeIfPresent(Status.self, forKey: .status)
-        self.latestChapter = try container.decodeIfPresent(Chapter.self, forKey: .latestChapter)
-        self.description = try container.decodeIfPresent(String.self, forKey: .description)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        cover = try container.decodeIfPresent(String.self, forKey: .cover)
+        status = try container.decodeIfPresent(Status.self, forKey: .status)
+        latestChapter = try container.decodeIfPresent(Chapter.self, forKey: .latestChapter)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
 
         if let updatedAtMilliseconds = try container.decodeIfPresent(Int64.self, forKey: .updatedAt) {
-            self.updatedAt = Date(
+            updatedAt = Date(
                 timeIntervalSince1970: TimeInterval(updatedAtMilliseconds) / 1000.0)
         } else {
-            self.updatedAt = nil
+            updatedAt = nil
         }
 
-        self.authors = try container.decodeIfPresent([String].self, forKey: .authors) ?? []
-        self.genres = try container.decodeIfPresent([Genre].self, forKey: .genres) ?? []
-        self.chapters =
+        authors = try container.decodeIfPresent([String].self, forKey: .authors) ?? []
+        genres = try container.decodeIfPresent([Genre].self, forKey: .genres) ?? []
+        chapters =
             try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
 
-        self.meta = try container.decodeIfPresent(String.self, forKey: .meta)
+        meta = try container.decodeIfPresent(String.self, forKey: .meta)
     }
 
     func encode(to encoder: Encoder) throws {

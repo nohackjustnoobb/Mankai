@@ -64,10 +64,10 @@ struct UpdateMangaContent: View {
         plugin: ReadWriteFsPlugin? = nil, manga: DetailedManga? = nil, plugins: [ReadWriteFsPlugin]
     ) {
         self.plugins = plugins
-        self.isCreatingManga = manga == nil
+        isCreatingManga = manga == nil
 
-        self._plugin = State(initialValue: plugin?.id ?? AppDirPlugin.shared.id)
-        self._manga = State(initialValue: manga ?? DetailedManga())
+        _plugin = State(initialValue: plugin?.id ?? AppDirPlugin.shared.id)
+        _manga = State(initialValue: manga ?? DetailedManga())
     }
 
     private var title: Binding<String> {

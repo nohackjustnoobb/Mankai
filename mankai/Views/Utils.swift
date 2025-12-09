@@ -35,10 +35,10 @@ extension View {
 
 enum ImageHeaderData {
     static var PNG: [UInt8] = [0x89]
-    static var JPEG: [UInt8] = [0xff]
+    static var JPEG: [UInt8] = [0xFF]
     static var GIF: [UInt8] = [0x47]
     static var TIFF_01: [UInt8] = [0x49]
-    static var TIFF_02: [UInt8] = [0x4d]
+    static var TIFF_02: [UInt8] = [0x4D]
 }
 
 enum ImageFormat: String {
@@ -52,7 +52,7 @@ enum ImageFormat: String {
 extension NSData {
     var imageFormat: ImageFormat {
         var buffer = [UInt8](repeating: 0, count: 1)
-        self.getBytes(&buffer, range: NSRange(location: 0, length: 1))
+        getBytes(&buffer, range: NSRange(location: 0, length: 1))
         if buffer == ImageHeaderData.PNG {
             return .PNG
         } else if buffer == ImageHeaderData.JPEG {

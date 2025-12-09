@@ -28,7 +28,7 @@ struct UpdateChaptersModal: View {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
-        self.chapters = manga.chapters[chaptersKey] ?? []
+        chapters = manga.chapters[chaptersKey] ?? []
         self.isRootOfSheet = isRootOfSheet
     }
 
@@ -54,7 +54,7 @@ struct UpdateChaptersModal: View {
         update()
     }
 
-    private func update() {
+    private func update(refetchChapters: Bool = false) {
         guard var manga = Copy(of: manga) else {
             return
         }
@@ -66,6 +66,10 @@ struct UpdateChaptersModal: View {
         Task {
             do {
                 try await plugin.updateManga(manga)
+
+                if refetchChapters {
+                    chapters = try await plugin.getDetailedManga(manga.id).chapters[chaptersKey] ?? []
+                }
             } catch {
                 errorMessage = error.localizedDescription
                 showingErrorAlert = true
@@ -142,7 +146,7 @@ struct UpdateChaptersModal: View {
                 if !trimmedName.isEmpty {
                     let newChapter = Chapter(title: trimmedName)
                     chapters.append(newChapter)
-                    update()
+                    update(refetchChapters: true)
                 }
                 newChapterName = ""
             }

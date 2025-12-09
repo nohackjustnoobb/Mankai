@@ -88,7 +88,8 @@ class JsRuntime: NSObject {
         if webview == nil {
             webview = WKWebView(frame: .zero)
             webview?.configuration.userContentController.addScriptMessageHandler(
-                self, contentWorld: .defaultClient, name: "DEFAULT_BRIDGE")
+                self, contentWorld: .defaultClient, name: "DEFAULT_BRIDGE"
+            )
         }
     }
 
@@ -96,7 +97,7 @@ class JsRuntime: NSObject {
     /// - Parameter js: The JavaScript code to execute
     /// - Returns: The result of the JavaScript execution
     @MainActor
-    public func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
+    func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
         -> Any?
     {
         await initWebview()
@@ -104,7 +105,8 @@ class JsRuntime: NSObject {
         guard let webview else {
             throw NSError(
                 domain: "JsRuntime", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "webViewNotInitialized"])
+                userInfo: [NSLocalizedDescriptionKey: "webViewNotInitialized"]
+            )
         }
 
         // Inject functions
@@ -128,7 +130,8 @@ class JsRuntime: NSObject {
             let configValuesJson: String
             do {
                 let jsonData = try JSONSerialization.data(
-                    withJSONObject: configValuesArray, options: [])
+                    withJSONObject: configValuesArray, options: []
+                )
                 configValuesJson = String(data: jsonData, encoding: .utf8) ?? "[]"
             } catch {
                 configValuesJson = "[]"
@@ -158,13 +161,15 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
     private func handleFetch(_ params: [String: Any]) async throws -> [String: Any] {
         guard let url = params["url"] as? String else {
             throw NSError(
-                domain: "JsRuntime", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "missingUrlParameter"])
+                domain: "JsRuntime", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "missingUrlParameter"]
+            )
         }
 
         guard let requestURL = URL(string: url) else {
             throw NSError(
-                domain: "JsRuntime", code: 3, userInfo: [NSLocalizedDescriptionKey: "invalidUrl"])
+                domain: "JsRuntime", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidUrl"]
+            )
         }
 
         var request = URLRequest(url: requestURL)
@@ -186,8 +191,9 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NSError(
-                domain: "JsRuntime", code: 4,
-                userInfo: [NSLocalizedDescriptionKey: "invalidResponseType"])
+                domain: "JsRuntime", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "invalidResponseType"]
+            )
         }
 
         let responseTextBase64 = data.base64EncodedString()
@@ -210,7 +216,7 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
     }
 
     func userContentController(
-        _ userContentController: WKUserContentController, didReceive message: WKScriptMessage
+        _: WKUserContentController, didReceive message: WKScriptMessage
     ) async -> (Any?, String?) {
         let body = message.body as! [String: Any]
         let method = Method(rawValue: body["method"] as! String)

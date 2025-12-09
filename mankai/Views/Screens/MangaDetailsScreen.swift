@@ -342,7 +342,6 @@ struct MangaDetailsScreen: View {
                                 } else {
                                     ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
                                         chapter in
-
                                         HStack {
                                             Text(chapter.title ?? chapter.id ?? "nil")
                                                 .foregroundColor(.primary)
