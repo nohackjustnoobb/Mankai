@@ -82,17 +82,17 @@ class JsPlugin: Plugin {
         scripts: [ScriptType: String] = [:],
         configs: [Config] = []
     ) {
-        self._id = id
-        self._name = name
-        self._version = version
-        self._description = description
-        self._authors = authors
-        self._repository = repository
-        self._updatesUrl = updatesUrl
-        self._availableGenres = availableGenres
-        self._configs = configs
+        _id = id
+        _name = name
+        _version = version
+        _description = description
+        _authors = authors
+        _repository = repository
+        _updatesUrl = updatesUrl
+        _availableGenres = availableGenres
+        _configs = configs
 
-        self._scripts = scripts
+        _scripts = scripts
         for (scriptType, script) in scripts {
             guard
                 let regex = try? NSRegularExpression(
@@ -259,7 +259,7 @@ class JsPlugin: Plugin {
         return "\(id)_\(method.rawValue)_\(paramString)"
     }
 
-    private func getCachedData<T>(for key: String, as type: T.Type) -> T? {
+    private func getCachedData<T>(for key: String, as _: T.Type) -> T? {
         // Periodically clear expired cache entries
         if cache.count > JsPluginConstants.maxCacheSize {
             clearExpiredCache()
@@ -342,9 +342,9 @@ class JsPlugin: Plugin {
                     "description": config.description as Any,
                     "type": config.type.rawValue,
                     "defaultValue": config.defaultValue,
-                    "options": config.options as Any
+                    "options": config.options as Any,
                 ]
-            }
+            },
         ]
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
@@ -359,7 +359,7 @@ class JsPlugin: Plugin {
         let configValuesArray = _configValues.values.map { configValue in
             [
                 "key": configValue.key,
-                "value": configValue.value
+                "value": configValue.value,
             ]
         }
         let configValuesData = try JSONSerialization.data(
@@ -412,7 +412,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForIsOnline"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForIsOnline",
                 ]
             )
         }
@@ -439,7 +439,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForSuggestions"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForSuggestions",
                 ]
             )
         }
@@ -467,9 +467,9 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
                 ]
             )
         }
@@ -501,9 +501,9 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
                 ]
             )
         }
@@ -530,9 +530,9 @@ class JsPlugin: Plugin {
 
         guard let mangas = result as? [Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
                 ]
             )
         }
@@ -557,9 +557,9 @@ class JsPlugin: Plugin {
 
         guard let detailedManga = result as? [String: Any] else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga",
                 ]
             )
         }
@@ -570,9 +570,9 @@ class JsPlugin: Plugin {
             return detailedMangaResult
         } else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga",
                 ]
             )
         }
@@ -602,9 +602,9 @@ class JsPlugin: Plugin {
               let chapterString = String(data: chapterJson, encoding: .utf8)
         else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"
+                    NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat",
                 ]
             )
         }
@@ -615,9 +615,9 @@ class JsPlugin: Plugin {
 
         guard let images = result as? [String] else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForImages"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForImages",
                 ]
             )
         }
@@ -639,7 +639,9 @@ class JsPlugin: Plugin {
 
         let pluginCacheDir = cacheDir.appendingPathComponent(_id)
         if !fileManager.fileExists(atPath: pluginCacheDir.path) {
-            try? fileManager.createDirectory(at: pluginCacheDir, withIntermediateDirectories: true, attributes: nil)
+            try? fileManager.createDirectory(
+                at: pluginCacheDir, withIntermediateDirectories: true, attributes: nil
+            )
         }
 
         // Try to read from disk cache
@@ -660,18 +662,18 @@ class JsPlugin: Plugin {
 
         guard let imageBase64Encoded = result as? String else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForImage"
+                    NSLocalizedDescriptionKey: "invalidResultFormatForImage",
                 ]
             )
         }
 
         guard let imageData = Data(base64Encoded: imageBase64Encoded) else {
             throw NSError(
-                domain: "JsPlugin", code: 2,
+                domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidBase64StringForImage"
+                    NSLocalizedDescriptionKey: "invalidBase64StringForImage",
                 ]
             )
         }

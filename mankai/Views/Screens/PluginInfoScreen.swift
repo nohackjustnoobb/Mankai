@@ -415,7 +415,7 @@ struct SelectConfigView: View {
         var newValue =
             plugin.getConfig(config.key) as? String ?? config.defaultValue as? String ?? ""
 
-        if !options.contains(newValue) && !options.isEmpty {
+        if !options.contains(newValue), !options.isEmpty {
             newValue = options.first ?? ""
         }
 

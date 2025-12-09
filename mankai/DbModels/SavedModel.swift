@@ -23,7 +23,9 @@ struct SavedModel {
             $0.column("datetime", .datetime).notNull()
             $0.column("updates", .boolean).notNull()
 
-            $0.foreignKey(["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade
+            )
         }
     }
 }

@@ -14,7 +14,7 @@ struct MangasListView: View {
     var body: some View {
         LazyVGrid(
             columns: [
-                GridItem(.adaptive(minimum: 110), spacing: 12)
+                GridItem(.adaptive(minimum: 110), spacing: 12),
             ], spacing: 12
         ) {
             ForEach(mangas, id: \.id) { manga in

@@ -38,7 +38,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     func updateManga(_ manga: DetailedManga) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         try await db.write { db in
@@ -202,10 +205,13 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     func deleteManga(_ mangaId: String) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
-        let _ = try await db.write { db in
+        _ = try await db.write { db in
             try FsMangaModel
                 .filter(Column("id") == mangaId)
                 .deleteAll(db)
@@ -226,7 +232,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     func updateCover(mangaId: String, image: Data) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         let fileManager = FileManager.default
@@ -235,6 +244,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
         let imageInfo = getImageInfo(from: image)
         let coverFileName = "cover.\(imageInfo.format)"
+        let coverId = "cover-\(mangaId)"
 
         if !fileManager.fileExists(atPath: mangaCoverDir.path) {
             try fileManager.createDirectory(at: mangaCoverDir, withIntermediateDirectories: true)
@@ -245,8 +255,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
         let existingCover = try await db.read { db in
             try FsImageModel
-                .filter(Column("mangaId") == mangaId && Column("chapterId") == nil)
-                .fetchOne(db)
+                .fetchOne(db, key: coverId)
         }
 
         if let existingCover = existingCover {
@@ -267,6 +276,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                 try updatedCover.update(db)
             } else {
                 let coverImage = FsImageModel(
+                    id: coverId,
                     path: relativeCoverPath,
                     width: imageInfo.width,
                     height: imageInfo.height,
@@ -284,7 +294,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     func addImages(mangaId: String, chapterId: String, images: [Data]) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         let fileManager = FileManager.default
@@ -305,22 +318,24 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         do {
             for imageData in images {
                 let imageInfo = getImageInfo(from: imageData)
-                let imageFileName = "\(UUID().uuidString).\(imageInfo.format)"
+                let imageId = UUID().uuidString
+                let imageFileName = "\(imageId).\(imageInfo.format)"
 
                 let imagePath = chapterDir.appendingPathComponent(imageFileName)
                 let relativeImagePath = "\(mangaId)/chapters/\(chapterId)/\(imageFileName)"
 
                 try imageData.write(to: imagePath)
                 writtenFiles.append(imagePath)
-                imagePaths.append((relativeImagePath, imageFileName, imageInfo.width, imageInfo.height))
+                imagePaths.append((relativeImagePath, imageId, imageInfo.width, imageInfo.height))
             }
 
             let pathsToInsert = imagePaths
             try await db.write { db in
                 var imageIds: [String] = []
 
-                for (relativeImagePath, _, width, height) in pathsToInsert {
+                for (relativeImagePath, imageId, width, height) in pathsToInsert {
                     var imageModel = FsImageModel(
+                        id: imageId,
                         path: relativeImagePath,
                         width: width,
                         height: height,
@@ -329,16 +344,16 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                     )
                     imageModel = try imageModel.insertAndFetch(db)
 
-                    imageIds.append(String(imageModel.id!))
+                    imageIds.append(imageModel.id)
                 }
 
                 if let chapterIdInt = Int(chapterId) {
-                    if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
-                        var updatedChapter = chapterModel
-                        let existingIds = chapterModel.order.isEmpty ? [] : chapterModel.order.components(separatedBy: "|")
+                    if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                        let existingIds =
+                            chapterModel.order.isEmpty ? [] : chapterModel.order.components(separatedBy: "|")
                         let newOrder = existingIds + imageIds
-                        updatedChapter.order = newOrder.joined(separator: "|")
-                        try updatedChapter.update(db)
+                        chapterModel.order = newOrder.joined(separator: "|")
+                        try chapterModel.update(db)
                     }
                 }
             }
@@ -354,9 +369,12 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func removeImages(mangaId: String, chapterId: String, ids: [String]) async throws {
+    func removeImages(mangaId _: String, chapterId: String, ids: [String]) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         let fileManager = FileManager.default
@@ -372,13 +390,12 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             try FsImageModel.filter(keys: imageIds).deleteAll(db)
 
             if let chapterIdInt = Int(chapterId) {
-                if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
                     let currentIds = chapterModel.order.components(separatedBy: "|")
                         .filter { !ids.contains($0) && !$0.isEmpty }
 
-                    var updatedChapter = chapterModel
-                    updatedChapter.order = currentIds.joined(separator: "|")
-                    try updatedChapter.update(db)
+                    chapterModel.order = currentIds.joined(separator: "|")
+                    try chapterModel.update(db)
                 }
             }
         }
@@ -395,17 +412,19 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func arrangeImageOrder(mangaId: String, chapterId: String, ids: [String]) async throws {
+    func arrangeImageOrder(mangaId _: String, chapterId: String, ids: [String]) async throws {
         guard let db = db else {
-            throw NSError(domain: "ReadWriteFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         try await db.write { db in
             if let chapterIdInt = Int(chapterId) {
-                if let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
-                    var updatedChapter = chapterModel
-                    updatedChapter.order = ids.joined(separator: "|")
-                    try updatedChapter.update(db)
+                if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
+                    chapterModel.order = ids.joined(separator: "|")
+                    try chapterModel.update(db)
                 }
             }
         }

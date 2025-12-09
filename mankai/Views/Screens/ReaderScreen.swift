@@ -83,14 +83,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         self.chapter = chapter
         self.initialPage = initialPage
 
-        self.chapters = manga.chapters[chaptersKey] ?? []
-        self.currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
+        chapters = manga.chapters[chaptersKey] ?? []
+        currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
 
         super.init(nibName: nil, bundle: nil)
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -108,13 +108,15 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             self,
             selector: #selector(updateGrouping),
             name: UIDevice.orientationDidChangeNotification,
-            object: nil)
+            object: nil
+        )
 
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateGrouping),
             name: UserDefaults.didChangeNotification,
-            object: nil)
+            object: nil
+        )
     }
 
     deinit {
@@ -146,7 +148,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         updateImageViews()
     }
 
-    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+    func viewForZooming(in _: UIScrollView) -> UIView? {
         return contentView
     }
 
@@ -159,7 +161,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Scroll Event Monitoring
 
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    func scrollViewDidScroll(_: UIScrollView) {
         updateCurrentPageFromScroll()
     }
 
@@ -244,7 +246,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let mangaModel = MangaModel(
             mangaId: manga.id,
             pluginId: plugin.id,
-            info: mangaInfo)
+            info: mangaInfo
+        )
 
         let recordModel = RecordModel(
             mangaId: manga.id,
@@ -252,7 +255,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             datetime: Date(),
             chapterId: currentChapter.id,
             chapterTitle: currentChapter.title,
-            page: currentPage)
+            page: currentPage
+        )
 
         if let result = HistoryService.shared.update(record: recordModel, manga: mangaModel), result {
             lastSavedPage = currentPage
@@ -298,12 +302,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         Task {
             do {
                 urls = try await plugin.getChapter(
-                    manga: manga, chapter: chapter)
+                    manga: manga, chapter: chapter
+                )
 
                 if let initialPage = self.initialPage {
                     self.jumpToPage = urls[initialPage]
                 }
 
+                scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
                 loadImages()
                 updateBottomBar()
             } catch {
@@ -369,7 +375,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 var group: [String] = []
                 var j = i
 
-                while j < urls.count && group.count < defaultGroupSize {
+                while j < urls.count, group.count < defaultGroupSize {
                     let currentUrl = urls[j]
 
                     // If we encounter a wide image while building the group, stop here
@@ -400,7 +406,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - Page Management
 
     private func navigateToPage(_ page: Int, animated: Bool = false) {
-        guard page >= 0 && page < urls.count else { return }
+        guard page >= 0, page < urls.count else { return }
 
         let targetUrl = urls[page]
 
@@ -415,7 +421,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
             scrollView.setContentOffset(
                 CGPoint(x: 0, y: clampedScrollY),
-                animated: animated)
+                animated: animated
+            )
 
             currentPage = page
             updateBottomBar()
@@ -461,7 +468,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                         x: tabBarControllerView.frame.origin.x,
                         y: tabBarControllerView.frame.origin.y,
                         width: tabBarControllerView.frame.width,
-                        height: UIScreen.main.bounds.height + tabBar.frame.height)
+                        height: UIScreen.main.bounds.height + tabBar.frame.height
+                    )
                 }
             }
 
@@ -471,10 +479,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                     tabBar.frame.origin.y = UIScreen.main.bounds.height
                     tabBar.alpha = 0.0
                     self.view.layoutIfNeeded()
-                }) { _ in
-                    tabBar.isHidden = true
-                    self.isTabBarAnimating = false
                 }
+            ) { _ in
+                tabBar.isHidden = true
+                self.isTabBarAnimating = false
+            }
             isTabBarHidden = true
         }
     }
@@ -497,9 +506,10 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                     tabBar.frame.origin.y = UIScreen.main.bounds.height - tabBar.frame.height
                     tabBar.alpha = 1.0
                     self.view.layoutIfNeeded()
-                }) { _ in
-                    self.isTabBarAnimating = false
                 }
+            ) { _ in
+                self.isTabBarAnimating = false
+            }
             isTabBarHidden = false
         }
     }
@@ -516,16 +526,18 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             withDuration: 0.2, delay: 0, options: [.curveLinear],
             animations: {
                 navigationBar.transform = .init(
-                    translationX: 0, y: -(navigationBar.frame.height + navigationBar.frame.origin.y))
+                    translationX: 0, y: -(navigationBar.frame.height + navigationBar.frame.origin.y)
+                )
 
                 self.bottomBar.transform = .init(
-                    translationX: 0, y: self.bottomBar.frame.height)
+                    translationX: 0, y: self.bottomBar.frame.height
+                )
 
                 self.view.layoutIfNeeded()
-            }) { _ in
-
-                self.isNavigationBarAnimating = false
             }
+        ) { _ in
+            self.isNavigationBarAnimating = false
+        }
 
         isNavigationBarHidden = true
     }
@@ -546,9 +558,10 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 self.bottomBar.transform = .init(translationX: 0, y: 0)
 
                 self.view.layoutIfNeeded()
-            }) { _ in
-                self.isNavigationBarAnimating = false
             }
+        ) { _ in
+            self.isNavigationBarAnimating = false
+        }
 
         isNavigationBarHidden = false
     }
@@ -848,7 +861,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let currentState = getImageViewState(for: url)
 
         switch currentState {
-        case .loaded(let imageView):
+        case let .loaded(imageView):
             if existingView != imageView {
                 replaceView(existingView, with: imageView, tag: tag, url: url, frames: frames)
                 imageView.contentMode = .scaleToFill
@@ -872,7 +885,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             if !isLoadingView {
                 let loadingImageView = createLoadingImageView()
                 replaceView(
-                    existingView, with: loadingImageView, tag: tag, url: url, frames: frames)
+                    existingView, with: loadingImageView, tag: tag, url: url, frames: frames
+                )
             } else {
                 updateViewFrame(existingView, url: url, frames: frames)
             }
@@ -883,7 +897,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let currentState = getImageViewState(for: url)
 
         switch currentState {
-        case .loaded(let imageView):
+        case let .loaded(imageView):
             addImageViewToContent(imageView, tag: tag, url: url, frames: frames)
             imageView.contentMode = .scaleToFill
 
@@ -958,7 +972,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                     x: currentX,
                     y: currentY,
                     width: imageWidth,
-                    height: height)
+                    height: height
+                )
 
                 frames[url] = frame
                 imagesCenterY[url] = height / 2 + currentY
@@ -1026,7 +1041,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let ratios = calculateImageRatios()
         let mode = calculateModeRatio(from: ratios)
         let (frames, finalY) = calculateFrames(
-            ratios: ratios, mode: mode)
+            ratios: ratios, mode: mode
+        )
 
         updateImageViewsWithFrames(frames)
         updateContentSize(finalY: finalY)
@@ -1081,12 +1097,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         // Add button actions
         previousChapterButton.addTarget(
-            self, action: #selector(previousChapterButtonTapped), for: .touchUpInside)
+            self, action: #selector(previousChapterButtonTapped), for: .touchUpInside
+        )
         previousButton.addTarget(self, action: #selector(previousButtonTapped), for: .touchUpInside)
         pageInfoButton.addTarget(self, action: #selector(pageInfoButtonTapped), for: .touchUpInside)
         nextButton.addTarget(self, action: #selector(nextButtonTapped), for: .touchUpInside)
         nextChapterButton.addTarget(
-            self, action: #selector(nextChapterButtonTapped), for: .touchUpInside)
+            self, action: #selector(nextChapterButtonTapped), for: .touchUpInside
+        )
 
         bottomStackView.addArrangedSubview(previousChapterButton)
         bottomStackView.addArrangedSubview(previousButton)
@@ -1111,15 +1129,18 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         NSLayoutConstraint.activate([
             bottomStackView.topAnchor.constraint(equalTo: bottomBar.topAnchor, constant: 20),
             bottomStackView.leadingAnchor.constraint(
-                equalTo: bottomBar.leadingAnchor, constant: 20),
+                equalTo: bottomBar.leadingAnchor, constant: 20
+            ),
             bottomStackView.trailingAnchor.constraint(
-                equalTo: bottomBar.trailingAnchor, constant: -20),
+                equalTo: bottomBar.trailingAnchor, constant: -20
+            ),
 
             pageSlider.topAnchor.constraint(equalTo: bottomStackView.bottomAnchor, constant: 10),
             pageSlider.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: 20),
             pageSlider.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -20),
             pageSlider.bottomAnchor.constraint(
-                equalTo: bottomBar.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+                equalTo: bottomBar.safeAreaLayoutGuide.bottomAnchor, constant: -20
+            ),
         ])
 
         view.addSubview(bottomBar)
@@ -1128,6 +1149,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private func createBottomBarButton(title: String? = nil, systemImage: String? = nil) -> UIButton {
         var configuration = UIButton.Configuration.borderless()
         configuration.title = title
+        configuration.titleLineBreakMode = .byTruncatingTail
 
         if let systemImage = systemImage {
             configuration.image = UIImage(systemName: systemImage)
@@ -1187,7 +1209,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     @objc private func pageSliderValueChanged(_ sender: UISlider) {
         let targetPage = Int(sender.value) - 1
-        guard targetPage >= 0 && targetPage < urls.count else { return }
+        guard targetPage >= 0, targetPage < urls.count else { return }
 
         navigateToPage(targetPage)
     }
@@ -1252,7 +1274,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         NSLayoutConstraint.activate([
             textLabel.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor, constant: 20),
             textLabel.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
-            textLabel.trailingAnchor.constraint(equalTo: bottomOverscrollView.trailingAnchor, constant: -8),
+            textLabel.trailingAnchor.constraint(
+                equalTo: bottomOverscrollView.trailingAnchor, constant: -8
+            ),
             textLabel.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
 
             arrowImageView.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 8),
@@ -1277,8 +1301,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         }
 
         // Update bottom overscroll view
-        if let arrowImageView = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_ARROW_TAG) as? UIImageView,
-           let textLabel = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_TEXT_TAG) as? UILabel
+        if let arrowImageView = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_ARROW_TAG)
+            as? UIImageView,
+            let textLabel = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_TEXT_TAG) as? UILabel
         {
             if currentChapterIndex < chapters.count - 1 {
                 arrowImageView.image = UIImage(systemName: "chevron.down")
@@ -1300,16 +1325,17 @@ private struct ReaderViewControllerWrapper: UIViewControllerRepresentable {
     let chapter: Chapter
     let initialPage: Int?
 
-    func makeUIViewController(context: Context) -> ReaderViewController {
+    func makeUIViewController(context _: Context) -> ReaderViewController {
         return ReaderViewController(
             plugin: plugin,
             manga: manga,
             chaptersKey: chaptersKey,
             chapter: chapter,
-            initialPage: initialPage)
+            initialPage: initialPage
+        )
     }
 
-    func updateUIViewController(_ uiViewController: ReaderViewController, context: Context) {
+    func updateUIViewController(_: ReaderViewController, context _: Context) {
         // Handle any updates if needed
     }
 }
@@ -1330,8 +1356,9 @@ struct ReaderScreen: View {
                 manga: manga,
                 chaptersKey: chaptersKey,
                 chapter: chapter,
-                initialPage: initialPage)
-                .ignoresSafeArea()
+                initialPage: initialPage
+            )
+            .ignoresSafeArea()
         }
     }
 }

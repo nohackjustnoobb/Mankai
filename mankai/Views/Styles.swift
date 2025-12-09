@@ -54,10 +54,10 @@ struct GenreTagModifier: ViewModifier {
 
 extension View {
     func smallTagStyle() -> some View {
-        self.modifier(SmallTagModifier())
+        modifier(SmallTagModifier())
     }
 
     func genreTagStyle() -> some View {
-        self.modifier(GenreTagModifier())
+        modifier(GenreTagModifier())
     }
 }

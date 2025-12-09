@@ -9,7 +9,7 @@ import SwiftUI
 
 struct PluginSettingsScreen: View {
     @State private var showModal = false
-    @ObservedObject var pluginService: PluginService = PluginService.shared
+    @ObservedObject var pluginService: PluginService = .shared
 
     var body: some View {
         List {

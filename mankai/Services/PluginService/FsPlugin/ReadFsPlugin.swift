@@ -33,7 +33,7 @@ class ReadFsPlugin: Plugin {
 
     init(_ path: String) {
         self.path = path
-        self._id = UUID().uuidString
+        _id = UUID().uuidString
     }
 
     // MARK: - Metadata
@@ -100,7 +100,9 @@ class ReadFsPlugin: Plugin {
         return Manga(from: mangaDict)
     }
 
-    private func convertToDetailedManga(_ mangaModel: FsMangaModel, db: Database) throws -> DetailedManga? {
+    private func convertToDetailedManga(_ mangaModel: FsMangaModel, db: Database) throws
+        -> DetailedManga?
+    {
         let cover = try mangaModel.cover.fetchOne(db)
         let latestChapter = try mangaModel.latestChapter.fetchOne(db)
         let chapterGroups = try mangaModel.chapters.fetchAll(db)
@@ -129,10 +131,14 @@ class ReadFsPlugin: Plugin {
             mangaDict["updatedAt"] = Int64(updatedAt.timeIntervalSince1970 * 1000)
         }
 
-        let authors = mangaModel.authors.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let authors = mangaModel.authors.components(separatedBy: "|").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }.filter { !$0.isEmpty }
         mangaDict["authors"] = authors
 
-        let genres = mangaModel.genres.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        let genres = mangaModel.genres.components(separatedBy: "|").map {
+            $0.trimmingCharacters(in: .whitespaces)
+        }.filter { !$0.isEmpty }
         mangaDict["genres"] = genres
 
         if let chapter = latestChapter {
@@ -157,7 +163,9 @@ class ReadFsPlugin: Plugin {
                 uniqueKeysWithValues: chaptersArray.compactMap { item in
                     (item["id"] as! String, item)
                 })
-            let orderIds = group.order.components(separatedBy: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+            let orderIds = group.order.components(separatedBy: "|").map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }
             let sortedChaptersArray = orderIds.compactMap { chapterDict[$0] }
             chaptersDict[group.title] = sortedChaptersArray
         }
@@ -168,7 +176,10 @@ class ReadFsPlugin: Plugin {
 
     override func getSuggestions(_ query: String) async throws -> [String] {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         return try await db.read { db in
@@ -185,7 +196,10 @@ class ReadFsPlugin: Plugin {
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         return try await db.read { db in
@@ -207,7 +221,10 @@ class ReadFsPlugin: Plugin {
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         return try await db.read { db in
@@ -240,7 +257,10 @@ class ReadFsPlugin: Plugin {
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         return try await db.read { db in
@@ -257,39 +277,56 @@ class ReadFsPlugin: Plugin {
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         return try await db.read { db in
             guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
-                throw NSError(domain: "ReadFsPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"])
+                throw NSError(
+                    domain: "ReadFsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"]
+                )
             }
 
             guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
-                throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "failedToLoadMangaDetails"])
+                throw NSError(
+                    domain: "ReadFsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "failedToLoadMangaDetails"]
+                )
             }
 
             return detailedManga
         }
     }
 
-    override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
+    override func getChapter(manga _: DetailedManga, chapter: Chapter) async throws -> [String] {
         guard let db = db else {
-            throw NSError(domain: "ReadFsPlugin", code: 500, userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+            )
         }
 
         guard let chapterId = chapter.id, let chapterIdInt = Int(chapterId) else {
-            throw NSError(domain: "ReadFsPlugin", code: 400, userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"])
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"]
+            )
         }
 
         return try await db.read { db in
             guard let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) else {
-                throw NSError(domain: "ReadFsPlugin", code: 404, userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"])
+                throw NSError(
+                    domain: "ReadFsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"]
+                )
             }
 
             let imageIds = chapterModel.order.components(separatedBy: "|")
                 .map { $0.trimmingCharacters(in: .whitespaces) }
-                .compactMap { Int($0) }
 
             let images =
                 try FsImageModel
@@ -309,8 +346,9 @@ class ReadFsPlugin: Plugin {
 
         guard fileManager.fileExists(atPath: fullImagePath) else {
             throw NSError(
-                domain: "ReadFsPlugin", code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"])
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]
+            )
         }
 
         do {
@@ -318,8 +356,9 @@ class ReadFsPlugin: Plugin {
             return imageData
         } catch {
             throw NSError(
-                domain: "ReadFsPlugin", code: 500,
-                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"])
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]
+            )
         }
     }
 }

@@ -69,7 +69,7 @@ struct HistoryScreen: View {
     }
 
     private func loadMoreRecords() {
-        guard !isLoading && !hasLoadedAll else { return }
+        guard !isLoading, !hasLoadedAll else { return }
 
         isLoading = true
 

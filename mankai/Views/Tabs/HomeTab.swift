@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  HomeTab.swift
 //  mankai
 //
 //  Created by Travis XU on 20/6/2025.
@@ -26,17 +26,19 @@ struct HomeTab: View {
 
     // Filter & Search
     @State private var searchText: String = ""
-    @State private var hidePlugins: [String] = []
+    @State private var showPlugins: [String] = []
     @State private var status: HomeMangaStatus = .all
     @State private var filteredOrders: [String] = []
     @State private var showingFilters = false
 
     // Temp filter states for modal
-    @State private var tempHidePlugins: [String] = []
+    @State private var tempShowPlugins: [String] = []
     @State private var tempStatus: HomeMangaStatus = .all
 
     private var hasActiveFilters: Bool {
-        !hidePlugins.isEmpty || status != .all
+        let allPluginIds = Set(pluginService.plugins.map { $0.id })
+        let showSet = Set(showPlugins)
+        return showSet != allPluginIds || status != .all
     }
 
     private var availablePlugins: [Plugin] {
@@ -72,7 +74,7 @@ struct HomeTab: View {
                     ScrollView {
                         LazyVGrid(
                             columns: [
-                                GridItem(.adaptive(minimum: 110), spacing: 12)
+                                GridItem(.adaptive(minimum: 110), spacing: 12),
                             ], spacing: 12
                         ) {
                             ForEach(filteredOrders, id: \.self) { key in
@@ -125,6 +127,7 @@ struct HomeTab: View {
             }
             .onAppear {
                 updateSaved()
+                initializeShowPlugins()
             }
             .onReceive(pluginService.objectWillChange) {
                 updateSaved()
@@ -155,20 +158,20 @@ struct HomeTab: View {
                             Spacer(minLength: 0)
                         }
 
-                        Section("hidePlugins") {
+                        Section("showPlugins") {
                             ForEach(availablePlugins, id: \.id) { plugin in
                                 Button(action: {
-                                    if tempHidePlugins.contains(plugin.id) {
-                                        tempHidePlugins.removeAll { $0 == plugin.id }
+                                    if tempShowPlugins.contains(plugin.id) {
+                                        tempShowPlugins.removeAll { $0 == plugin.id }
                                     } else {
-                                        tempHidePlugins.append(plugin.id)
+                                        tempShowPlugins.append(plugin.id)
                                     }
                                 }) {
                                     HStack {
                                         Text(plugin.name ?? plugin.id)
                                             .foregroundColor(.primary)
                                         Spacer()
-                                        if tempHidePlugins.contains(plugin.id) {
+                                        if tempShowPlugins.contains(plugin.id) {
                                             Image(systemName: "checkmark")
                                         }
                                     }
@@ -192,7 +195,7 @@ struct HomeTab: View {
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button(action: {
-                                tempHidePlugins = hidePlugins
+                                tempShowPlugins = showPlugins
                                 tempStatus = status
                                 showingFilters = false
                             }) {
@@ -202,7 +205,7 @@ struct HomeTab: View {
 
                         ToolbarItem(placement: .confirmationAction) {
                             Button(action: {
-                                setFilters(hidePlugins: tempHidePlugins, status: tempStatus)
+                                setFilters(showPlugins: tempShowPlugins, status: tempStatus)
                                 showingFilters = false
                             }) {
                                 Text("done")
@@ -212,7 +215,7 @@ struct HomeTab: View {
                 }
                 .presentationDetents([.medium])
                 .onAppear {
-                    tempHidePlugins = hidePlugins
+                    tempShowPlugins = showPlugins
                     tempStatus = status
                 }
             }
@@ -280,7 +283,7 @@ struct HomeTab: View {
             let newerDate2 = [savedDate2, recordDate2].compactMap { $0 }.max()
 
             switch (newerDate1, newerDate2) {
-            case (let date1?, let date2?):
+            case let (date1?, date2?):
                 return date1 > date2
             case (nil, _):
                 return false
@@ -303,11 +306,11 @@ struct HomeTab: View {
             }
         }
 
-        // Filter by hidden plugins
-        if !hidePlugins.isEmpty {
+        // Filter by shown plugins
+        if !showPlugins.isEmpty {
             filtered = filtered.filter { key in
                 let pluginId = key.split(separator: "_").first.map(String.init) ?? ""
-                return !hidePlugins.contains(pluginId)
+                return showPlugins.contains(pluginId)
             }
         }
 
@@ -338,14 +341,15 @@ struct HomeTab: View {
         filterManga()
     }
 
-    private func removeHiddenPlugin(_ pluginId: String) {
-        hidePlugins.removeAll { $0 == pluginId }
-        filterManga()
+    private func initializeShowPlugins() {
+        if showPlugins.isEmpty {
+            showPlugins = pluginService.plugins.map { $0.id }
+        }
     }
 
-    private func setFilters(hidePlugins: [String], status: HomeMangaStatus) {
-        if self.hidePlugins != hidePlugins {
-            self.hidePlugins = hidePlugins
+    private func setFilters(showPlugins: [String], status: HomeMangaStatus) {
+        if self.showPlugins != showPlugins {
+            self.showPlugins = showPlugins
         }
 
         if self.status != status {
@@ -356,8 +360,8 @@ struct HomeTab: View {
     }
 
     private func resetFilters() {
-        tempHidePlugins = []
+        tempShowPlugins = pluginService.plugins.map { $0.id }
         tempStatus = .all
-        setFilters(hidePlugins: [], status: .all)
+        setFilters(showPlugins: pluginService.plugins.map { $0.id }, status: .all)
     }
 }

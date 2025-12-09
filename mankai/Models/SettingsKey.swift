@@ -25,12 +25,12 @@ enum ReadingDirection: Int {
 }
 
 enum CacheDuration: Double {
-    case auto = 0  // Use default
-    case fifteenMinutes = 900  // 15 minutes
-    case thirtyMinutes = 1800  // 30 minutes
-    case oneHour = 3600  // 1 hour
-    case twoHours = 7200  // 2 hours
-    case sixHours = 21600  // 6 hours
-    case twelveHours = 43200  // 12 hours
-    case oneDay = 86400  // 24 hours
+    case auto = 0 // Use default
+    case fifteenMinutes = 900 // 15 minutes
+    case thirtyMinutes = 1800 // 30 minutes
+    case oneHour = 3600 // 1 hour
+    case twoHours = 7200 // 2 hours
+    case sixHours = 21600 // 6 hours
+    case twelveHours = 43200 // 12 hours
+    case oneDay = 86400 // 24 hours
 }

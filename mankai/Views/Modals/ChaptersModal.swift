@@ -15,12 +15,15 @@ struct ChaptersModal: View {
 
     private let chapters: [Chapter]
 
-    init(plugin: Plugin, manga: DetailedManga, chaptersKey: String, onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void) {
+    init(
+        plugin: Plugin, manga: DetailedManga, chaptersKey: String,
+        onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void
+    ) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
         self.onNavigateToChapter = onNavigateToChapter
-        self.chapters = manga.chapters[chaptersKey] ?? []
+        chapters = manga.chapters[chaptersKey] ?? []
     }
 
     @Environment(\.dismiss) var dismiss
@@ -68,7 +71,9 @@ struct ChaptersModal: View {
 
                         if plugin is ReadWriteFsPlugin {
                             NavigationLink(destination: {
-                                UpdateChaptersModal(plugin: plugin as! ReadWriteFsPlugin, manga: manga, chaptersKey: chaptersKey)
+                                UpdateChaptersModal(
+                                    plugin: plugin as! ReadWriteFsPlugin, manga: manga, chaptersKey: chaptersKey
+                                )
                             }) {
                                 Image(systemName: "pencil")
                             }

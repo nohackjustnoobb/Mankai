@@ -27,7 +27,9 @@ struct RecordModel {
             $0.column("chapterId", .text)
             $0.column("chapterTitle", .text)
 
-            $0.foreignKey(["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade)
+            $0.foreignKey(
+                ["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade
+            )
         }
     }
 }

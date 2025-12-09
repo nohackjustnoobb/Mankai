@@ -74,7 +74,8 @@ struct DebugGetMangasAndGetDetailedManga: View {
                 List {
                     if let manga = manga {
                         DebugMangas(
-                            mangas: [manga], plugin: plugin, title: String(localized: "manga"))
+                            mangas: [manga], plugin: plugin, title: String(localized: "manga")
+                        )
                     }
 
                     if let detailedManga = detailedManga {
@@ -84,38 +85,46 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                     InfoRow(label: String(localized: "id"), value: detailedManga.id)
                                     InfoRow(
                                         label: String(localized: "cover"),
-                                        value: detailedManga.cover ?? String(localized: "nil"))
+                                        value: detailedManga.cover ?? String(localized: "nil")
+                                    )
                                     InfoRow(
                                         label: String(localized: "title"),
-                                        value: detailedManga.title ?? String(localized: "nil"))
+                                        value: detailedManga.title ?? String(localized: "nil")
+                                    )
                                     InfoRow(
                                         label: String(localized: "status"),
-                                        value: statusText(detailedManga.status))
+                                        value: statusText(detailedManga.status)
+                                    )
                                     InfoRow(
                                         label: String(localized: "description"),
                                         value: detailedManga.description ?? String(localized: "nil")
                                     )
                                     InfoRow(
                                         label: String(localized: "updatedAt"),
-                                        value: dateText(detailedManga.updatedAt))
+                                        value: dateText(detailedManga.updatedAt)
+                                    )
                                     InfoRow(
                                         label: String(localized: "authors"),
                                         value: detailedManga.authors.isEmpty
                                             ? String(localized: "nil")
-                                            : detailedManga.authors.joined(separator: ", "))
+                                            : detailedManga.authors.joined(separator: ", ")
+                                    )
                                     InfoRow(
                                         label: String(localized: "genres"),
                                         value: detailedManga.genres.isEmpty
                                             ? String(localized: "nil")
                                             : detailedManga.genres.map { $0.rawValue }.joined(
-                                                separator: ", "))
+                                                separator: ", ")
+                                    )
                                     InfoRow(
                                         label: String(localized: "latestChapter"),
-                                        value: chapterText(detailedManga.latestChapter))
+                                        value: chapterText(detailedManga.latestChapter)
+                                    )
                                     InfoRow(
                                         label: String(localized: "totalChapters"),
                                         value:
-                                            "\(detailedManga.chapters.values.flatMap { $0 }.count)")
+                                        "\(detailedManga.chapters.values.flatMap { $0 }.count)"
+                                    )
                                 }
                             }
                         }
@@ -135,7 +144,8 @@ struct DebugGetMangasAndGetDetailedManga: View {
                                             destination: DebugGetChapter(
                                                 plugin: plugin,
                                                 manga: detailedManga,
-                                                chapter: chapter)
+                                                chapter: chapter
+                                            )
                                         ) {
                                             Text(chapterText(chapter))
                                                 .frame(maxWidth: .infinity, alignment: .leading)

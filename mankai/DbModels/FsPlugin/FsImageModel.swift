@@ -8,7 +8,7 @@
 import GRDB
 
 struct FsImageModel {
-    var id: Int?
+    var id: String
     var path: String
     var width: Int
     var height: Int
@@ -17,7 +17,7 @@ struct FsImageModel {
 
     static func createTable(_ db: Database) throws {
         try db.create(table: FsImageModel.databaseTableName, ifNotExists: true) {
-            $0.autoIncrementedPrimaryKey("id")
+            $0.primaryKey("id", .text)
 
             $0.column("path", .text).notNull()
             $0.column("width", .integer).notNull()

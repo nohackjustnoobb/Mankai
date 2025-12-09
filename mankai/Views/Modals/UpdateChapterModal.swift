@@ -36,7 +36,8 @@ struct UpdateChapterModal: View {
             } catch {
                 showError(
                     title: String(localized: "failedToLoadChapter"),
-                    message: error.localizedDescription)
+                    message: error.localizedDescription
+                )
             }
         }
     }
@@ -55,7 +56,8 @@ struct UpdateChapterModal: View {
                     } catch {
                         showError(
                             title: String(localized: "failedToLoadImage"),
-                            message: error.localizedDescription)
+                            message: error.localizedDescription
+                        )
                     }
                 }
             }
@@ -70,12 +72,14 @@ struct UpdateChapterModal: View {
         Task {
             do {
                 try await plugin.arrangeImageOrder(
-                    mangaId: manga.id, chapterId: chapterId, ids: ids)
+                    mangaId: manga.id, chapterId: chapterId, ids: ids
+                )
                 loadUrls()
             } catch {
                 showError(
                     title: String(localized: "failedToReorderImages"),
-                    message: error.localizedDescription)
+                    message: error.localizedDescription
+                )
             }
         }
     }
@@ -89,12 +93,14 @@ struct UpdateChapterModal: View {
         Task {
             do {
                 try await plugin.removeImages(
-                    mangaId: manga.id, chapterId: chapterId, ids: idsToRemove)
+                    mangaId: manga.id, chapterId: chapterId, ids: idsToRemove
+                )
                 loadUrls()
             } catch {
                 showError(
                     title: String(localized: "failedToRemoveImages"),
-                    message: error.localizedDescription)
+                    message: error.localizedDescription
+                )
             }
         }
     }
@@ -113,20 +119,23 @@ struct UpdateChapterModal: View {
                 } catch {
                     showError(
                         title: String(localized: "failedToLoadSelectedImage"),
-                        message: error.localizedDescription)
+                        message: error.localizedDescription
+                    )
                 }
             }
 
             do {
                 try await plugin.addImages(
-                    mangaId: manga.id, chapterId: chapterId, images: newImages)
+                    mangaId: manga.id, chapterId: chapterId, images: newImages
+                )
 
                 loadUrls()
                 selectedItems = []
             } catch {
                 showError(
                     title: String(localized: "failedToAddImages"),
-                    message: error.localizedDescription)
+                    message: error.localizedDescription
+                )
             }
         }
     }
@@ -137,8 +146,8 @@ struct UpdateChapterModal: View {
                 Section {
                     PhotosPicker(
                         selection: $selectedItems,
-                        matching: .images)
-                    {
+                        matching: .images
+                    ) {
                         Text("add")
                             .padding(.horizontal, 20)
                     }
