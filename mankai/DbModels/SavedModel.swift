@@ -13,6 +13,7 @@ struct SavedModel {
     var pluginId: String
     var datetime: Date
     var updates: Bool
+    var latestChapter: String
 
     static func createTable(_ db: Database) throws {
         try db.create(table: SavedModel.databaseTableName, ifNotExists: true) {
@@ -22,6 +23,7 @@ struct SavedModel {
             $0.column("pluginId", .text).notNull()
             $0.column("datetime", .datetime).notNull()
             $0.column("updates", .boolean).notNull()
+            $0.column("latestChapter", .text).notNull()
 
             $0.foreignKey(
                 ["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade

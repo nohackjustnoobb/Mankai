@@ -10,6 +10,7 @@ import SwiftUI
 struct GeneralSettingsScreen: View {
     @AppStorage(SettingsKey.cacheExpiryDuration.rawValue) private var cacheExpiryDurationRawValue:
         Double = CacheDuration.auto.rawValue
+    @ObservedObject private var updateService = UpdateService.shared
 
     var body: some View {
         List {
@@ -29,6 +30,16 @@ struct GeneralSettingsScreen: View {
                     Text("6h").tag(CacheDuration.sixHours)
                     Text("12h").tag(CacheDuration.twelveHours)
                     Text("1d").tag(CacheDuration.oneDay)
+                }
+
+                LabeledContent("lastUpdateTime") {
+                    if let lastUpdateTime = updateService.lastUpdateTime {
+                        Text(lastUpdateTime, style: .relative)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("never")
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
 

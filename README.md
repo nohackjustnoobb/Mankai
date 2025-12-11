@@ -1,7 +1,7 @@
 # Mankai
 
 > [!WARNING]
-> This project is currently under active development. Syncing and fetching updates features are not yet implemented, and many details are still being finalized.
+> This project is currently under active development. Many details are still being finalized.
 
 A powerful and extensible manga reader for iPhone and iPad, written in Swift.
 

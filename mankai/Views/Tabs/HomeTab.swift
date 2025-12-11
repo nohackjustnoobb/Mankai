@@ -35,6 +35,11 @@ struct HomeTab: View {
     @State private var tempShowPlugins: [String] = []
     @State private var tempStatus: HomeMangaStatus = .all
 
+    // Update state
+    @State private var isRefreshing = false
+    @State private var updateError: Error?
+    @State private var showingUpdateError = false
+
     private var hasActiveFilters: Bool {
         let allPluginIds = Set(pluginService.plugins.map { $0.id })
         let showSet = Set(showPlugins)
@@ -100,6 +105,9 @@ struct HomeTab: View {
                         }
                         .padding()
                     }
+                    .refreshable {
+                        await performUpdate()
+                    }
                 }
             }
             .navigationTitle("home")
@@ -138,6 +146,15 @@ struct HomeTab: View {
             }
             .onReceive(HistoryService.shared.objectWillChange) {
                 updateRecord()
+            }
+            .alert("updateError", isPresented: $showingUpdateError) {
+                Button("ok") {
+                    showingUpdateError = false
+                }
+            } message: {
+                if let error = updateError {
+                    Text(error.localizedDescription)
+                }
             }
             .sheet(isPresented: $showingFilters) {
                 NavigationView {
@@ -363,5 +380,19 @@ struct HomeTab: View {
         tempShowPlugins = pluginService.plugins.map { $0.id }
         tempStatus = .all
         setFilters(showPlugins: pluginService.plugins.map { $0.id }, status: .all)
+    }
+
+    private func performUpdate() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+
+        do {
+            try await UpdateService.shared.update()
+        } catch {
+            updateError = error
+            showingUpdateError = true
+        }
+
+        isRefreshing = false
     }
 }

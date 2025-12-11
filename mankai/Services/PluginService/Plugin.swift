@@ -98,7 +98,9 @@ class Plugin: Identifiable, ObservableObject {
     func setConfig(key: String, value: Any) throws {
         _configValues[key] = ConfigValue(key: key, value: value)
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
 
         try savePlugin()
     }
@@ -112,7 +114,9 @@ class Plugin: Identifiable, ObservableObject {
             )
         }
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
 
         try savePlugin()
     }

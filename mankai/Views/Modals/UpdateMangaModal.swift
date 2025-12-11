@@ -424,6 +424,7 @@ struct UpdateMangaContent: View {
         } message: {
             Text("enterChapterGroup")
         }
+        // FIXME: maybe offed
         .confirmationDialog(
             "removeChapterGroup", isPresented: $showingRemoveChapterGroupAlert,
             titleVisibility: .visible

@@ -114,6 +114,22 @@ struct PluginInfoScreen: View {
                                     showResetConfirmation = true
                                 }
                             )
+                            .confirmationDialog(
+                                "resetConfigs", isPresented: $showResetConfirmation, titleVisibility: .visible
+                            ) {
+                                Button("reset", role: .destructive) {
+                                    do {
+                                        try plugin.resetConfigs()
+                                    } catch {
+                                        errorTitle = String(localized: "failedToResetConfigs")
+                                        errorMessage = error.localizedDescription
+                                        showErrorAlert = true
+                                    }
+                                }
+                                Button("cancel", role: .cancel) {}
+                            } message: {
+                                Text("resetConfigsConfirmation")
+                            }
                         }
 
                         Button(
@@ -123,6 +139,23 @@ struct PluginInfoScreen: View {
                                 showRemoveConfirmation = true
                             }
                         )
+                        .confirmationDialog(
+                            "removePlugin", isPresented: $showRemoveConfirmation, titleVisibility: .visible
+                        ) {
+                            Button("remove", role: .destructive) {
+                                do {
+                                    try PluginService.shared.removePlugin(plugin.id)
+                                    dismiss()
+                                } catch {
+                                    errorTitle = String(localized: "failedToRemovePlugin")
+                                    errorMessage = error.localizedDescription
+                                    showErrorAlert = true
+                                }
+                            }
+                            Button("cancel", role: .cancel) {}
+                        } message: {
+                            Text("removePluginConfirmation")
+                        }
                     }
                 }
             }
@@ -132,39 +165,6 @@ struct PluginInfoScreen: View {
             Button("ok") {}
         } message: {
             Text(errorMessage)
-        }
-        .confirmationDialog(
-            "resetConfigs", isPresented: $showResetConfirmation, titleVisibility: .visible
-        ) {
-            Button("reset", role: .destructive) {
-                do {
-                    try plugin.resetConfigs()
-                } catch {
-                    errorTitle = String(localized: "failedToResetConfigs")
-                    errorMessage = error.localizedDescription
-                    showErrorAlert = true
-                }
-            }
-            Button("cancel", role: .cancel) {}
-        } message: {
-            Text("resetConfigsConfirmation")
-        }
-        .confirmationDialog(
-            "removePlugin", isPresented: $showRemoveConfirmation, titleVisibility: .visible
-        ) {
-            Button("remove", role: .destructive) {
-                do {
-                    try PluginService.shared.removePlugin(plugin.id)
-                    dismiss()
-                } catch {
-                    errorTitle = String(localized: "failedToRemovePlugin")
-                    errorMessage = error.localizedDescription
-                    showErrorAlert = true
-                }
-            }
-            Button("cancel", role: .cancel) {}
-        } message: {
-            Text("removePluginConfirmation")
         }
     }
 }

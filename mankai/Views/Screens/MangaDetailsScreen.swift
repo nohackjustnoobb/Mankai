@@ -92,13 +92,14 @@ struct MangaDetailsScreen: View {
         let result: Bool?
 
         if saved != nil {
-            result = SavedService.shared.delete(mangaId: manga.id, pluginId: plugin.id)
+            result = SavedService.shared.remove(mangaId: manga.id, pluginId: plugin.id)
         } else {
             let newSaved = SavedModel(
                 mangaId: manga.id,
                 pluginId: plugin.id,
                 datetime: Date(),
-                updates: false
+                updates: false,
+                latestChapter: manga.latestChapter?.encode() ?? ""
             )
 
             let mangaInfo: String
@@ -114,7 +115,7 @@ struct MangaDetailsScreen: View {
                 info: mangaInfo
             )
 
-            result = SavedService.shared.update(saved: newSaved, manga: mangaModel)
+            result = SavedService.shared.add(saved: newSaved, manga: mangaModel)
         }
 
         if result == nil || !result! {
