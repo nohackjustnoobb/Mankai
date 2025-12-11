@@ -23,15 +23,60 @@ class HistoryService: ObservableObject {
         return result
     }
 
-    func update(record: RecordModel, manga: MangaModel) -> Bool? {
+    func add(record: RecordModel, manga: MangaModel? = nil) -> Bool? {
+        let result = update(record: record, manga: manga)
+
+        try? DbService.shared.appDb?.write { db in
+            // Set updates to false in the corresponding saved if it exists
+            if var saved = try SavedModel
+                .filter(Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId && Column("updates") == true)
+                .fetchOne(db)
+            {
+                saved.updates = false
+                saved.datetime = Date()
+                try saved.update(db)
+            }
+        }
+
+        return result
+    }
+
+    func update(record: RecordModel, manga: MangaModel? = nil) -> Bool? {
         let result = try? DbService.shared.appDb?.write { db in
-            try manga.upsert(db)
+            if let manga = manga {
+                try manga.upsert(db)
+            }
             try record.upsert(db)
 
             return true
         }
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+
+        return result
+    }
+
+    func batchUpdate(records: [RecordModel], mangas: [MangaModel]? = nil) -> Bool? {
+        let result = try? DbService.shared.appDb?.write { db in
+            if let mangas = mangas {
+                for manga in mangas {
+                    try manga.upsert(db)
+                }
+            }
+
+            for record in records {
+                try record.upsert(db)
+            }
+
+            return true
+        }
+
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+
         return result
     }
 
@@ -47,6 +92,29 @@ class HistoryService: ObservableObject {
         }
 
         return result ?? []
+    }
+
+    func getAllSince(date: Date) -> [RecordModel] {
+        let result = try? DbService.shared.appDb?.read { db in
+            let request = RecordModel
+                .filter(Column("datetime") > date)
+                .order(Column("datetime").desc)
+
+            return try request.fetchAll(db)
+        }
+
+        return result ?? []
+    }
+
+    func getLatest() -> RecordModel? {
+        let result = try? DbService.shared.appDb?.read { db in
+            try RecordModel
+                .order(Column("datetime").desc)
+                .limit(1)
+                .fetchOne(db)
+        }
+
+        return result
     }
 
     //    func delete(mangaId: String, pluginId: String) -> Bool? {

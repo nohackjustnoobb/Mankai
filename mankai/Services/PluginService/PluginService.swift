@@ -38,14 +38,18 @@ class PluginService: ObservableObject {
     func addPlugin(_ plugin: Plugin) throws {
         _plugins[plugin.id] = plugin
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
 
         try plugin.savePlugin()
     }
 
     func removePlugin(_ id: String) throws {
         if let plugin = _plugins.removeValue(forKey: id) {
-            objectWillChange.send()
+            DispatchQueue.main.async {
+                self.objectWillChange.send()
+            }
 
             try plugin.deletePlugin()
         }

@@ -5,6 +5,7 @@
 //  Created by Travis XU on 17/7/2025.
 //
 
+import CryptoKit
 import Foundation
 import GRDB
 
@@ -23,15 +24,66 @@ class SavedService: ObservableObject {
         return result
     }
 
-    func update(saved: SavedModel, manga: MangaModel) -> Bool? {
+    func add(saved: SavedModel, manga: MangaModel? = nil) -> Bool? {
+        let result = update(saved: saved, manga: manga)
+
+        if let result = result, result {
+            Task {
+                try await SyncService.shared.pushSaveds()
+            }
+        }
+
+        return result
+    }
+
+    func remove(mangaId: String, pluginId: String) -> Bool? {
+        let result = delete(mangaId: mangaId, pluginId: pluginId)
+
+        if let result = result, result {
+            Task {
+                try await SyncService.shared.pushSaveds()
+            }
+        }
+
+        return result
+    }
+
+    func update(saved: SavedModel, manga: MangaModel? = nil) -> Bool? {
         let result = try? DbService.shared.appDb?.write { db in
-            try manga.upsert(db)
+            if let manga = manga {
+                try manga.upsert(db)
+            }
             try saved.upsert(db)
 
             return true
         }
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+
+        return result
+    }
+
+    func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) -> Bool? {
+        let result = try? DbService.shared.appDb?.write { db in
+            if let mangas = mangas {
+                for manga in mangas {
+                    try manga.upsert(db)
+                }
+            }
+
+            for saved in saveds {
+                try saved.upsert(db)
+            }
+
+            return true
+        }
+
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+
         return result
     }
 
@@ -56,7 +108,10 @@ class SavedService: ObservableObject {
             return deleted > 0
         }
 
-        objectWillChange.send()
+        DispatchQueue.main.async {
+            self.objectWillChange.send()
+        }
+
         return result
     }
 
@@ -68,5 +123,50 @@ class SavedService: ObservableObject {
         }
 
         return result ?? []
+    }
+
+    func getAllSince(date: Date) -> [SavedModel] {
+        let result = try? DbService.shared.appDb?.read { db in
+            try SavedModel
+                .filter(Column("datetime") > date)
+                .order(Column("datetime").asc)
+                .fetchAll(db)
+        }
+
+        return result ?? []
+    }
+
+    func getLatest() -> SavedModel? {
+        let result = try? DbService.shared.appDb?.read { db in
+            try SavedModel
+                .order(Column("datetime").desc)
+                .limit(1)
+                .fetchOne(db)
+        }
+
+        return result
+    }
+
+    func generateHash() -> String? {
+        let result = try? DbService.shared.appDb?.read { db in
+            // Fetch all saved items, sorted by mangaId and pluginId
+            let saveds = try SavedModel
+                .order(Column("mangaId").asc, Column("pluginId").asc)
+                .fetchAll(db)
+
+            // Concatenate primary keys
+            let keyString = saveds
+                .map { "\($0.mangaId)|\($0.pluginId)" }
+                .joined()
+
+            // Generate SHA256 hash
+            let data = Data(keyString.utf8)
+            let hash = SHA256.hash(data: data)
+
+            // Convert hash to hex string
+            return hash.compactMap { String(format: "%02x", $0) }.joined()
+        }
+
+        return result
     }
 }

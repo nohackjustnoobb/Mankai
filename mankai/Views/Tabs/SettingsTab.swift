@@ -20,6 +20,22 @@ struct SettingsTab: View {
                     }
 
                     NavigationLink(
+                        destination: ReaderSettingsScreen()
+                    ) {
+                        Label("reader", systemImage: "book.pages.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .orange))
+                    }
+
+                    NavigationLink(
+                        destination: PluginSettingsScreen()
+                    ) {
+                        Label("plugins", systemImage: "puzzlepiece.fill")
+                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
+                    }
+                }
+
+                Section {
+                    NavigationLink(
                         destination: HistoryScreen()
                     ) {
                         Label(
@@ -30,25 +46,22 @@ struct SettingsTab: View {
                     }
 
                     NavigationLink(
-                        destination: ReaderSettingsScreen()
+                        destination: SyncSettingsScreen()
                     ) {
-                        Label("reader", systemImage: "book.pages.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .orange))
+                        Label(
+                            "sync",
+                            systemImage: "arrow.trianglehead.2.clockwise.rotate.90"
+                        )
+                        .labelStyle(ColorfulIconLabelStyle(color: .blue))
                     }
                 }
 
                 Section {
                     NavigationLink(
-                        destination: PluginSettingsScreen()
-                    ) {
-                        Label("plugins", systemImage: "puzzlepiece.fill")
-                            .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
-                    }
-                    NavigationLink(
                         destination: DebugScreen()
                     ) {
                         Label("debug", systemImage: "curlybraces")
-                            .labelStyle(ColorfulIconLabelStyle(color: .blue))
+                            .labelStyle(ColorfulIconLabelStyle(color: .yellow))
                     }
                 }
             }

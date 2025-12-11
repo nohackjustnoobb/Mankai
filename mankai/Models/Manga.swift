@@ -39,6 +39,19 @@ enum Status: UInt, Codable {
 struct Chapter: Codable {
     var id: String?
     var title: String?
+
+    func encode() -> String {
+        let id = self.id ?? ""
+        let title = self.title ?? ""
+        return "\(id)|\(title)"
+    }
+
+    static func decode(_ encoded: String) -> Chapter {
+        let parts = encoded.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+        let id = parts.count > 0 && !parts[0].isEmpty ? String(parts[0]) : nil
+        let title = parts.count > 1 && !parts[1].isEmpty ? String(parts[1]) : nil
+        return Chapter(id: id, title: title)
+    }
 }
 
 struct Manga: Identifiable, Codable {

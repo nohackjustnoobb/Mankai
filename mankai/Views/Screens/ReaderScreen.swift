@@ -258,7 +258,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             page: currentPage
         )
 
-        if let result = HistoryService.shared.update(record: recordModel, manga: mangaModel), result {
+        if let result = HistoryService.shared.add(record: recordModel, manga: mangaModel), result {
             lastSavedPage = currentPage
         } else {
             print("Failed to save record")
