@@ -85,7 +85,7 @@ class SyncService: ObservableObject {
 
             // Update local database without deleting existing saveds
             if !remoteSaveds.isEmpty {
-                _ = SavedService.shared.batchUpdate(saveds: remoteSaveds)
+                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
             }
 
             // Push all local saveds to remote
@@ -95,6 +95,7 @@ class SyncService: ObservableObject {
 
         // Call sync
         try await sync()
+        try await UpdateService.shared.update()
     }
 
     private func subscribeToEngine() {
@@ -193,13 +194,13 @@ class SyncService: ObservableObject {
             for saved in localSaveds {
                 let key = "\(saved.mangaId)|\(saved.pluginId)"
                 if !remoteKeys.contains(key) {
-                    _ = SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+                    _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
                 }
             }
 
             // Add or update saveds from remote
             if !remoteSaveds.isEmpty {
-                _ = SavedService.shared.batchUpdate(saveds: remoteSaveds)
+                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
             }
         }
 
@@ -236,7 +237,7 @@ class SyncService: ObservableObject {
 
         // Update local database with remote saveds
         if !remoteSavedsUpdates.isEmpty {
-            _ = SavedService.shared.batchUpdate(saveds: remoteSavedsUpdates)
+            _ = await SavedService.shared.batchUpdate(saveds: remoteSavedsUpdates)
         }
 
         // Update last sync time for saveds
@@ -277,7 +278,7 @@ class SyncService: ObservableObject {
 
         // Update local database with remote records
         if !remoteRecords.isEmpty {
-            _ = HistoryService.shared.batchUpdate(records: remoteRecords)
+            _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
         }
 
         // Update last sync time

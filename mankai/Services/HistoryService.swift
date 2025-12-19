@@ -23,10 +23,10 @@ class HistoryService: ObservableObject {
         return result
     }
 
-    func add(record: RecordModel, manga: MangaModel? = nil) -> Bool? {
-        let result = update(record: record, manga: manga)
+    func add(record: RecordModel, manga: MangaModel? = nil) async -> Bool? {
+        let result = await update(record: record, manga: manga)
 
-        try? DbService.shared.appDb?.write { db in
+        try? await DbService.shared.appDb?.write { db in
             // Set updates to false in the corresponding saved if it exists
             if var saved = try SavedModel
                 .filter(Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId && Column("updates") == true)
@@ -41,8 +41,8 @@ class HistoryService: ObservableObject {
         return result
     }
 
-    func update(record: RecordModel, manga: MangaModel? = nil) -> Bool? {
-        let result = try? DbService.shared.appDb?.write { db in
+    func update(record: RecordModel, manga: MangaModel? = nil) async -> Bool? {
+        let result = try? await DbService.shared.appDb?.write { db in
             if let manga = manga {
                 try manga.upsert(db)
             }
@@ -51,15 +51,15 @@ class HistoryService: ObservableObject {
             return true
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.objectWillChange.send()
         }
 
         return result
     }
 
-    func batchUpdate(records: [RecordModel], mangas: [MangaModel]? = nil) -> Bool? {
-        let result = try? DbService.shared.appDb?.write { db in
+    func batchUpdate(records: [RecordModel], mangas: [MangaModel]? = nil) async -> Bool? {
+        let result = try? await DbService.shared.appDb?.write { db in
             if let mangas = mangas {
                 for manga in mangas {
                     try manga.upsert(db)
@@ -73,7 +73,7 @@ class HistoryService: ObservableObject {
             return true
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.objectWillChange.send()
         }
 
