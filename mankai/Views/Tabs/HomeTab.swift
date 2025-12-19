@@ -134,12 +134,12 @@ struct HomeTab: View {
                 filterManga()
             }
             .onAppear {
-                updateSaved()
                 initializeShowPlugins()
+                updateSaved()
             }
             .onReceive(pluginService.objectWillChange) {
-                updateSaved()
                 initializeShowPlugins()
+                updateSaved()
             }
             .onReceive(SavedService.shared.objectWillChange) {
                 updateSaved()
@@ -301,6 +301,9 @@ struct HomeTab: View {
 
             switch (newerDate1, newerDate2) {
             case let (date1?, date2?):
+                if abs(date1.timeIntervalSince(date2)) < 1e-3 {
+                    return key1 < key2
+                }
                 return date1 > date2
             case (nil, _):
                 return false
@@ -324,11 +327,9 @@ struct HomeTab: View {
         }
 
         // Filter by shown plugins
-        if !showPlugins.isEmpty {
-            filtered = filtered.filter { key in
-                let pluginId = key.split(separator: "_").first.map(String.init) ?? ""
-                return showPlugins.contains(pluginId)
-            }
+        filtered = filtered.filter { key in
+            let pluginId = key.split(separator: "_").first.map(String.init) ?? ""
+            return showPlugins.contains(pluginId)
         }
 
         // Filter by status
@@ -359,9 +360,7 @@ struct HomeTab: View {
     }
 
     private func initializeShowPlugins() {
-        if showPlugins.isEmpty {
-            showPlugins = pluginService.plugins.map { $0.id }
-        }
+        showPlugins = pluginService.plugins.map { $0.id }
     }
 
     private func setFilters(showPlugins: [String], status: HomeMangaStatus) {
