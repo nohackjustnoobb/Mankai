@@ -24,8 +24,8 @@ class SavedService: ObservableObject {
         return result
     }
 
-    func add(saved: SavedModel, manga: MangaModel? = nil) -> Bool? {
-        let result = update(saved: saved, manga: manga)
+    func add(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
+        let result = await update(saved: saved, manga: manga)
 
         if let result = result, result {
             Task {
@@ -36,8 +36,8 @@ class SavedService: ObservableObject {
         return result
     }
 
-    func remove(mangaId: String, pluginId: String) -> Bool? {
-        let result = delete(mangaId: mangaId, pluginId: pluginId)
+    func remove(mangaId: String, pluginId: String) async -> Bool? {
+        let result = await delete(mangaId: mangaId, pluginId: pluginId)
 
         if let result = result, result {
             Task {
@@ -48,8 +48,8 @@ class SavedService: ObservableObject {
         return result
     }
 
-    func update(saved: SavedModel, manga: MangaModel? = nil) -> Bool? {
-        let result = try? DbService.shared.appDb?.write { db in
+    func update(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
+        let result = try? await DbService.shared.appDb?.write { db in
             if let manga = manga {
                 try manga.upsert(db)
             }
@@ -58,15 +58,15 @@ class SavedService: ObservableObject {
             return true
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.objectWillChange.send()
         }
 
         return result
     }
 
-    func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) -> Bool? {
-        let result = try? DbService.shared.appDb?.write { db in
+    func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) async -> Bool? {
+        let result = try! await DbService.shared.appDb?.write { db in
             if let mangas = mangas {
                 for manga in mangas {
                     try manga.upsert(db)
@@ -80,15 +80,15 @@ class SavedService: ObservableObject {
             return true
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.objectWillChange.send()
         }
 
         return result
     }
 
-    func delete(mangaId: String, pluginId: String) -> Bool? {
-        let result = try? DbService.shared.appDb?.write { db in
+    func delete(mangaId: String, pluginId: String) async -> Bool? {
+        let result = try? await DbService.shared.appDb?.write { db in
             let deleted =
                 try SavedModel
                     .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
@@ -108,7 +108,7 @@ class SavedService: ObservableObject {
             return deleted > 0
         }
 
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.objectWillChange.send()
         }
 

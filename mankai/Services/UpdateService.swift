@@ -84,8 +84,10 @@ class UpdateService: ObservableObject {
                             hasUpdate = newId != oldId
                         } else if let newTitle = newChapter.title, let oldTitle = oldChapter.title {
                             hasUpdate = newTitle != oldTitle
+                        } else {
+                            // If no id or title, consider it an update
+                            hasUpdate = true
                         }
-                        // If no id or title, ignore this manga
 
                         if hasUpdate {
                             // Create updated saved model
@@ -117,7 +119,7 @@ class UpdateService: ObservableObject {
 
         // Batch update all changed saveds and mangas
         if !updatedSaveds.isEmpty {
-            _ = SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
+            _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
         }
 
         // Update last update time

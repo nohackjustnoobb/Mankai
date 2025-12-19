@@ -25,17 +25,6 @@ struct MangaModel {
 
 extension MangaModel: TableRecord {
     static let databaseTableName = "manga"
-
-    static let record = hasOne(RecordModel.self)
-    static let saved = hasOne(SavedModel.self)
 }
 
-extension MangaModel: Codable, FetchableRecord, PersistableRecord {
-    var saved: QueryInterfaceRequest<SavedModel> {
-        request(for: MangaModel.saved)
-    }
-
-    var record: QueryInterfaceRequest<RecordModel> {
-        request(for: MangaModel.record)
-    }
-}
+extension MangaModel: Codable, FetchableRecord, PersistableRecord {}

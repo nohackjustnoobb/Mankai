@@ -24,22 +24,12 @@ struct SavedModel {
             $0.column("datetime", .datetime).notNull()
             $0.column("updates", .boolean).notNull()
             $0.column("latestChapter", .text).notNull()
-
-            $0.foreignKey(
-                ["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade
-            )
         }
     }
 }
 
 extension SavedModel: TableRecord {
     static let databaseTableName = "saved"
-
-    static let manga = belongsTo(MangaModel.self)
 }
 
-extension SavedModel: Codable, FetchableRecord, PersistableRecord {
-    var manga: QueryInterfaceRequest<MangaModel> {
-        request(for: SavedModel.manga)
-    }
-}
+extension SavedModel: Codable, FetchableRecord, PersistableRecord {}

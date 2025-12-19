@@ -405,7 +405,6 @@ class JsPlugin: Plugin {
         }
 
         let script = "\(_scriptsNoExport[.isOnline]!) return await \(_funcName[.isOnline]!)();"
-        print(script)
         let result = try await JsRuntime.shared.execute(script, plugin: self)
 
         guard let isOnline = result as? Bool else {

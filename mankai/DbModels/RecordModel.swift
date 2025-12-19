@@ -26,22 +26,12 @@ struct RecordModel {
             $0.column("page", .integer).notNull()
             $0.column("chapterId", .text)
             $0.column("chapterTitle", .text)
-
-            $0.foreignKey(
-                ["mangaId", "pluginId"], references: MangaModel.databaseTableName, onDelete: .cascade
-            )
         }
     }
 }
 
 extension RecordModel: TableRecord {
     static let databaseTableName = "record"
-
-    static let manga = belongsTo(MangaModel.self)
 }
 
-extension RecordModel: Codable, FetchableRecord, PersistableRecord {
-    var manga: QueryInterfaceRequest<MangaModel> {
-        request(for: RecordModel.manga)
-    }
-}
+extension RecordModel: Codable, FetchableRecord, PersistableRecord {}
