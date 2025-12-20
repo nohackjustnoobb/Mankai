@@ -50,6 +50,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private var imagesCenterY: [String: CGFloat] = [:]
     private var startY: CGFloat = 0.0
 
+    // Haptic feedback state
+    private var hasTriggeredTopHaptic = false
+    private var hasTriggeredBottomHaptic = false
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+
     // State variables for tab bar visibility
     var isTabBarHidden = false
     var isTabBarAnimating = false
@@ -111,16 +116,26 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             object: nil
         )
 
-        NotificationCenter.default.addObserver(
+        // Observe specific UserDefaults keys that affect layout
+        UserDefaults.standard.addObserver(
             self,
-            selector: #selector(updateGrouping),
-            name: UserDefaults.didChangeNotification,
-            object: nil
+            forKeyPath: SettingsKey.imageLayout.rawValue,
+            options: [.new],
+            context: nil
+        )
+
+        UserDefaults.standard.addObserver(
+            self,
+            forKeyPath: SettingsKey.readingDirection.rawValue,
+            options: [.new],
+            context: nil
         )
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.imageLayout.rawValue)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.readingDirection.rawValue)
         saveTimer?.invalidate()
     }
 
@@ -154,18 +169,57 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Observer
 
+    override func observeValue(
+        forKeyPath _: String?,
+        of _: Any?,
+        change _: [NSKeyValueChangeKey: Any]?,
+        context _: UnsafeMutableRawPointer?
+    ) {
+        updateGrouping()
+    }
+
     @objc private func updateGrouping() {
-        groupImages()
-        syncPage()
+        DispatchQueue.main.async { [weak self] in
+            self?.groupImages()
+            self?.syncPage()
+        }
     }
 
     // MARK: - Scroll Event Monitoring
 
-    func scrollViewDidScroll(_: UIScrollView) {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
         updateCurrentPageFromScroll()
+
+        let offsetY = scrollView.contentOffset.y
+        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + 125
+
+        // Trigger haptic feedback when reaching top threshold
+        if offsetY < -125 {
+            if !hasTriggeredTopHaptic, currentChapterIndex > 0 {
+                impactFeedback.impactOccurred()
+                hasTriggeredTopHaptic = true
+            }
+        }
+
+        // Trigger haptic feedback when reaching bottom threshold
+        if offsetY > maxScrollY {
+            if !hasTriggeredBottomHaptic, currentChapterIndex < chapters.count - 1 {
+                impactFeedback.impactOccurred()
+                hasTriggeredBottomHaptic = true
+            }
+        }
+    }
+
+    func scrollViewWillBeginDragging(_: UIScrollView) {
+        // Prepare haptic feedback for smooth response
+        impactFeedback.prepare()
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        // Reset haptic feedback state when user ends dragging
+        hasTriggeredTopHaptic = false
+        hasTriggeredBottomHaptic = false
+
         guard decelerate else { return }
 
         let offsetY = scrollView.contentOffset.y
@@ -456,7 +510,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Tab Bar
 
-    func hideTabBar() {
+    private func hideTabBar() {
         if #available(iOS 18.0, *) {
             tabBarController?.setTabBarHidden(true, animated: true)
         } else {
@@ -490,7 +544,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    func showTabBar() {
+    private func showTabBar() {
         if #available(iOS 18.0, *) {
             tabBarController?.setTabBarHidden(false, animated: true)
         } else {
