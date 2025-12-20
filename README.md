@@ -12,3 +12,12 @@ A powerful and extensible manga reader for iPhone and iPad, written in Swift.
 - **📖 Library Management**: Organize and manage your manga collection
 - **📜 Reading History**: Keep track of your reading progress
 - **✨ Modern UI**: Clean interface built with SwiftUI
+
+## Development Notes
+
+**Performance with Debugger Attached (e.g., from Xcode):**
+
+- The startup time will be significantly slower than normal.
+- The app may temporarily freeze on the first scroll in the reader screen.
+
+These issues do not occur when running the app without a debugger attached.
