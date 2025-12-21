@@ -19,7 +19,7 @@ class AppDirPlugin: ReadWriteFsPlugin {
             try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
         }
 
-        print("AppDirPlugin initialized with PATH: \(mangaDir.path())")
+        Logger.appDirPlugin.info("AppDirPlugin initialized with PATH: \(mangaDir.path())")
 
         super.init(mangaDir.path())
     }

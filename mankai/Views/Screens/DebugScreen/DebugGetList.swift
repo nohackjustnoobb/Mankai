@@ -25,7 +25,7 @@ struct DebugGetList: View {
         }
         .task {
             mangas = try! await plugin.getList(page: 1, genre: Genre.all, status: Status.any)
-            print(mangas ?? [])
+            Logger.jsPlugin.debug("mangas: \(mangas ?? [])")
         }
     }
 }

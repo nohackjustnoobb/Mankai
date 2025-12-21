@@ -72,7 +72,7 @@ func Copy<T: Codable>(of object: T) -> T? {
         let json = try JSONEncoder().encode(object)
         return try JSONDecoder().decode(T.self, from: json)
     } catch {
-        print(error)
+        Logger.general.error("Failed to copy object", error: error)
         return nil
     }
 }

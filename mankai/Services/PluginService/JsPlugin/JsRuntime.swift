@@ -85,6 +85,7 @@ class JsRuntime: NSObject {
 
     @MainActor
     private func initWebview() async {
+        Logger.jsRuntime.debug("Initializing WebView")
         if webview == nil {
             webview = WKWebView(frame: .zero)
             webview?.configuration.userContentController.addScriptMessageHandler(
@@ -100,9 +101,11 @@ class JsRuntime: NSObject {
     func execute(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) async throws
         -> Any?
     {
+        Logger.jsRuntime.debug("Executing JS (from: \(from ?? plugin?.id ?? "unknown"))")
         await initWebview()
 
         guard let webview else {
+            Logger.jsRuntime.error("WebView not initialized")
             throw NSError(
                 domain: "JsRuntime", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "webViewNotInitialized"]
@@ -159,6 +162,9 @@ class JsRuntime: NSObject {
 
 extension JsRuntime: WKScriptMessageHandlerWithReply {
     private func handleFetch(_ params: [String: Any]) async throws -> [String: Any] {
+        let url = params["url"] as? String ?? "unknown"
+        Logger.jsRuntime.debug("Handling fetch request: \(url)")
+
         guard let url = params["url"] as? String else {
             throw NSError(
                 domain: "JsRuntime", code: 1,
@@ -219,6 +225,9 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         _: WKUserContentController, didReceive message: WKScriptMessage
     ) async -> (Any?, String?) {
         let body = message.body as! [String: Any]
+        let methodStr = body["method"] as? String ?? "unknown"
+        Logger.jsRuntime.debug("Received message from JS: \(methodStr)")
+
         let method = Method(rawValue: body["method"] as! String)
         let params = body["params"] as! [String: Any]
 
@@ -226,16 +235,18 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         case .log:
             let from = params["from"] as! String
             let message = params["message"] as! String
-            print("[\(from)] \(message)")
+            Logger.jsRuntime.info("[\(from)] \(message)")
         case .fetch:
             do {
                 let resp = try await handleFetch(params)
 
                 return (resp, nil)
             } catch {
+                Logger.jsRuntime.error("Fetch failed", error: error)
                 return (nil, error.localizedDescription)
             }
         default:
+            Logger.jsRuntime.warning("Unexpected Method: \(methodStr)")
             fatalError("Unexpected Method")
         }
 

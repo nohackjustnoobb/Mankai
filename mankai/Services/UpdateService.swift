@@ -10,7 +10,9 @@ import Foundation
 class UpdateService: ObservableObject {
     static let shared = UpdateService()
 
-    private init() {}
+    private init() {
+        Logger.updateService.debug("Initializing UpdateService")
+    }
 
     var lastUpdateTime: Date? {
         let defaults = UserDefaults.standard
@@ -18,22 +20,26 @@ class UpdateService: ObservableObject {
     }
 
     func update() async throws {
+        Logger.updateService.debug("Starting update process")
         // Check if sync is needed (only if sync engine is configured)
         if SyncService.shared.engine != nil {
             if let lastSyncTime = SyncService.shared.lastSyncTime {
                 // Check if last sync was more than 1 minute ago
                 let timeInterval = Date().timeIntervalSince(lastSyncTime)
                 if timeInterval > 60 { // 1 minute in seconds
+                    Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
                     try await SyncService.shared.sync()
                 }
             } else {
                 // No sync has been performed yet
+                Logger.updateService.info("Syncing before update (first sync)")
                 try await SyncService.shared.sync()
             }
         }
 
         // Get all saved mangas
         let saveds = SavedService.shared.getAll()
+        Logger.updateService.debug("Found \(saveds.count) saved mangas to check for updates")
 
         // Group saveds by pluginId
         var savedsByPlugin: [String: [SavedModel]] = [:]
@@ -49,8 +55,10 @@ class UpdateService: ObservableObject {
         var updatedMangaModels: [MangaModel] = []
 
         for (pluginId, pluginSaveds) in savedsByPlugin {
+            Logger.updateService.debug("Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
+                Logger.updateService.warning("Plugin not found: \(pluginId)")
                 continue // Skip if plugin doesn't exist
             }
 
@@ -60,6 +68,7 @@ class UpdateService: ObservableObject {
             // Fetch updated manga data from the plugin
             do {
                 let updatedMangas = try await plugin.getMangas(mangaIds)
+                Logger.updateService.debug("Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
 
                 // Create a dictionary for quick lookup
                 var mangaDict: [String: Manga] = [:]
@@ -90,6 +99,7 @@ class UpdateService: ObservableObject {
                         }
 
                         if hasUpdate {
+                            Logger.updateService.info("Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
                             // Create updated saved model
                             var updatedSaved = saved
                             updatedSaved.latestChapter = newChapter.encode()
@@ -112,6 +122,7 @@ class UpdateService: ObservableObject {
                     }
                 }
             } catch {
+                Logger.updateService.error("Error checking updates for plugin \(pluginId)", error: error)
                 // Skip this plugin if there's an error
                 continue
             }
@@ -119,7 +130,10 @@ class UpdateService: ObservableObject {
 
         // Batch update all changed saveds and mangas
         if !updatedSaveds.isEmpty {
+            Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas")
             _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
+        } else {
+            Logger.updateService.debug("No updates found")
         }
 
         // Update last update time
@@ -128,5 +142,6 @@ class UpdateService: ObservableObject {
         await MainActor.run {
             self.objectWillChange.send()
         }
+        Logger.updateService.debug("Update process completed")
     }
 }

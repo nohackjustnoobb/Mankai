@@ -45,13 +45,13 @@ struct DebugSearchAndGetSuggestionAndIsOnline: View {
         }
         .task {
             isOnline = try! await plugin.isOnline()
-            print(isOnline as Any)
+            Logger.jsPlugin.debug("isOnline: \(isOnline as Any)")
 
             suggestions = try! await plugin.getSuggestions("mankai")
-            print(suggestions as Any)
+            Logger.jsPlugin.debug("suggestions: \(suggestions as Any)")
 
             mangas = try! await plugin.search("mankai", page: 1)
-            print(mangas as Any)
+            Logger.jsPlugin.debug("mangas: \(mangas as Any)")
         }
         .navigationTitle("getList")
     }

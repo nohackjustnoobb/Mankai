@@ -15,6 +15,7 @@ class SyncService: ObservableObject {
         [HttpEngine.shared]
 
     private init() {
+        Logger.syncService.debug("Initializing SyncService")
         let defaults = UserDefaults.standard
         if let engineId = defaults.string(forKey: "SyncService.engineId") {
             _engine = SyncService.engines.first(where: { $0.id == engineId })
@@ -33,6 +34,7 @@ class SyncService: ObservableObject {
             _engine
         }
         set {
+            Logger.syncService.debug("Setting sync engine: \(newValue?.id ?? "nil")")
             _engine = newValue
 
             let defaults = UserDefaults.standard
@@ -62,7 +64,9 @@ class SyncService: ObservableObject {
     }
 
     func onEngineChange() async throws {
+        Logger.syncService.debug("Handling engine change")
         guard let engine = _engine else {
+            Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
         }
 
@@ -80,6 +84,7 @@ class SyncService: ObservableObject {
 
         // Compare hashes
         if remoteHash != localHash {
+            Logger.syncService.info("Hashes mismatch, syncing saveds")
             // Pull saveds from remote
             let remoteSaveds = try await engine.getSaveds()
 
@@ -91,6 +96,8 @@ class SyncService: ObservableObject {
             // Push all local saveds to remote
             let localSaveds = SavedService.shared.getAll()
             try await engine.saveSaveds(localSaveds)
+        } else {
+            Logger.syncService.debug("Hashes match, skipping saveds sync")
         }
 
         // Call sync
@@ -108,6 +115,7 @@ class SyncService: ObservableObject {
     }
 
     private func startPeriodicSync() {
+        Logger.syncService.debug("Starting periodic sync")
         stopPeriodicSync()
 
         guard _engine != nil else { return }
@@ -131,6 +139,7 @@ class SyncService: ObservableObject {
     }
 
     private func stopPeriodicSync() {
+        Logger.syncService.debug("Stopping periodic sync")
         syncTimer?.invalidate()
         syncTimer = nil
     }
@@ -140,7 +149,9 @@ class SyncService: ObservableObject {
     }
 
     func sync() async throws {
+        Logger.syncService.debug("Starting sync")
         guard let engine = _engine else {
+            Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
         }
 
@@ -158,10 +169,13 @@ class SyncService: ObservableObject {
         await MainActor.run {
             self.objectWillChange.send()
         }
+        Logger.syncService.debug("Sync completed")
     }
 
     func pushSaveds() async throws {
+        Logger.syncService.debug("Pushing saveds")
         guard let engine = _engine else {
+            Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
         }
 
@@ -170,9 +184,11 @@ class SyncService: ObservableObject {
 
         // Push all saveds to remote
         try await engine.saveSaveds(localSaveds)
+        Logger.syncService.info("Pushed \(localSaveds.count) saveds to remote")
     }
 
     private func syncSaveds(engine: SyncEngine, defaults: UserDefaults) async throws {
+        Logger.syncService.debug("Syncing saveds")
         // Get hash from remote server
         let remoteHash = try await engine.getSavedsHash()
 
@@ -181,6 +197,7 @@ class SyncService: ObservableObject {
 
         // Compare hashes
         if remoteHash != localHash {
+            Logger.syncService.info("Hashes mismatch, full sync for saveds")
             // Hashes don't match, pull all saveds from remote
             let remoteSaveds = try await engine.getSaveds()
 
@@ -217,6 +234,7 @@ class SyncService: ObservableObject {
            abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
         {
             // Already synced
+            Logger.syncService.debug("Saveds already synced")
             defaults.set(Date(), forKey: "SyncService.lastSyncTime.saveds")
             return
         }
@@ -225,11 +243,10 @@ class SyncService: ObservableObject {
         let lastSyncTime = defaults.object(forKey: "SyncService.lastSyncTime.saveds") as? Date
 
         // Fetch and upload new local saveds since last sync
-        if let lastSync = lastSyncTime {
-            let newLocalSaveds = SavedService.shared.getAllSince(date: lastSync)
-            if !newLocalSaveds.isEmpty {
-                try await engine.updateSaveds(newLocalSaveds)
-            }
+        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
+        if !newLocalSaveds.isEmpty {
+            Logger.syncService.info("Uploading \(newLocalSaveds.count) new local saveds")
+            try await engine.updateSaveds(newLocalSaveds)
         }
 
         // Get remote saveds since last sync
@@ -237,6 +254,7 @@ class SyncService: ObservableObject {
 
         // Update local database with remote saveds
         if !remoteSavedsUpdates.isEmpty {
+            Logger.syncService.info("Downloading \(remoteSavedsUpdates.count) remote saveds updates")
             _ = await SavedService.shared.batchUpdate(saveds: remoteSavedsUpdates)
         }
 
@@ -245,6 +263,7 @@ class SyncService: ObservableObject {
     }
 
     private func syncRecords(engine: SyncEngine, defaults: UserDefaults) async throws {
+        Logger.syncService.debug("Syncing records")
         // Get latest record from remote
         let remoteLatest = try await engine.getLatestRecord()
 
@@ -258,6 +277,7 @@ class SyncService: ObservableObject {
            abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
         {
             // Already synced
+            Logger.syncService.debug("Records already synced")
             defaults.set(Date(), forKey: "SyncService.lastSyncTime.records")
             return
         }
@@ -266,11 +286,10 @@ class SyncService: ObservableObject {
         let lastSyncTime = defaults.object(forKey: "SyncService.lastSyncTime.records") as? Date
 
         // Fetch and upload new local data since last sync
-        if let lastSync = lastSyncTime {
-            let newLocalRecords = HistoryService.shared.getAllSince(date: lastSync)
-            if !newLocalRecords.isEmpty {
-                try await engine.updateRecords(newLocalRecords)
-            }
+        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime)
+        if !newLocalRecords.isEmpty {
+            Logger.syncService.info("Uploading \(newLocalRecords.count) new local records")
+            try await engine.updateRecords(newLocalRecords)
         }
 
         // Get remote records since last sync
@@ -278,6 +297,7 @@ class SyncService: ObservableObject {
 
         // Update local database with remote records
         if !remoteRecords.isEmpty {
+            Logger.syncService.info("Downloading \(remoteRecords.count) remote records updates")
             _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
         }
 

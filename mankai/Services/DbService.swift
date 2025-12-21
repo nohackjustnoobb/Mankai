@@ -12,47 +12,63 @@ import GRDB
 class DbService {
     static let shared = DbService()
 
-    private init() {}
+    private init() {
+        Logger.dbService.debug("Initializing DbService")
+    }
 
     lazy var appDb: DatabasePool? = {
+        Logger.dbService.debug("Initializing appDb")
         guard
             let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             .first
         else {
+            Logger.dbService.error("Could not find document directory")
             return nil
         }
         let fullUrl = documentsURL.appendingPathComponent("db.sqlite3")
+        Logger.dbService.info("Database path: \(fullUrl.path())")
 
-        let dbPool = try? DatabasePool(path: fullUrl.path())
+        do {
+            let dbPool = try DatabasePool(path: fullUrl.path())
 
-        try? dbPool?.write { db in
-            try MangaModel.createTable(db)
-            try SavedModel.createTable(db)
-            try RecordModel.createTable(db)
-            try JsPluginModel.createTable(db)
+            try dbPool.write { db in
+                try MangaModel.createTable(db)
+                try SavedModel.createTable(db)
+                try RecordModel.createTable(db)
+                try JsPluginModel.createTable(db)
+            }
+            Logger.dbService.info("appDb initialized successfully")
+            return dbPool
+        } catch {
+            Logger.dbService.error("Failed to initialize appDb", error: error)
+            return nil
         }
-
-        return dbPool
     }()
 
     private var fsDb: [String: DatabasePool] = [:]
 
     func openFsDb(_ path: String, readOnly: Bool) -> DatabasePool? {
+        Logger.dbService.debug("Opening FsDb at \(path), readOnly: \(readOnly)")
         var config = Configuration()
         config.readonly = readOnly
 
-        let pool = try? DatabasePool(path: path, configuration: config)
+        do {
+            let pool = try DatabasePool(path: path, configuration: config)
 
-        try? pool?.write { db in
-            try FsMangaModel.createTable(db)
-            try FsChapterGroupModel.createTable(db)
-            try FsChapterModel.createTable(db)
-            try FsImageModel.createTable(db)
+            try pool.write { db in
+                try FsMangaModel.createTable(db)
+                try FsChapterGroupModel.createTable(db)
+                try FsChapterModel.createTable(db)
+                try FsImageModel.createTable(db)
+            }
+
+            fsDb[path] = pool
+            Logger.dbService.info("FsDb opened successfully at \(path)")
+            return pool
+        } catch {
+            Logger.dbService.error("Failed to open FsDb at \(path)", error: error)
+            return nil
         }
-
-        fsDb[path] = pool
-
-        return pool
     }
 
     func getFsDb(_ path: String) -> DatabasePool? {

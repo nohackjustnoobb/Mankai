@@ -316,7 +316,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             if let result = await HistoryService.shared.add(record: recordModel, manga: mangaModel), result {
                 lastSavedPage = currentPage
             } else {
-                print("Failed to save record")
+                Logger.ui.error("Failed to save record")
             }
         }
     }
@@ -1250,7 +1250,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     }
 
     @objc private func pageInfoButtonTapped() {
-        print("Page info button tapped")
+        Logger.ui.debug("Page info button tapped")
         // TODO: Implement page info action
     }
 

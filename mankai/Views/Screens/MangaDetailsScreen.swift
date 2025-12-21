@@ -120,7 +120,7 @@ struct MangaDetailsScreen: View {
             }
 
             if result == nil || !result! {
-                print("Failed to delete or create SavedData")
+                Logger.ui.error("Failed to delete or create SavedData")
             }
         }
     }
@@ -516,7 +516,7 @@ struct MangaDetailsScreen: View {
                         .first?.key
             } catch {
                 if !(plugin is ReadWriteFsPlugin) {
-                    print("Failed to load detailed manga: \(error)")
+                    Logger.ui.error("Failed to load detailed manga", error: error)
                 }
 
                 dismiss()
