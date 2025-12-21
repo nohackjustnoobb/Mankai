@@ -171,10 +171,10 @@ class UpdateService: ObservableObject {
         // Batch update all changed saveds and mangas
         if !updatedSaveds.isEmpty {
             Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas")
-            _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
         } else {
             Logger.updateService.debug("No updates found")
         }
+        _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
 
         // Update last update time
         UserDefaults.standard.set(Date(), forKey: "UpdateService.lastUpdateTime")

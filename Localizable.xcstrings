@@ -786,6 +786,23 @@
         }
       }
     },
+    "databaseNotAvailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Database Not Available"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資料庫不可用"
+          }
+        }
+      }
+    },
     "dataSize: %lld bytes": {
       "localizations": {
         "en": {
@@ -1233,6 +1250,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "編輯章節失敗"
+          }
+        }
+      }
+    },
+    "failedToEncodeConfigValuesData": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to Encode Config Values Data"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編碼設定值資料失敗"
+          }
+        }
+      }
+    },
+    "failedToEncodeMetaData": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to Encode Metadata"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編碼元數據失敗"
           }
         }
       }
@@ -1843,6 +1894,23 @@
         }
       }
     },
+    "invalidHashResponse": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid Hash Response"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無效的雜湊回應"
+          }
+        }
+      }
+    },
     "invalidJsonResponse": {
       "extractionState": "manual",
       "localizations": {
@@ -2140,6 +2208,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Last Update Time"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最後更新時間"
           }
         }
       }
@@ -2442,6 +2516,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "缺少更新令牌或伺服器網址"
+          }
+        }
+      }
+    },
+    "missingServerUrl": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing Server URL"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "缺少伺服器網址"
           }
         }
       }
@@ -2753,6 +2844,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "沒有已儲存的漫畫"
+          }
+        }
+      }
+    },
+    "noSyncEngine": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Sync Engine"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有同步引擎"
           }
         }
       }
@@ -3982,66 +4090,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "百合"
-          }
-        }
-      }
-    },
-    "databaseNotAvailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Database Not Available"
-          }
-        }
-      }
-    },
-    "failedToEncodeMetaData": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed to Encode Metadata"
-          }
-        }
-      }
-    },
-    "failedToEncodeConfigValuesData": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed to Encode Config Values Data"
-          }
-        }
-      }
-    },
-    "noSyncEngine": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No Sync Engine"
-          }
-        }
-      }
-    },
-    "missingServerUrl": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Missing Server URL"
-          }
-        }
-      }
-    },
-    "invalidHashResponse": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Invalid Hash Response"
           }
         }
       }

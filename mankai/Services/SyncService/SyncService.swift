@@ -143,11 +143,6 @@ class SyncService: ObservableObject {
                 try? await self?.sync()
             }
         }
-
-        // Ensure timer runs even when UI is scrolling
-        if let timer = syncTimer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
     }
 
     private func stopPeriodicSync() {
