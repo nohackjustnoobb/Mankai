@@ -29,7 +29,9 @@ class DbService {
         Logger.dbService.info("Database path: \(fullUrl.path())")
 
         do {
-            let dbPool = try DatabasePool(path: fullUrl.path())
+            var config = Configuration()
+            config.busyMode = .timeout(5.0)
+            let dbPool = try DatabasePool(path: fullUrl.path(), configuration: config)
 
             try dbPool.write { db in
                 try MangaModel.createTable(db)
@@ -51,6 +53,7 @@ class DbService {
         Logger.dbService.debug("Opening FsDb at \(path), readOnly: \(readOnly)")
         var config = Configuration()
         config.readonly = readOnly
+        config.busyMode = .timeout(5.0)
 
         do {
             let pool = try DatabasePool(path: path, configuration: config)

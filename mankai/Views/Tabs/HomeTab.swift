@@ -37,8 +37,6 @@ struct HomeTab: View {
 
     // Update state
     @State private var isRefreshing = false
-    @State private var updateError: Error?
-    @State private var showingUpdateError = false
 
     private var hasActiveFilters: Bool {
         let allPluginIds = Set(pluginService.plugins.map { $0.id })
@@ -146,15 +144,6 @@ struct HomeTab: View {
             }
             .onReceive(HistoryService.shared.objectWillChange) {
                 updateRecord()
-            }
-            .alert("updateError", isPresented: $showingUpdateError) {
-                Button("ok") {
-                    showingUpdateError = false
-                }
-            } message: {
-                if let error = updateError {
-                    Text(error.localizedDescription)
-                }
             }
             .sheet(isPresented: $showingFilters) {
                 NavigationView {
@@ -275,9 +264,12 @@ struct HomeTab: View {
 
     private func updateRecord() {
         var records: [String: RecordModel] = [:]
+        let ids = saveds.values.map { (mangaId: $0.mangaId, pluginId: $0.pluginId) }
+        let historyRecords = HistoryService.shared.get(ids: ids)
 
-        for (key, saved) in saveds {
-            if let record = HistoryService.shared.get(mangaId: saved.mangaId, pluginId: saved.pluginId) {
+        for record in historyRecords {
+            let key = "\(record.pluginId)_\(record.mangaId)"
+            if saveds[key] != nil {
                 records[key] = record
             }
         }
@@ -385,12 +377,7 @@ struct HomeTab: View {
         guard !isRefreshing else { return }
         isRefreshing = true
 
-        do {
-            try await UpdateService.shared.update()
-        } catch {
-            updateError = error
-            showingUpdateError = true
-        }
+        try? await UpdateService.shared.update()
 
         isRefreshing = false
     }

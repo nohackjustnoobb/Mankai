@@ -389,6 +389,20 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 groupImages()
             }
         }
+
+        // Retry failed images after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            guard let self = self else { return }
+
+            // Check if any images are still nil
+            let hasFailedImages = self.urls.contains { url in
+                self.images[url] == nil || self.images[url] as? NSObject == nil
+            }
+
+            if hasFailedImages {
+                self.loadImages()
+            }
+        }
     }
 
     // MARK: - Group Images

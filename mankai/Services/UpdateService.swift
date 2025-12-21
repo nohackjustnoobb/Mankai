@@ -19,8 +19,32 @@ class UpdateService: ObservableObject {
         return defaults.object(forKey: "UpdateService.lastUpdateTime") as? Date
     }
 
+    @Published var isUpdating = false
+
     func update() async throws {
+        if isUpdating {
+            Logger.updateService.debug("Update already in progress, skipping")
+            return
+        }
+
+        await MainActor.run { isUpdating = true }
+        defer {
+            Task { @MainActor in isUpdating = false }
+        }
+
         Logger.updateService.debug("Starting update process")
+
+        do {
+            try await performUpdate()
+        } catch {
+            Logger.updateService.error("Update failed", error: error)
+            let message = String(localized: "failedToUpdateLibrary")
+            NotificationService.shared.showError(String(format: message, error.localizedDescription))
+            throw error
+        }
+    }
+
+    private func performUpdate() async throws {
         // Check if sync is needed (only if sync engine is configured)
         if SyncService.shared.engine != nil {
             if let lastSyncTime = SyncService.shared.lastSyncTime {
@@ -28,12 +52,26 @@ class UpdateService: ObservableObject {
                 let timeInterval = Date().timeIntervalSince(lastSyncTime)
                 if timeInterval > 60 { // 1 minute in seconds
                     Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
-                    try await SyncService.shared.sync()
+                    do {
+                        try await SyncService.shared.sync()
+                    } catch {
+                        Logger.updateService.error("Sync failed before update", error: error)
+                        let message = String(localized: "failedToSync")
+                        NotificationService.shared.showError(String(format: message, error.localizedDescription))
+                        throw error
+                    }
                 }
             } else {
                 // No sync has been performed yet
                 Logger.updateService.info("Syncing before update (first sync)")
-                try await SyncService.shared.sync()
+                do {
+                    try await SyncService.shared.sync()
+                } catch {
+                    Logger.updateService.error("Initial sync failed", error: error)
+                    let message = String(localized: "failedToSync")
+                    NotificationService.shared.showError(String(format: message, error.localizedDescription))
+                    throw error
+                }
             }
         }
 
@@ -123,6 +161,8 @@ class UpdateService: ObservableObject {
                 }
             } catch {
                 Logger.updateService.error("Error checking updates for plugin \(pluginId)", error: error)
+                let message = String(localized: "failedToCheckUpdatesForPlugin")
+                NotificationService.shared.showWarning(String(format: message, pluginId))
                 // Skip this plugin if there's an error
                 continue
             }
