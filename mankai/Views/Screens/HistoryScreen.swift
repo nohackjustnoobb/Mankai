@@ -157,7 +157,7 @@ struct HistoryItemView: View {
             do {
                 manga = try JSONDecoder().decode(Manga.self, from: infoData)
             } catch {
-                print("Failed to decode manga data: \(error)")
+                Logger.ui.error("Failed to decode manga data", error: error)
             }
         }
 

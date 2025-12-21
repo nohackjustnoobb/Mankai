@@ -176,11 +176,10 @@ struct DebugScreen: View {
                             )
 
                             // Test Fetch
-                            try! print(
-                                await JsRuntime.shared.execute(
-                                    "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
-                                ) as Any
-                            )
+                            let result = try! await JsRuntime.shared.execute(
+                                "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
+                            ) as Any
+                            Logger.jsRuntime.debug("\(result)")
                         }
                     }
                 }

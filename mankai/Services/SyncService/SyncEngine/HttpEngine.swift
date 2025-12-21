@@ -17,6 +17,7 @@ class HttpEngine: SyncEngine {
     }()
 
     override private init() {
+        Logger.httpEngine.debug("HttpEngine initialized")
         let defaults = UserDefaults.standard
 
         _email = defaults.string(forKey: "HttpEngine.email")
@@ -60,6 +61,7 @@ class HttpEngine: SyncEngine {
     }
 
     func login(email: String, password: String) async throws {
+        Logger.httpEngine.info("HttpEngine logging in with email: \(email)")
         _email = email
         _password = password
 
@@ -67,9 +69,11 @@ class HttpEngine: SyncEngine {
         _accessToken = nil
 
         try await getRefreshToken()
+        Logger.httpEngine.info("HttpEngine login successful")
     }
 
     func logout() {
+        Logger.httpEngine.info("HttpEngine logging out")
         _email = nil
         _password = nil
         _refreshToken = nil
@@ -79,7 +83,9 @@ class HttpEngine: SyncEngine {
     }
 
     private func getRefreshToken() async throws {
+        Logger.httpEngine.debug("HttpEngine getting refresh token")
         guard let email = _email, let password = _password, let serverUrl = _serverUrl else {
+            Logger.httpEngine.error("HttpEngine missing credentials or server URL")
             throw NSError(
                 domain: "HttpEngine", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "missingCredentialsOrServerUrl"]
@@ -87,6 +93,7 @@ class HttpEngine: SyncEngine {
         }
 
         guard let url = URL(string: serverUrl + "/auth/login") else {
+            Logger.httpEngine.error("HttpEngine invalid server URL: \(serverUrl)")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidServerUrl"]
             )
@@ -105,6 +112,7 @@ class HttpEngine: SyncEngine {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            Logger.httpEngine.error("HttpEngine login failed with status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
             logout()
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidCredentials"]
@@ -113,12 +121,14 @@ class HttpEngine: SyncEngine {
 
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
+            Logger.httpEngine.error("HttpEngine invalid JSON response during login")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidJsonResponse"]
             )
         }
 
         guard let refreshToken = json["refreshToken"] as? String else {
+            Logger.httpEngine.error("HttpEngine no refresh token in response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "noRefreshTokenInResponse"]
@@ -127,10 +137,13 @@ class HttpEngine: SyncEngine {
 
         _refreshToken = refreshToken
         save()
+        Logger.httpEngine.debug("HttpEngine refresh token obtained")
     }
 
     private func refreshAccessToken() async throws {
+        Logger.httpEngine.debug("HttpEngine refreshing access token")
         guard let refreshToken = _refreshToken, let serverUrl = _serverUrl else {
+            Logger.httpEngine.error("HttpEngine missing refresh token or server URL")
             throw NSError(
                 domain: "HttpEngine", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "missingRefreshTokenOrServerUrl"]
@@ -138,6 +151,7 @@ class HttpEngine: SyncEngine {
         }
 
         guard let url = URL(string: serverUrl + "/auth/refresh") else {
+            Logger.httpEngine.error("HttpEngine invalid server URL: \(serverUrl)")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidServerUrl"]
             )
@@ -155,18 +169,21 @@ class HttpEngine: SyncEngine {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            Logger.httpEngine.error("HttpEngine invalid response during token refresh")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidResponse"]
             )
         }
 
         if httpResponse.statusCode == 401 {
+            Logger.httpEngine.warning("HttpEngine refresh token expired, trying to re-login")
             // maybe the refresh token is expired, try to get a new one
             try await getRefreshToken()
             return try await refreshAccessToken()
         }
 
         guard httpResponse.statusCode == 200 else {
+            Logger.httpEngine.error("HttpEngine refresh failed with status code: \(httpResponse.statusCode)")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "refreshFailed"]
             )
@@ -174,12 +191,14 @@ class HttpEngine: SyncEngine {
 
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         else {
+            Logger.httpEngine.error("HttpEngine invalid JSON response during token refresh")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidJsonResponse"]
             )
         }
 
         guard let accessToken = json["accessToken"] as? String else {
+            Logger.httpEngine.error("HttpEngine no access token in response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "noAccessTokenInResponse"]
@@ -188,6 +207,7 @@ class HttpEngine: SyncEngine {
 
         _accessToken = accessToken
         save()
+        Logger.httpEngine.debug("HttpEngine access token refreshed")
     }
 
     private func save() {
@@ -214,7 +234,9 @@ class HttpEngine: SyncEngine {
         method: String, path: String, query: [String: String]? = nil, body: Data? = nil,
         retry: Bool = true
     ) async throws -> (Data, HTTPURLResponse) {
+        Logger.httpEngine.debug("HttpEngine request: \(method) \(path)")
         guard let serverUrl = _serverUrl else {
+            Logger.httpEngine.error("HttpEngine missing server URL")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "missingServerUrl"]
             )
@@ -230,6 +252,7 @@ class HttpEngine: SyncEngine {
         }
 
         guard let url = URL(string: urlString) else {
+            Logger.httpEngine.error("HttpEngine invalid URL: \(urlString)")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidUrl"]
             )
@@ -251,6 +274,7 @@ class HttpEngine: SyncEngine {
 
         if let httpResponse = response as? HTTPURLResponse {
             if httpResponse.statusCode == 401, retry {
+                Logger.httpEngine.warning("HttpEngine request 401, retrying with token refresh")
                 try await refreshAccessToken()
                 return try await request(method: method, path: path, query: query, body: body, retry: false)
             }
@@ -260,12 +284,14 @@ class HttpEngine: SyncEngine {
             } else {
                 let errorMsg =
                     String(data: data, encoding: .utf8) ?? "HTTP error \(httpResponse.statusCode)"
+                Logger.httpEngine.error("HttpEngine request failed: \(errorMsg)")
                 throw NSError(
                     domain: "HttpEngine", code: httpResponse.statusCode,
                     userInfo: [NSLocalizedDescriptionKey: errorMsg]
                 )
             }
         } else {
+            Logger.httpEngine.error("HttpEngine invalid response type")
             throw NSError(
                 domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidResponse"]
             )
@@ -275,10 +301,12 @@ class HttpEngine: SyncEngine {
     // MARK: - SyncEngine Overrides
 
     override func getSavedsHash() async throws -> String {
+        Logger.httpEngine.debug("HttpEngine getting saveds hash")
         let (data, _) = try await get(path: "/saveds/hash")
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let hash = json["hash"] as? String
         else {
+            Logger.httpEngine.error("HttpEngine invalid hash response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "invalidHashResponse"]
@@ -288,6 +316,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func getLatestSaved() async throws -> SavedModel? {
+        Logger.httpEngine.debug("HttpEngine getting latest saved")
         let (data, _) = try await get(path: "/saveds", query: ["lm": "1"])
         guard let arr = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], let dict = arr.first else { return nil }
 
@@ -297,12 +326,16 @@ class HttpEngine: SyncEngine {
               let updates = dict["updates"] as? Bool,
               let latestChapter = dict["latestChapter"] as? String,
               let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-        else { return nil }
+        else {
+            Logger.httpEngine.error("HttpEngine failed to parse latest saved")
+            return nil
+        }
 
         return SavedModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates, latestChapter: latestChapter)
     }
 
     override func saveSaveds(_ saveds: [SavedModel]) async throws {
+        Logger.httpEngine.debug("HttpEngine saving \(saveds.count) saveds")
         let bodyArr: [[String: Any]] = saveds.map { saved in
             [
                 "mangaId": saved.mangaId,
@@ -317,6 +350,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func updateSaveds(_ saveds: [SavedModel]) async throws {
+        Logger.httpEngine.debug("HttpEngine updating \(saveds.count) saveds")
         let bodyArr: [[String: Any]] = saveds.map { saved in
             [
                 "mangaId": saved.mangaId,
@@ -331,6 +365,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func getLatestRecord() async throws -> RecordModel? {
+        Logger.httpEngine.debug("HttpEngine getting latest record")
         let (data, _) = try await get(path: "/records", query: ["lm": "1"])
         guard let arr = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], let dict = arr.first else { return nil }
 
@@ -339,7 +374,10 @@ class HttpEngine: SyncEngine {
               let datetimeStr = dict["datetime"] as? String,
               let page = dict["page"] as? Int,
               let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-        else { return nil }
+        else {
+            Logger.httpEngine.error("HttpEngine failed to parse latest record")
+            return nil
+        }
         let chapterId = dict["chapterId"] as? String
         let chapterTitle = dict["chapterTitle"] as? String
 
@@ -347,6 +385,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func updateRecords(_ records: [RecordModel]) async throws {
+        Logger.httpEngine.debug("HttpEngine updating \(records.count) records")
         let bodyArr: [[String: Any]] = records.map { record in
             var dict: [String: Any] = [
                 "mangaId": record.mangaId,
@@ -363,6 +402,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func getSaveds(_ since: Date? = nil) async throws -> [SavedModel] {
+        Logger.httpEngine.debug("HttpEngine getting saveds since: \(String(describing: since))")
         var allResults: [SavedModel] = []
         var offset = 0
         let limit = 50
@@ -387,7 +427,10 @@ class HttpEngine: SyncEngine {
                       let updates = dict["updates"] as? Bool,
                       let latestChapter = dict["latestChapter"] as? String,
                       let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-                else { return nil }
+                else {
+                    Logger.httpEngine.error("HttpEngine failed to parse saved item")
+                    return nil
+                }
                 return SavedModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates, latestChapter: latestChapter)
             }
 
@@ -404,6 +447,7 @@ class HttpEngine: SyncEngine {
     }
 
     override func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
+        Logger.httpEngine.debug("HttpEngine getting records since: \(String(describing: since))")
         var allResults: [RecordModel] = []
         var offset = 0
         let limit = 50
@@ -427,7 +471,10 @@ class HttpEngine: SyncEngine {
                       let datetimeStr = dict["datetime"] as? String,
                       let page = dict["page"] as? Int,
                       let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
-                else { return nil }
+                else {
+                    Logger.httpEngine.error("HttpEngine failed to parse record item")
+                    return nil
+                }
                 let chapterId = dict["chapterId"] as? String
                 let chapterTitle = dict["chapterTitle"] as? String
                 return RecordModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId, chapterTitle: chapterTitle, page: page)

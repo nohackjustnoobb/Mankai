@@ -37,7 +37,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     // MARK: - Methods
 
     func updateManga(_ manga: DetailedManga) async throws {
+        Logger.fsPlugin.debug("Updating manga: \(manga.id)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for updateManga")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -204,7 +206,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func deleteManga(_ mangaId: String) async throws {
+        Logger.fsPlugin.debug("Deleting manga: \(mangaId)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for deleteManga")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -231,7 +235,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func updateCover(mangaId: String, image: Data) async throws {
+        Logger.fsPlugin.debug("Updating cover for manga: \(mangaId)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for updateCover")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -293,7 +299,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func addImages(mangaId: String, chapterId: String, images: [Data]) async throws {
+        Logger.fsPlugin.debug("Adding \(images.count) images to chapter: \(chapterId) (manga: \(mangaId))")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for addImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -370,7 +378,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func removeImages(mangaId _: String, chapterId: String, ids: [String]) async throws {
+        Logger.fsPlugin.debug("Removing \(ids.count) images from chapter: \(chapterId)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for removeImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -413,7 +423,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
     }
 
     func arrangeImageOrder(mangaId _: String, chapterId: String, ids: [String]) async throws {
+        Logger.fsPlugin.debug("Arranging image order for chapter: \(chapterId)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for arrangeImageOrder")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]

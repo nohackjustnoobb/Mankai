@@ -160,10 +160,10 @@ struct DebugGetMangasAndGetDetailedManga: View {
         }
         .task {
             manga = try! await plugin.getMangas([mangaId]).first
-            print(manga ?? "nil")
+            Logger.jsPlugin.debug("manga: \(manga ?? "nil" as Any)")
 
             detailedManga = try! await plugin.getDetailedManga(mangaId)
-            print(detailedManga ?? "nil")
+            Logger.jsPlugin.debug("detailedManga: \(detailedManga ?? "nil" as Any)")
         }
     }
 }

@@ -82,6 +82,7 @@ class JsPlugin: Plugin {
         scripts: [ScriptType: String] = [:],
         configs: [Config] = []
     ) {
+        Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
         _id = id
         _name = name
         _version = version
@@ -215,8 +216,9 @@ class JsPlugin: Plugin {
     }
 
     static func loadPlugins() -> [JsPlugin] {
+        Logger.jsPlugin.debug("Loading JS plugins")
         guard let dbPool = DbService.shared.appDb else {
-            print("Database not available")
+            Logger.jsPlugin.error("Database not available")
             return []
         }
 
@@ -233,7 +235,7 @@ class JsPlugin: Plugin {
                 }
             }
         } catch {
-            print("Failed to load plugins from GRDB: \(error)")
+            Logger.jsPlugin.error("Failed to load plugins from GRDB", error: error)
         }
 
         return results
@@ -312,6 +314,7 @@ class JsPlugin: Plugin {
     // MARK: - Methods
 
     override func savePlugin() throws {
+        Logger.jsPlugin.debug("Saving plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
@@ -384,6 +387,7 @@ class JsPlugin: Plugin {
     }
 
     override func deletePlugin() throws {
+        Logger.jsPlugin.debug("Deleting plugin: \(id)")
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
@@ -400,6 +404,7 @@ class JsPlugin: Plugin {
     }
 
     override func isOnline() async throws -> Bool {
+        Logger.jsPlugin.debug("Checking isOnline for plugin: \(id)")
         if _scripts[.isOnline] == nil {
             fatalError("Script for isOnline is not defined")
         }
@@ -420,6 +425,7 @@ class JsPlugin: Plugin {
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
+        Logger.jsPlugin.debug("Getting suggestions for query: \(query) (plugin: \(id))")
         // Check cache first
         let cacheKey = getCacheKey(for: .getSuggestion, with: [query])
         if let cachedSuggestions = getCachedData(for: cacheKey, as: [String].self) {
@@ -450,6 +456,7 @@ class JsPlugin: Plugin {
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
+        Logger.jsPlugin.debug("Searching for: \(query), page: \(page) (plugin: \(id))")
         // Check cache first
         let cacheKey = getCacheKey(for: .search, with: [query, String(page)])
         if let cachedMangas = getCachedData(for: cacheKey, as: [Manga].self) {
@@ -482,6 +489,7 @@ class JsPlugin: Plugin {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+        Logger.jsPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
         // Check cache first
         let cacheKey = getCacheKey(
             for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)]
@@ -516,6 +524,7 @@ class JsPlugin: Plugin {
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
+        Logger.jsPlugin.debug("Getting \(ids.count) mangas (plugin: \(id))")
         if _scripts[.getMangas] == nil {
             fatalError("Script for getMangas is not defined")
         }
@@ -540,6 +549,7 @@ class JsPlugin: Plugin {
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
+        Logger.jsPlugin.debug("Getting detailed manga: \(id) (plugin: \(self.id))")
         // Check cache first
         let cacheKey = getCacheKey(for: .getDetailedManga, with: [id])
         if let cachedDetailedManga = getCachedData(for: cacheKey, as: DetailedManga.self) {
@@ -578,6 +588,7 @@ class JsPlugin: Plugin {
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
+        Logger.jsPlugin.debug("Getting chapter: \(chapter.id ?? "nil") (plugin: \(id))")
         // Check cache first
         var cacheKey: String?
 
@@ -630,6 +641,7 @@ class JsPlugin: Plugin {
     }
 
     override func getImage(_ url: String) async throws -> Data {
+        Logger.jsPlugin.debug("Getting image: \(url) (plugin: \(id))")
         // Check cache first
         let cacheKey = getCacheKey(for: .getImage, with: [url])
 

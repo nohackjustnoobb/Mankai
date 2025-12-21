@@ -32,6 +32,7 @@ class ReadFsPlugin: Plugin {
     }
 
     init(_ path: String) {
+        Logger.fsPlugin.debug("Initializing ReadFsPlugin with path: \(path)")
         self.path = path
         _id = UUID().uuidString
     }
@@ -175,7 +176,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getSuggestions(_ query: String) async throws -> [String] {
+        Logger.fsPlugin.debug("Getting suggestions for query: \(query)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for suggestions")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -195,7 +198,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
+        Logger.fsPlugin.debug("Searching for: \(query), page: \(page)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for search")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -220,7 +225,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
+        Logger.fsPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for list")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -256,7 +263,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getMangas(_ ids: [String]) async throws -> [Manga] {
+        Logger.fsPlugin.debug("Getting \(ids.count) mangas")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for getMangas")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -276,7 +285,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getDetailedManga(_ id: String) async throws -> DetailedManga {
+        Logger.fsPlugin.debug("Getting detailed manga: \(id)")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for getDetailedManga")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -285,6 +296,7 @@ class ReadFsPlugin: Plugin {
 
         return try await db.read { db in
             guard let mangaModel = try FsMangaModel.fetchOne(db, key: id) else {
+                Logger.fsPlugin.warning("Manga not found in DB: \(id)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"]
@@ -292,6 +304,7 @@ class ReadFsPlugin: Plugin {
             }
 
             guard let detailedManga = try self.convertToDetailedManga(mangaModel, db: db) else {
+                Logger.fsPlugin.error("Failed to convert manga model to detailed manga: \(id)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "failedToLoadMangaDetails"]
@@ -303,7 +316,9 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getChapter(manga _: DetailedManga, chapter: Chapter) async throws -> [String] {
+        Logger.fsPlugin.debug("Getting chapter: \(chapter.id ?? "nil")")
         guard let db = db else {
+            Logger.fsPlugin.error("Database not available for getChapter")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
@@ -311,6 +326,7 @@ class ReadFsPlugin: Plugin {
         }
 
         guard let chapterId = chapter.id, let chapterIdInt = Int(chapterId) else {
+            Logger.fsPlugin.error("Invalid chapter ID: \(String(describing: chapter.id))")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"]
@@ -319,6 +335,7 @@ class ReadFsPlugin: Plugin {
 
         return try await db.read { db in
             guard let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) else {
+                Logger.fsPlugin.warning("Chapter not found in DB: \(chapterIdInt)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"]
@@ -340,11 +357,13 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getImage(_ url: String) async throws -> Data {
+        Logger.fsPlugin.debug("Getting image: \(url)")
         let fileManager = FileManager.default
         let pathURL = URL(fileURLWithPath: path)
         let fullImagePath = pathURL.appendingPathComponent(url).path
 
         guard fileManager.fileExists(atPath: fullImagePath) else {
+            Logger.fsPlugin.error("Image file not found: \(fullImagePath)")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]
@@ -355,6 +374,7 @@ class ReadFsPlugin: Plugin {
             let imageData = try Data(contentsOf: URL(fileURLWithPath: fullImagePath))
             return imageData
         } catch {
+            Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]

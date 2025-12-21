@@ -37,7 +37,7 @@ struct DebugGetChapter: View {
         }
         .task {
             urls = try! await plugin.getChapter(manga: manga, chapter: chapter)
-            print(urls ?? [])
+            Logger.jsPlugin.debug("urls: \(urls ?? [])")
         }
     }
 }

@@ -103,7 +103,7 @@ struct LibraryTab: View {
                     allSuggestions.formUnion(suggestions)
                 } catch {
                     // Continue with other plugins if one fails
-                    print("Failed to get suggestions from plugin \(plugin.id): \(error)")
+                    Logger.pluginService.error("Failed to get suggestions from plugin \(plugin.id)", error: error)
                 }
             }
 

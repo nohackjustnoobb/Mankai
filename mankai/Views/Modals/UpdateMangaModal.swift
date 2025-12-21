@@ -385,7 +385,7 @@ struct UpdateMangaContent: View {
                             isCoverChanged = true
                         }
                     } catch {
-                        print("Failed to load photo: \(error)")
+                        Logger.ui.error("Failed to load photo", error: error)
                     }
                 }
             }

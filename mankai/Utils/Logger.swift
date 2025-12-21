@@ -1,0 +1,168 @@
+//
+//  Logger.swift
+//  mankai
+//
+//  Created on 21/12/2025.
+//
+
+import Foundation
+import OSLog
+
+/// Logger categories for different parts of the application
+enum LogCategory: String {
+    // Services
+    case dbService = "DbService"
+    case historyService = "HistoryService"
+    case savedService = "SavedService"
+    case updateService = "UpdateService"
+    case pluginService = "PluginService"
+    case syncService = "SyncService"
+
+    // UI
+    case ui = "UI"
+
+    // Plugin Types
+    case fsPlugin = "FsPlugin"
+    case jsPlugin = "JsPlugin"
+    case appDirPlugin = "AppDirPlugin"
+
+    // Runtime
+    case jsRuntime = "JsRuntime"
+
+    // Sync Engines
+    case httpEngine = "HttpEngine"
+    case syncEngine = "SyncEngine"
+
+    // General
+    case general = "General"
+
+    var subsystem: String {
+        return "com.mankai.app"
+    }
+
+    var category: String {
+        return rawValue
+    }
+}
+
+/// Unified logger for the application
+class Logger {
+    private let osLogger: os.Logger
+    private let category: LogCategory
+
+    /// Initialize a logger for a specific category
+    /// - Parameter category: The category this logger belongs to
+    init(category: LogCategory) {
+        self.category = category
+        osLogger = os.Logger(subsystem: category.subsystem, category: category.category)
+    }
+
+    /// Log a debug message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func debug(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+        osLogger.debug("[\(function):\(line)] \(message)")
+    }
+
+    /// Log an info message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func info(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+        osLogger.info("[\(function):\(line)] \(message)")
+    }
+
+    /// Log a notice message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func notice(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+        osLogger.notice("[\(function):\(line)] \(message)")
+    }
+
+    /// Log a warning message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func warning(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+        osLogger.warning("[\(function):\(line)] \(message)")
+    }
+
+    /// Log an error message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - error: Optional error object to include
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func error(_ message: String, error: Error? = nil, file _: String = #file, function: String = #function, line: Int = #line) {
+        if let error = error {
+            osLogger.error("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
+        } else {
+            osLogger.error("[\(function):\(line)] \(message)")
+        }
+    }
+
+    /// Log a critical/fault message
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - error: Optional error object to include
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func critical(_ message: String, error: Error? = nil, file _: String = #file, function: String = #function, line: Int = #line) {
+        if let error = error {
+            osLogger.critical("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
+        } else {
+            osLogger.critical("[\(function):\(line)] \(message)")
+        }
+    }
+
+    /// Log a trace message for detailed debugging
+    /// - Parameters:
+    ///   - message: The message to log
+    ///   - file: The file where the log is called (automatically populated)
+    ///   - function: The function where the log is called (automatically populated)
+    ///   - line: The line number where the log is called (automatically populated)
+    func trace(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+        osLogger.trace("[\(function):\(line)] \(message)")
+    }
+}
+
+/// Convenience accessors for category-specific loggers
+extension Logger {
+    // Services
+    static let dbService = Logger(category: .dbService)
+    static let historyService = Logger(category: .historyService)
+    static let savedService = Logger(category: .savedService)
+    static let updateService = Logger(category: .updateService)
+    static let pluginService = Logger(category: .pluginService)
+    static let syncService = Logger(category: .syncService)
+
+    // UI
+    static let ui = Logger(category: .ui)
+
+    // Plugin Types
+    static let fsPlugin = Logger(category: .fsPlugin)
+    static let jsPlugin = Logger(category: .jsPlugin)
+    static let appDirPlugin = Logger(category: .appDirPlugin)
+
+    // Runtime
+    static let jsRuntime = Logger(category: .jsRuntime)
+
+    // Sync Engines
+    static let httpEngine = Logger(category: .httpEngine)
+    static let syncEngine = Logger(category: .syncEngine)
+
+    // General
+    static let general = Logger(category: .general)
+}
