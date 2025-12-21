@@ -29,6 +29,8 @@ class SyncService: ObservableObject {
     private var syncTimer: Timer?
     private let syncInterval: TimeInterval = 60 // 1 minute
 
+    @Published var isSyncing = false
+
     var engine: SyncEngine? {
         get {
             _engine
@@ -64,6 +66,16 @@ class SyncService: ObservableObject {
     }
 
     func onEngineChange() async throws {
+        if isSyncing {
+            Logger.syncService.warning("Sync in progress, skipping engine change sync")
+            return
+        }
+
+        await MainActor.run { isSyncing = true }
+        defer {
+            Task { @MainActor in isSyncing = false }
+        }
+
         Logger.syncService.debug("Handling engine change")
         guard let engine = _engine else {
             Logger.syncService.error("No sync engine available")
@@ -101,7 +113,7 @@ class SyncService: ObservableObject {
         }
 
         // Call sync
-        try await sync()
+        try await internalSync()
         try await UpdateService.shared.update()
     }
 
@@ -149,6 +161,20 @@ class SyncService: ObservableObject {
     }
 
     func sync() async throws {
+        if isSyncing {
+            Logger.syncService.debug("Sync already in progress, skipping")
+            return
+        }
+
+        await MainActor.run { isSyncing = true }
+        defer {
+            Task { @MainActor in isSyncing = false }
+        }
+
+        try await internalSync()
+    }
+
+    private func internalSync() async throws {
         Logger.syncService.debug("Starting sync")
         guard let engine = _engine else {
             Logger.syncService.error("No sync engine available")

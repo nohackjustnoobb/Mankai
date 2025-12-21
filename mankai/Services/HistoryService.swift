@@ -30,6 +30,20 @@ class HistoryService: ObservableObject {
         }
     }
 
+    func get(ids: [(mangaId: String, pluginId: String)]) -> [RecordModel] {
+        Logger.historyService.debug("Getting history for \(ids.count) records")
+        do {
+            let keys = ids.map { ["mangaId": $0.mangaId, "pluginId": $0.pluginId] }
+            let result = try DbService.shared.appDb?.read { db in
+                try RecordModel.fetchAll(db, keys: keys)
+            }
+            return result ?? []
+        } catch {
+            Logger.historyService.error("Failed to get history records", error: error)
+            return []
+        }
+    }
+
     func add(record: RecordModel, manga: MangaModel? = nil) async -> Bool? {
         Logger.historyService.debug("Adding history record for mangaId: \(record.mangaId)")
         let result = await update(record: record, manga: manga)
