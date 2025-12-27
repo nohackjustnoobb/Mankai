@@ -318,7 +318,7 @@ class JsPlugin: Plugin {
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -354,7 +354,7 @@ class JsPlugin: Plugin {
         guard let metaString = String(data: metaData, encoding: .utf8) else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "failedToEncodeMetaData"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeMetaData")]
             )
         }
 
@@ -371,7 +371,7 @@ class JsPlugin: Plugin {
         guard let configValuesString = String(data: configValuesData, encoding: .utf8) else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "failedToEncodeConfigValuesData"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToEncodeConfigValuesData")]
             )
         }
 
@@ -391,7 +391,7 @@ class JsPlugin: Plugin {
         guard let dbPool = DbService.shared.appDb else {
             throw NSError(
                 domain: "JsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -416,7 +416,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForIsOnline",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForIsOnline"),
                 ]
             )
         }
@@ -444,7 +444,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForSuggestions",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForSuggestions"),
                 ]
             )
         }
@@ -475,7 +475,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
             )
         }
@@ -510,7 +510,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
             )
         }
@@ -540,7 +540,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForMangas",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForMangas"),
                 ]
             )
         }
@@ -568,7 +568,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
                 ]
             )
         }
@@ -581,7 +581,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForDetailedManga",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForDetailedManga"),
                 ]
             )
         }
@@ -614,7 +614,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat",
+                    NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat"),
                 ]
             )
         }
@@ -627,7 +627,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForImages",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImages"),
                 ]
             )
         }
@@ -675,7 +675,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidResultFormatForImage",
+                    NSLocalizedDescriptionKey: String(localized: "invalidResultFormatForImage"),
                 ]
             )
         }
@@ -684,7 +684,7 @@ class JsPlugin: Plugin {
             throw NSError(
                 domain: "JsPlugin", code: 1,
                 userInfo: [
-                    NSLocalizedDescriptionKey: "invalidBase64StringForImage",
+                    NSLocalizedDescriptionKey: String(localized: "invalidBase64StringForImage"),
                 ]
             )
         }

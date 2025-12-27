@@ -79,7 +79,7 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Handling engine change")
         guard let engine = _engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
+            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
         // Reset last sync time in UserDefaults
@@ -173,7 +173,7 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Starting sync")
         guard let engine = _engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
+            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
         let defaults = UserDefaults.standard
@@ -197,7 +197,7 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Pushing saveds")
         guard let engine = _engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: "noSyncEngine"])
+            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
         // Get all local saveds

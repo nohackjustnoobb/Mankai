@@ -169,12 +169,17 @@ class UpdateService: ObservableObject {
         }
 
         // Batch update all changed saveds and mangas
+        _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
         if !updatedSaveds.isEmpty {
-            Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds and \(updatedMangaModels.count) mangas")
+            Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds")
+            do {
+                try await SyncService.shared.sync()
+            } catch {
+                Logger.updateService.error("Sync failed after update", error: error)
+            }
         } else {
             Logger.updateService.debug("No updates found")
         }
-        _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
 
         // Update last update time
         UserDefaults.standard.set(Date(), forKey: "UpdateService.lastUpdateTime")

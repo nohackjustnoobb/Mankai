@@ -70,6 +70,8 @@ class HttpEngine: SyncEngine {
 
         try await getRefreshToken()
         Logger.httpEngine.info("HttpEngine login successful")
+
+        try await SyncService.shared.onEngineChange()
     }
 
     func logout() {
@@ -88,14 +90,14 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine missing credentials or server URL")
             throw NSError(
                 domain: "HttpEngine", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "missingCredentialsOrServerUrl"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingCredentialsOrServerUrl")]
             )
         }
 
         guard let url = URL(string: serverUrl + "/auth/login") else {
             Logger.httpEngine.error("HttpEngine invalid server URL: \(serverUrl)")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidServerUrl"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
             )
         }
 
@@ -115,7 +117,7 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine login failed with status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
             logout()
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidCredentials"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
             )
         }
 
@@ -123,7 +125,7 @@ class HttpEngine: SyncEngine {
         else {
             Logger.httpEngine.error("HttpEngine invalid JSON response during login")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidJsonResponse"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
             )
         }
 
@@ -131,7 +133,7 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine no refresh token in response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "noRefreshTokenInResponse"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noRefreshTokenInResponse")]
             )
         }
 
@@ -146,14 +148,14 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine missing refresh token or server URL")
             throw NSError(
                 domain: "HttpEngine", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "missingRefreshTokenOrServerUrl"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingRefreshTokenOrServerUrl")]
             )
         }
 
         guard let url = URL(string: serverUrl + "/auth/refresh") else {
             Logger.httpEngine.error("HttpEngine invalid server URL: \(serverUrl)")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidServerUrl"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
             )
         }
 
@@ -171,7 +173,7 @@ class HttpEngine: SyncEngine {
         guard let httpResponse = response as? HTTPURLResponse else {
             Logger.httpEngine.error("HttpEngine invalid response during token refresh")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidResponse"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
             )
         }
 
@@ -185,7 +187,7 @@ class HttpEngine: SyncEngine {
         guard httpResponse.statusCode == 200 else {
             Logger.httpEngine.error("HttpEngine refresh failed with status code: \(httpResponse.statusCode)")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "refreshFailed"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "refreshFailed")]
             )
         }
 
@@ -193,7 +195,7 @@ class HttpEngine: SyncEngine {
         else {
             Logger.httpEngine.error("HttpEngine invalid JSON response during token refresh")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidJsonResponse"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
             )
         }
 
@@ -201,7 +203,7 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine no access token in response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "noAccessTokenInResponse"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noAccessTokenInResponse")]
             )
         }
 
@@ -238,7 +240,7 @@ class HttpEngine: SyncEngine {
         guard let serverUrl = _serverUrl else {
             Logger.httpEngine.error("HttpEngine missing server URL")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "missingServerUrl"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "missingServerUrl")]
             )
         }
 
@@ -254,7 +256,7 @@ class HttpEngine: SyncEngine {
         guard let url = URL(string: urlString) else {
             Logger.httpEngine.error("HttpEngine invalid URL: \(urlString)")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidUrl"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
             )
         }
 
@@ -293,7 +295,7 @@ class HttpEngine: SyncEngine {
         } else {
             Logger.httpEngine.error("HttpEngine invalid response type")
             throw NSError(
-                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: "invalidResponse"]
+                domain: "HttpEngine", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
             )
         }
     }
@@ -309,7 +311,7 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.error("HttpEngine invalid hash response")
             throw NSError(
                 domain: "HttpEngine", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "invalidHashResponse"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidHashResponse")]
             )
         }
         return hash

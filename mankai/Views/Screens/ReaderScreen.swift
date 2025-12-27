@@ -27,6 +27,8 @@ let TOP_OVERSCROLL_TEXT_TAG = 12
 let BOTTOM_OVERSCROLL_ARROW_TAG = 13
 let BOTTOM_OVERSCROLL_TEXT_TAG = 14
 
+let OVERSCROLL_THRESHOLD: CGFloat = 100
+
 // MARK: - ReaderViewController
 
 private class ReaderViewController: UIViewController, UIScrollViewDelegate {
@@ -48,6 +50,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // Reading state variables
     private var currentPage: Int = 0
     private var imagesCenterY: [String: CGFloat] = [:]
+    private var groupsCenterY: [[String]: CGFloat] = [:]
     private var startY: CGFloat = 0.0
 
     // Haptic feedback state
@@ -102,7 +105,6 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupNavigationBarAppearance()
         setupUI()
         setupGestures()
         setupConstraints()
@@ -145,14 +147,16 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         forceSaveRecord()
         showTabBar()
         showNavigationBar()
-        restoreNavigationBarAppearance()
+
+        Task {
+            try? await SyncService.shared.sync()
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         hideTabBar()
-        setupNavigationBarAppearance()
 
         parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
     }
@@ -191,10 +195,10 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         updateCurrentPageFromScroll()
 
         let offsetY = scrollView.contentOffset.y
-        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + 125
+        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + OVERSCROLL_THRESHOLD
 
         // Trigger haptic feedback when reaching top threshold
-        if offsetY < -125 {
+        if offsetY < -OVERSCROLL_THRESHOLD {
             if !hasTriggeredTopHaptic, currentChapterIndex > 0 {
                 impactFeedback.impactOccurred()
                 hasTriggeredTopHaptic = true
@@ -223,9 +227,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         guard decelerate else { return }
 
         let offsetY = scrollView.contentOffset.y
-        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + 125
+        let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height) + OVERSCROLL_THRESHOLD
 
-        if offsetY < -125 {
+        if offsetY < -OVERSCROLL_THRESHOLD {
             if currentChapterIndex > 0 {
                 currentChapterIndex -= 1
                 loadChapter()
@@ -349,6 +353,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         groups = []
         currentPage = 0
         imagesCenterY = [:]
+        groupsCenterY = [:]
         startY = 0.0
 
         // Set title
@@ -500,26 +505,36 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
+    private func navigateToGroup(_ groupIndex: Int, animated: Bool = false) {
+        guard groupIndex >= 0, groupIndex < groups.count else { return }
+
+        let group = groups[groupIndex]
+
+        if let centerY = groupsCenterY[group] {
+            let zoomScale = scrollView.zoomScale
+            let scaledCenterY = centerY * zoomScale
+            let targetScrollY = scaledCenterY + startY - (view.bounds.height / 2)
+
+            // Limit scroll position to valid bounds
+            let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+            let clampedScrollY = max(0, min(targetScrollY, maxScrollY))
+
+            scrollView.setContentOffset(
+                CGPoint(x: 0, y: clampedScrollY),
+                animated: animated
+            )
+
+            // Update current page to the last page in the group
+            if let lastUrl = group.last, let pageIndex = urls.firstIndex(of: lastUrl) {
+                currentPage = pageIndex
+                updateBottomBar()
+                saveRecord()
+            }
+        }
+    }
+
     private func syncPage() {
         navigateToPage(currentPage)
-    }
-
-    // MARK: - Navigation Bar Appearance
-
-    private func setupNavigationBarAppearance() {
-        guard let navigationController = navigationController else { return }
-
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemMaterial)
-
-        navigationController.navigationBar.scrollEdgeAppearance = appearance
-    }
-
-    private func restoreNavigationBarAppearance() {
-        guard let navigationController = navigationController else { return }
-
-        navigationController.navigationBar.scrollEdgeAppearance = nil
     }
 
     // MARK: - Tab Bar
@@ -648,11 +663,13 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let width = scrollView.bounds.width
 
         if location.x < width / 3 {
-            // Left third: previous page
-            navigateToPage(currentPage - 1, animated: true)
+            // Left third: previous group
+            let tappedGroupIndex = findGroupIndex(atY: location.y)
+            navigateToGroup(tappedGroupIndex - 1, animated: true)
         } else if location.x > width * 2 / 3 {
-            // Right third: next page
-            navigateToPage(currentPage + 1, animated: true)
+            // Right third: next group
+            let tappedGroupIndex = findGroupIndex(atY: location.y)
+            navigateToGroup(tappedGroupIndex + 1, animated: true)
         } else {
             // Middle third: toggle navigation bar
             if isNavigationBarHidden {
@@ -661,6 +678,41 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 hideNavigationBar()
             }
         }
+    }
+
+    private func findGroupIndex(atY y: CGFloat) -> Int {
+        let zoomScale = scrollView.zoomScale
+        let adjustedY = y - startY
+
+        var closestGroupIndex = 0
+        var closestDistance = CGFloat.greatestFiniteMagnitude
+
+        for (index, group) in groups.enumerated() {
+            if let centerY = groupsCenterY[group] {
+                let scaledCenterY = centerY * zoomScale
+                let distance = abs(scaledCenterY - adjustedY)
+                if distance < closestDistance {
+                    closestDistance = distance
+                    closestGroupIndex = index
+                }
+            }
+        }
+
+        return closestGroupIndex
+    }
+
+    private func findGroupIndex(forPage page: Int) -> Int {
+        guard page >= 0, page < urls.count else { return 0 }
+
+        let targetUrl = urls[page]
+
+        for (index, group) in groups.enumerated() {
+            if group.contains(targetUrl) {
+                return index
+            }
+        }
+
+        return 0
     }
 
     // MARK: - UI
@@ -735,11 +787,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
             // Overscroll view constraints
             overscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            overscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -20),
+            overscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -10),
 
             // Bottom overscroll view constraints
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 20),
+            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 10),
 
             // Bottom bar constraints
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -1021,6 +1073,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         var frames: [String: CGRect] = [:]
         imagesCenterY = [:]
+        groupsCenterY = [:]
         var currentY = 0.0
 
         let window = view.window!
@@ -1050,6 +1103,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 currentX += imageWidth
             }
 
+            groupsCenterY[group] = height / 2 + currentY
             currentY += height
         }
 
@@ -1123,20 +1177,35 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private func setupBottomBar() {
         bottomBar.translatesAutoresizingMaskIntoConstraints = false
 
-        // Create blur effect view
-        let blurEffect = UIBlurEffect(style: .systemMaterial)
-        let blurEffectView = UIVisualEffectView(effect: blurEffect)
-        blurEffectView.frame = bottomBar.bounds
-        blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        if #available(iOS 26.0, *) {
+            let glassEffect = UIGlassEffect(style: .regular)
+            let glassEffectView = UIVisualEffectView(effect: glassEffect)
+            glassEffectView.frame = bottomBar.bounds
+            glassEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
-        // Add blur effect as background
-        bottomBar.addSubview(blurEffectView)
+            // Add glass effect as background
+            bottomBar.addSubview(glassEffectView)
 
-        // Add a subtle border at the top
-        let borderLayer = CALayer()
-        borderLayer.backgroundColor = UIColor.separator.cgColor
-        borderLayer.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 0.5)
-        bottomBar.layer.addSublayer(borderLayer)
+            // Make bottomBar corners rounded
+            bottomBar.layer.cornerRadius = 25
+            bottomBar.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            bottomBar.layer.masksToBounds = true
+        } else {
+            // Create blur effect view
+            let blurEffect = UIBlurEffect(style: .systemMaterial)
+            let blurEffectView = UIVisualEffectView(effect: blurEffect)
+            blurEffectView.frame = bottomBar.bounds
+            blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+            // Add blur effect as background
+            bottomBar.addSubview(blurEffectView)
+
+            // Add a subtle border at the top
+            let borderLayer = CALayer()
+            borderLayer.backgroundColor = UIColor.separator.cgColor
+            borderLayer.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: 0.5)
+            bottomBar.layer.addSublayer(borderLayer)
+        }
 
         // Create horizontal stack view for bottom bar controls
         let bottomStackView = UIStackView()

@@ -75,32 +75,14 @@ struct HomeTab: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
-                        LazyVGrid(
-                            columns: [
-                                GridItem(.adaptive(minimum: 110), spacing: 12),
-                            ], spacing: 12
-                        ) {
-                            ForEach(filteredOrders, id: \.self) { key in
-                                if let manga = mangas[key],
-                                   let plugin = plugins[key]
-                                {
-                                    NavigationLink(
-                                        destination: MangaDetailsScreen(
-                                            plugin: plugin, manga: manga
-                                        )
-                                    ) {
-                                        MangaItemView(
-                                            manga: manga,
-                                            plugin: plugin,
-                                            record: records[key],
-                                            saved: saveds[key],
-                                            showNotRead: true
-                                        )
-                                        .aspectRatio(3 / 5, contentMode: .fit)
-                                    }
-                                }
-                            }
-                        }
+                        MangasListView(
+                            mangas: mangas,
+                            plugins: plugins,
+                            keys: filteredOrders,
+                            records: records,
+                            saveds: saveds,
+                            showNotRead: true
+                        )
                         .padding()
                     }
                     .refreshable {

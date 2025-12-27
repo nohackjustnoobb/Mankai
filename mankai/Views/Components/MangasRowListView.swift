@@ -38,7 +38,7 @@ struct MangasRowListView: View {
                 if mangas.isEmpty {
                     Text("noMangasAvailable")
                         .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
+                        .frame(maxWidth: .infinity, minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200, alignment: .center)
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(alignment: .top, spacing: 12) {
@@ -52,11 +52,11 @@ struct MangasRowListView: View {
                             }
                         }
                     }
-                    .frame(minHeight: 200)
+                    .frame(minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200)
                 }
             } else {
                 ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 200, alignment: .center)
+                    .frame(maxWidth: .infinity, minHeight: UIDevice.current.userInterfaceIdiom == .pad ? 240 : 200, alignment: .center)
             }
         }
     }

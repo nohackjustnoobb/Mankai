@@ -181,7 +181,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for suggestions")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -203,7 +203,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for search")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -230,7 +230,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for list")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -268,7 +268,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for getMangas")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -290,7 +290,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for getDetailedManga")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -299,7 +299,7 @@ class ReadFsPlugin: Plugin {
                 Logger.fsPlugin.warning("Manga not found in DB: \(id)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "mangaDirectoryNotFound"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaDirectoryNotFound")]
                 )
             }
 
@@ -307,7 +307,7 @@ class ReadFsPlugin: Plugin {
                 Logger.fsPlugin.error("Failed to convert manga model to detailed manga: \(id)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "failedToLoadMangaDetails"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadMangaDetails")]
                 )
             }
 
@@ -321,7 +321,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Database not available for getChapter")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -329,7 +329,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Invalid chapter ID: \(String(describing: chapter.id))")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "invalidMangaOrChapterFormat"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat")]
             )
         }
 
@@ -338,7 +338,7 @@ class ReadFsPlugin: Plugin {
                 Logger.fsPlugin.warning("Chapter not found in DB: \(chapterIdInt)")
                 throw NSError(
                     domain: "ReadFsPlugin", code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: "chapterDirectoryNotFound"]
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterDirectoryNotFound")]
                 )
             }
 
@@ -366,7 +366,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Image file not found: \(fullImagePath)")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
             )
         }
 
@@ -377,7 +377,7 @@ class ReadFsPlugin: Plugin {
             Logger.fsPlugin.error("Failed to load image data: \(fullImagePath)", error: error)
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "failedToLoadImage"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToLoadImage")]
             )
         }
     }
