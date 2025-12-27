@@ -8,21 +8,86 @@
 import SwiftUI
 
 struct MangasListView: View {
-    let mangas: [Manga]
-    let plugin: Plugin
+    let mangas: [Manga]?
+    let plugin: Plugin?
+    let mangasDict: [String: Manga]?
+    let pluginsDict: [String: Plugin]?
+    let keys: [String]?
+    let records: [String: RecordModel]?
+    let saveds: [String: SavedModel]?
+    let showNotRead: Bool
+
+    // Simple initializer for single plugin case
+    init(mangas: [Manga], plugin: Plugin) {
+        self.mangas = mangas
+        self.plugin = plugin
+        mangasDict = nil
+        pluginsDict = nil
+        keys = nil
+        records = nil
+        saveds = nil
+        showNotRead = false
+    }
+
+    // Complex initializer for multiple plugins with records and saved states
+    init(
+        mangas: [String: Manga],
+        plugins: [String: Plugin],
+        keys: [String],
+        records: [String: RecordModel]? = nil,
+        saveds: [String: SavedModel]? = nil,
+        showNotRead: Bool = false
+    ) {
+        self.mangas = nil
+        plugin = nil
+        mangasDict = mangas
+        pluginsDict = plugins
+        self.keys = keys
+        self.records = records
+        self.saveds = saveds
+        self.showNotRead = showNotRead
+    }
 
     var body: some View {
         LazyVGrid(
             columns: [
-                GridItem(.adaptive(minimum: 110), spacing: 12),
+                GridItem(.adaptive(minimum: UIDevice.current.userInterfaceIdiom == .pad ? 140 : 110), spacing: 12),
             ], spacing: 12
         ) {
-            ForEach(mangas, id: \.id) { manga in
-                NavigationLink(
-                    destination: MangaDetailsScreen(plugin: plugin, manga: manga)
-                ) {
-                    MangaItemView(manga: manga, plugin: plugin)
-                        .aspectRatio(3 / 5, contentMode: .fit)
+            if let mangas = mangas, let plugin = plugin {
+                // Simple case: array of mangas with single plugin
+                ForEach(mangas, id: \.id) { manga in
+                    NavigationLink(
+                        destination: MangaDetailsScreen(plugin: plugin, manga: manga)
+                    ) {
+                        MangaItemView(manga: manga, plugin: plugin)
+                            .aspectRatio(3 / 5, contentMode: .fit)
+                    }
+                }
+            } else if let mangasDict = mangasDict,
+                      let pluginsDict = pluginsDict,
+                      let keys = keys
+            {
+                // Complex case: dictionaries with keys
+                ForEach(keys, id: \.self) { key in
+                    if let manga = mangasDict[key],
+                       let plugin = pluginsDict[key]
+                    {
+                        NavigationLink(
+                            destination: MangaDetailsScreen(
+                                plugin: plugin, manga: manga
+                            )
+                        ) {
+                            MangaItemView(
+                                manga: manga,
+                                plugin: plugin,
+                                record: records?[key],
+                                saved: saveds?[key],
+                                showNotRead: showNotRead
+                            )
+                            .aspectRatio(3 / 5, contentMode: .fit)
+                        }
+                    }
                 }
             }
         }

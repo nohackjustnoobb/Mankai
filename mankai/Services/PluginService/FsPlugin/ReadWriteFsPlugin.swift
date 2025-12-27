@@ -42,7 +42,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for updateManga")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -211,7 +211,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for deleteManga")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -240,7 +240,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for updateCover")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -304,7 +304,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for addImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -383,7 +383,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for removeImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
@@ -428,7 +428,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             Logger.fsPlugin.error("Database not available for arrangeImageOrder")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "databaseNotAvailable"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
         }
 
