@@ -35,7 +35,7 @@ class UpdateService: ObservableObject {
         Logger.updateService.debug("Starting update process")
 
         do {
-            try await performUpdate()
+            try await internalUpdate()
         } catch {
             Logger.updateService.error("Update failed", error: error)
             let message = String(localized: "failedToUpdateLibrary")
@@ -44,7 +44,7 @@ class UpdateService: ObservableObject {
         }
     }
 
-    private func performUpdate() async throws {
+    private func internalUpdate() async throws {
         // Check if sync is needed (only if sync engine is configured)
         if SyncService.shared.engine != nil {
             if let lastSyncTime = SyncService.shared.lastSyncTime {
@@ -53,7 +53,7 @@ class UpdateService: ObservableObject {
                 if timeInterval > 60 { // 1 minute in seconds
                     Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
                     do {
-                        try await SyncService.shared.sync()
+                        try await SyncService.shared.sync(wait: true)
                     } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
                         let message = String(localized: "failedToSync")
@@ -65,7 +65,7 @@ class UpdateService: ObservableObject {
                 // No sync has been performed yet
                 Logger.updateService.info("Syncing before update (first sync)")
                 do {
-                    try await SyncService.shared.sync()
+                    try await SyncService.shared.sync(wait: true)
                 } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
                     let message = String(localized: "failedToSync")

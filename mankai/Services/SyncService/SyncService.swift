@@ -127,12 +127,12 @@ class SyncService: ObservableObject {
     }
 
     private func startPeriodicSync() {
-        Logger.syncService.debug("Starting periodic sync")
         stopPeriodicSync()
 
         guard _engine != nil else { return }
 
         // Initial
+        Logger.syncService.debug("Starting periodic sync")
         Task {
             try? await sync()
             try? await UpdateService.shared.update()
@@ -155,9 +155,18 @@ class SyncService: ObservableObject {
         stopPeriodicSync()
     }
 
-    func sync() async throws {
+    func sync(wait: Bool = false) async throws {
         if isSyncing {
-            Logger.syncService.debug("Sync already in progress, skipping")
+            if !wait {
+                Logger.syncService.debug("Sync already in progress, skipping")
+                return
+            }
+
+            Logger.syncService.debug("Waiting for ongoing sync to complete")
+            while isSyncing {
+                try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            }
+            Logger.syncService.debug("Ongoing sync completed, proceeding")
             return
         }
 
