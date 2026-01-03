@@ -9,7 +9,10 @@ import SwiftUI
 import UIKit
 
 enum ReaderScreenConstants {
+    static let defaultImageLayout: ImageLayout = .auto
     static let defaultReadingDirection: ReadingDirection = .rightToLeft
+    static let defaultTapNavigation: Bool = true
+    static let defaultSnapToPage: Bool = false
 }
 
 let LOADER_VIEW_ID = 1
@@ -49,9 +52,10 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // Reading state variables
     private var currentPage: Int = 0
-    private var imagesCenterY: [String: CGFloat] = [:]
-    private var groupsCenterY: [[String]: CGFloat] = [:]
+    private var currentGroup: [String]?
+    private var groupsLayout: [[String]: (y: CGFloat, height: CGFloat)] = [:]
     private var startY: CGFloat = 0.0
+    private var defaultGroupSize: Int = 1
 
     // Haptic feedback state
     private var hasTriggeredTopHaptic = false
@@ -65,6 +69,12 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // State variables for navigation bar and bottom bar visibility
     var isNavigationBarHidden = false
     var isNavigationBarAnimating = false
+
+    // Cached settings
+    private var cachedTapNavigation: Bool = ReaderScreenConstants.defaultTapNavigation
+    private var cachedSnapToPage: Bool = ReaderScreenConstants.defaultSnapToPage
+    private var cachedImageLayout: ImageLayout = ReaderScreenConstants.defaultImageLayout
+    private var cachedReadingDirection: ReadingDirection = ReaderScreenConstants.defaultReadingDirection
 
     // UI Components
     private let scrollView = UIScrollView()
@@ -132,12 +142,31 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             options: [.new],
             context: nil
         )
+
+        UserDefaults.standard.addObserver(
+            self,
+            forKeyPath: SettingsKey.tapNavigation.rawValue,
+            options: [.new],
+            context: nil
+        )
+
+        UserDefaults.standard.addObserver(
+            self,
+            forKeyPath: SettingsKey.snapToPage.rawValue,
+            options: [.new],
+            context: nil
+        )
+
+        // Initialize cached settings
+        updateCachedSettings()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.imageLayout.rawValue)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.readingDirection.rawValue)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.tapNavigation.rawValue)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.snapToPage.rawValue)
         saveTimer?.invalidate()
     }
 
@@ -174,12 +203,16 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // MARK: - Observer
 
     override func observeValue(
-        forKeyPath _: String?,
+        forKeyPath keyPath: String?,
         of _: Any?,
         change _: [NSKeyValueChangeKey: Any]?,
         context _: UnsafeMutableRawPointer?
     ) {
-        updateGrouping()
+        updateCachedSettings()
+
+        if keyPath == SettingsKey.imageLayout.rawValue || keyPath == SettingsKey.readingDirection.rawValue {
+            updateGrouping()
+        }
     }
 
     @objc private func updateGrouping() {
@@ -187,6 +220,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             self?.groupImages()
             self?.syncPage()
         }
+    }
+
+    private func updateCachedSettings() {
+        let defaults = UserDefaults.standard
+        cachedTapNavigation = defaults.object(forKey: SettingsKey.tapNavigation.rawValue) as? Bool ?? ReaderScreenConstants.defaultTapNavigation
+        cachedSnapToPage = defaults.object(forKey: SettingsKey.snapToPage.rawValue) as? Bool ?? ReaderScreenConstants.defaultSnapToPage
+        cachedImageLayout = ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue)) ?? ReaderScreenConstants.defaultImageLayout
+        cachedReadingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? ReaderScreenConstants.defaultReadingDirection
     }
 
     // MARK: - Scroll Event Monitoring
@@ -219,6 +260,47 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         impactFeedback.prepare()
     }
 
+    func scrollViewWillEndDragging(
+        _ scrollView: UIScrollView,
+        withVelocity _: CGPoint,
+        targetContentOffset: UnsafeMutablePointer<CGPoint>
+    ) {
+        guard cachedSnapToPage else { return }
+
+        let projectedY = targetContentOffset.pointee.y + startY
+        let zoomScale = scrollView.zoomScale
+        let viewportHeight = view.bounds.height
+        let viewportCenter = projectedY + (viewportHeight / 2)
+
+        var closestGroup: [String]?
+        var closestDistance = CGFloat.greatestFiniteMagnitude
+
+        for (group, layout) in groupsLayout {
+            let centerY = layout.y + layout.height / 2
+            let scaledCenterY = centerY * zoomScale
+            let distance = abs(scaledCenterY - viewportCenter)
+
+            if distance < closestDistance {
+                closestDistance = distance
+                closestGroup = group
+            }
+        }
+
+        if let targetGroup = closestGroup, var index = groups.firstIndex(of: targetGroup) {
+            if let currentGroup = currentGroup, let currentIndex = groups.firstIndex(of: currentGroup) {
+                index = max(currentIndex - 1, min(currentIndex + 1, index))
+            }
+
+            // stop the scrolling
+            targetContentOffset.pointee.y = scrollView.contentOffset.y
+
+            DispatchQueue.main.async {
+                // TODO: Snap to top/bottom of page if in the same group
+                self.navigateToGroup(index, animated: true)
+            }
+        }
+    }
+
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         // Reset haptic feedback state when user ends dragging
         hasTriggeredTopHaptic = false
@@ -246,28 +328,33 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let zoomScale = scrollView.zoomScale
         let scrollY = scrollView.contentOffset.y + startY
 
-        // Find which page is currently in the center of the viewport
+        // Find which group is currently in the center of the viewport
         let viewportCenter = scrollY + (view.bounds.height / 2)
 
-        var closestPage = 0
+        var closestGroup: [String]?
         var closestDistance = CGFloat.greatestFiniteMagnitude
 
-        for (index, url) in urls.enumerated() {
-            if let centerY = imagesCenterY[url] {
-                let scaledCenterY = centerY * zoomScale
-                let distance = abs(scaledCenterY - viewportCenter)
-                if distance < closestDistance {
-                    closestDistance = distance
-                    closestPage = index
-                }
+        for (group, layout) in groupsLayout {
+            let centerY = layout.y + layout.height / 2
+            let scaledCenterY = centerY * zoomScale
+            let distance = abs(scaledCenterY - viewportCenter)
+            if distance < closestDistance {
+                closestDistance = distance
+                closestGroup = group
             }
         }
 
-        // Only update if page actually changed
-        if closestPage != currentPage {
-            currentPage = closestPage
-            updateBottomBar()
-            saveRecord()
+        currentGroup = closestGroup
+
+        // Update current page to the last page in the closest group
+        if let closestGroup = closestGroup, let lastUrl = closestGroup.last,
+           let pageIndex = urls.lastIndex(of: lastUrl)
+        {
+            if pageIndex != currentPage {
+                currentPage = pageIndex
+                updateBottomBar()
+                saveRecord()
+            }
         }
     }
 
@@ -352,8 +439,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         images = [:]
         groups = []
         currentPage = 0
-        imagesCenterY = [:]
-        groupsCenterY = [:]
+        groupsLayout = [:]
         startY = 0.0
 
         // Set title
@@ -415,13 +501,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private func groupImages() {
         groups = []
 
-        let defaults = UserDefaults.standard
-        let imageLayout =
-            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue))
-                ?? .auto
-
-        let defaultGroupSize: Int
-        switch imageLayout {
+        switch cachedImageLayout {
         case .auto:
             // Determine screen orientation
             let isLandscape = UIDevice.current.orientation.isLandscape
@@ -485,23 +565,9 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         let targetUrl = urls[page]
 
-        if let centerY = imagesCenterY[targetUrl] {
-            let zoomScale = scrollView.zoomScale
-            let scaledCenterY = centerY * zoomScale
-            let targetScrollY = scaledCenterY + startY - (view.bounds.height / 2)
-
-            // Limit scroll position to valid bounds
-            let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-            let clampedScrollY = max(0, min(targetScrollY, maxScrollY))
-
-            scrollView.setContentOffset(
-                CGPoint(x: 0, y: clampedScrollY),
-                animated: animated
-            )
-
-            currentPage = page
-            updateBottomBar()
-            saveRecord()
+        // Find the group containing this page
+        if let groupIndex = groups.firstIndex(where: { $0.contains(targetUrl) }) {
+            navigateToGroup(groupIndex, animated: animated)
         }
     }
 
@@ -510,7 +576,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         let group = groups[groupIndex]
 
-        if let centerY = groupsCenterY[group] {
+        if let layout = groupsLayout[group] {
+            let centerY = layout.y + layout.height / 2
             let zoomScale = scrollView.zoomScale
             let scaledCenterY = centerY * zoomScale
             let targetScrollY = scaledCenterY + startY - (view.bounds.height / 2)
@@ -523,13 +590,6 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 CGPoint(x: 0, y: clampedScrollY),
                 animated: animated
             )
-
-            // Update current page to the last page in the group
-            if let lastUrl = group.last, let pageIndex = urls.firstIndex(of: lastUrl) {
-                currentPage = pageIndex
-                updateBottomBar()
-                saveRecord()
-            }
         }
     }
 
@@ -662,6 +722,17 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let location = gesture.location(in: scrollView)
         let width = scrollView.bounds.width
 
+        // If tap navigation is disabled, only toggle navigation bar
+        if !cachedTapNavigation {
+            if isNavigationBarHidden {
+                showNavigationBar()
+            } else {
+                hideNavigationBar()
+            }
+
+            return
+        }
+
         if location.x < width / 3 {
             // Left third: previous group
             let tappedGroupIndex = findGroupIndex(atY: location.y)
@@ -688,7 +759,8 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         var closestDistance = CGFloat.greatestFiniteMagnitude
 
         for (index, group) in groups.enumerated() {
-            if let centerY = groupsCenterY[group] {
+            if let layout = groupsLayout[group] {
+                let centerY = layout.y + layout.height / 2
                 let scaledCenterY = centerY * zoomScale
                 let distance = abs(scaledCenterY - adjustedY)
                 if distance < closestDistance {
@@ -1065,45 +1137,49 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private func calculateFrames(
         ratios: [String: CGFloat], mode: CGFloat
     ) -> ([String: CGRect], CGFloat) {
-        let defaults = UserDefaults.standard
-        let readingDirection =
-            ReadingDirection(
-                rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue))
-            ?? ReaderScreenConstants.defaultReadingDirection
-
         var frames: [String: CGRect] = [:]
-        imagesCenterY = [:]
-        groupsCenterY = [:]
-        var currentY = 0.0
+        groupsLayout = [:]
+        var currentY: CGFloat = 0.0
 
         let window = view.window!
         let safeFrame = window.safeAreaLayoutGuide.layoutFrame
         let width = safeFrame.width
 
         for group in groups {
+            // Check if this is a single portrait image
+            let isSinglePortraitImage = defaultGroupSize != 1 && group.count == 1 && ratios[group[0], default: mode] < 1
+            let effectiveWidth = isSinglePortraitImage ? width / CGFloat(defaultGroupSize) : width
+
             let ratiosSum: CGFloat = group.reduce(0) { result, url in
                 result + ratios[url, default: mode]
             }
 
-            let height = width / ratiosSum
-            var currentX = 0.0
+            let height = effectiveWidth / ratiosSum
+            var currentX: CGFloat = 0.0
 
-            for url in readingDirection == .rightToLeft ? group.reversed() : group {
+            for url in cachedReadingDirection == .rightToLeft ? group.reversed() : group {
                 let imageWidth = height * ratios[url, default: mode]
 
+                // Align single portrait images based on reading direction
+                let xPosition: CGFloat
+                if isSinglePortraitImage {
+                    xPosition = cachedReadingDirection == .rightToLeft ? width - imageWidth : 0
+                } else {
+                    xPosition = currentX
+                }
+
                 let frame = CGRect(
-                    x: currentX,
+                    x: xPosition,
                     y: currentY,
                     width: imageWidth,
                     height: height
                 )
 
                 frames[url] = frame
-                imagesCenterY[url] = height / 2 + currentY
                 currentX += imageWidth
             }
 
-            groupsCenterY[group] = height / 2 + currentY
+            groupsLayout[group] = (y: currentY, height: height)
             currentY += height
         }
 

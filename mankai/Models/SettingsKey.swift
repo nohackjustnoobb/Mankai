@@ -11,6 +11,8 @@ enum SettingsKey: String {
     case cacheExpiryDuration
     case imageLayout
     case readingDirection
+    case tapNavigation
+    case snapToPage
 }
 
 enum ImageLayout: Int {
