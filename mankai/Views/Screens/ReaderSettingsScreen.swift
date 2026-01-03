@@ -8,10 +8,13 @@
 import SwiftUI
 
 struct ReaderSettingsScreen: View {
-    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int = ImageLayout
-        .auto.rawValue
+    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int = ReaderScreenConstants.defaultImageLayout.rawValue
     @AppStorage(SettingsKey.readingDirection.rawValue) private var readingDirectionRawValue: Int =
         ReaderScreenConstants.defaultReadingDirection.rawValue
+    @AppStorage(SettingsKey.tapNavigation.rawValue) private var tapNavigation: Bool =
+        ReaderScreenConstants.defaultTapNavigation
+    @AppStorage(SettingsKey.snapToPage.rawValue) private var snapToPage: Bool =
+        ReaderScreenConstants.defaultSnapToPage
 
     var body: some View {
         List {
@@ -26,7 +29,7 @@ struct ReaderSettingsScreen: View {
                 Picker(
                     "imageLayout",
                     selection: Binding(
-                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? .auto },
+                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? ReaderScreenConstants.defaultImageLayout },
                         set: { imageLayoutRawValue = $0.rawValue }
                     )
                 ) {
@@ -48,6 +51,16 @@ struct ReaderSettingsScreen: View {
                     Text("leftToRight").tag(ReadingDirection.leftToRight)
                     Text("rightToLeft").tag(ReadingDirection.rightToLeft)
                 }
+
+                Toggle(
+                    String(localized: "tapNavigation"),
+                    isOn: $tapNavigation
+                )
+
+                Toggle(
+                    String(localized: "snapToPage"),
+                    isOn: $snapToPage
+                )
             }
         }
     }
