@@ -13,6 +13,7 @@ enum ReaderScreenConstants {
     static let defaultReadingDirection: ReadingDirection = .rightToLeft
     static let defaultTapNavigation: Bool = true
     static let defaultSnapToPage: Bool = false
+    static let defaultSoftSnap: Bool = false
 }
 
 let LOADER_VIEW_ID = 1
@@ -75,6 +76,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     private var cachedSnapToPage: Bool = ReaderScreenConstants.defaultSnapToPage
     private var cachedImageLayout: ImageLayout = ReaderScreenConstants.defaultImageLayout
     private var cachedReadingDirection: ReadingDirection = ReaderScreenConstants.defaultReadingDirection
+    private var cachedSoftSnap: Bool = ReaderScreenConstants.defaultSoftSnap
 
     // UI Components
     private let scrollView = UIScrollView()
@@ -157,6 +159,13 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             context: nil
         )
 
+        UserDefaults.standard.addObserver(
+            self,
+            forKeyPath: SettingsKey.softSnap.rawValue,
+            options: [.new],
+            context: nil
+        )
+
         // Initialize cached settings
         updateCachedSettings()
     }
@@ -167,6 +176,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.readingDirection.rawValue)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.tapNavigation.rawValue)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.snapToPage.rawValue)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.softSnap.rawValue)
         saveTimer?.invalidate()
     }
 
@@ -228,6 +238,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         cachedSnapToPage = defaults.object(forKey: SettingsKey.snapToPage.rawValue) as? Bool ?? ReaderScreenConstants.defaultSnapToPage
         cachedImageLayout = ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue)) ?? ReaderScreenConstants.defaultImageLayout
         cachedReadingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? ReaderScreenConstants.defaultReadingDirection
+        cachedSoftSnap = defaults.object(forKey: SettingsKey.softSnap.rawValue) as? Bool ?? ReaderScreenConstants.defaultSoftSnap
     }
 
     // MARK: - Scroll Event Monitoring
@@ -273,6 +284,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         let viewportCenter = projectedY + (viewportHeight / 2)
 
         var closestGroup: [String]?
+        var closestGroupCenterY: CGFloat?
         var closestDistance = CGFloat.greatestFiniteMagnitude
 
         for (group, layout) in groupsLayout {
@@ -283,20 +295,28 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             if distance < closestDistance {
                 closestDistance = distance
                 closestGroup = group
+
+                closestGroupCenterY = scaledCenterY + startY - (view.bounds.height / 2)
             }
         }
 
-        if let targetGroup = closestGroup, var index = groups.firstIndex(of: targetGroup) {
-            if let currentGroup = currentGroup, let currentIndex = groups.firstIndex(of: currentGroup) {
-                index = max(currentIndex - 1, min(currentIndex + 1, index))
-            }
-
+        if let targetGroup = closestGroup, let closestGroupCenterY = closestGroupCenterY, var index = groups.firstIndex(of: targetGroup) {
             // stop the scrolling
-            targetContentOffset.pointee.y = scrollView.contentOffset.y
+            if cachedSoftSnap {
+                // Soft snap: animate to the target group
+                targetContentOffset.pointee.y = closestGroupCenterY
+            } else {
+                if let currentGroup = currentGroup, let currentIndex = groups.firstIndex(of: currentGroup) {
+                    index = max(currentIndex - 1, min(currentIndex + 1, index))
+                }
 
-            DispatchQueue.main.async {
-                // TODO: Snap to top/bottom of page if in the same group
-                self.navigateToGroup(index, animated: true)
+                // Hard snap: jump directly to the target group
+                targetContentOffset.pointee.y = scrollView.contentOffset.y
+
+                DispatchQueue.main.async {
+                    // TODO: Snap to top/bottom of page if in the same group
+                    self.navigateToGroup(index, animated: true)
+                }
             }
         }
     }
@@ -578,8 +598,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         if let layout = groupsLayout[group] {
             let centerY = layout.y + layout.height / 2
-            let zoomScale = scrollView.zoomScale
-            let scaledCenterY = centerY * zoomScale
+            let scaledCenterY = centerY * scrollView.zoomScale
             let targetScrollY = scaledCenterY + startY - (view.bounds.height / 2)
 
             // Limit scroll position to valid bounds

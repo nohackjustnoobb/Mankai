@@ -15,6 +15,8 @@ struct ReaderSettingsScreen: View {
         ReaderScreenConstants.defaultTapNavigation
     @AppStorage(SettingsKey.snapToPage.rawValue) private var snapToPage: Bool =
         ReaderScreenConstants.defaultSnapToPage
+    @AppStorage(SettingsKey.softSnap.rawValue) private var softSnap: Bool =
+        ReaderScreenConstants.defaultSoftSnap
 
     var body: some View {
         List {
@@ -60,6 +62,11 @@ struct ReaderSettingsScreen: View {
                 Toggle(
                     String(localized: "snapToPage"),
                     isOn: $snapToPage
+                )
+
+                Toggle(
+                    String(localized: "softSnap"),
+                    isOn: $softSnap
                 )
             }
         }
