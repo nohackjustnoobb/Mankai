@@ -13,6 +13,7 @@ enum SettingsKey: String {
     case readingDirection
     case tapNavigation
     case snapToPage
+    case softSnap
 }
 
 enum ImageLayout: Int {
