@@ -278,45 +278,81 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     ) {
         guard cachedSnapToPage else { return }
 
-        let projectedY = targetContentOffset.pointee.y + startY
         let zoomScale = scrollView.zoomScale
         let viewportHeight = view.bounds.height
-        let viewportCenter = projectedY + (viewportHeight / 2)
 
-        var closestGroup: [String]?
-        var closestGroupCenterY: CGFloat?
+        let viewportTop = targetContentOffset.pointee.y
+        let viewportBottom = viewportTop + viewportHeight
+        let viewportCenter = viewportTop + (viewportHeight / 2)
+
+        var closestGroupScrollY: CGFloat?
         var closestDistance = CGFloat.greatestFiniteMagnitude
+        var shouldFreeScroll = false
 
         for (group, layout) in groupsLayout {
-            let centerY = layout.y + layout.height / 2
-            let scaledCenterY = centerY * zoomScale
-            let distance = abs(scaledCenterY - viewportCenter)
+            let groupTop = (layout.y + startY) * zoomScale
+            let groupHeight = layout.height * zoomScale
+            let groupBottom = groupTop + groupHeight
+            let groupCenter = groupTop + groupHeight / 2
+
+            var distance: CGFloat = 0
+            var targetY: CGFloat = 0
+            var isFreeScroll = false
+
+            if group != currentGroup || groupHeight <= viewportHeight {
+                // Snap to Center
+                distance = abs(groupCenter - viewportCenter)
+                targetY = groupCenter - (viewportHeight / 2)
+            } else {
+                // Long group AND same group: Smart logic (Free Scroll / Edge Snap)
+                if viewportTop >= groupTop, viewportBottom <= groupBottom {
+                    // Free scroll: Maintain current projection
+                    distance = 0
+                    isFreeScroll = true
+                    targetY = targetContentOffset.pointee.y
+                } else {
+                    // Snap to nearest edge
+                    let distTop = abs(viewportTop - groupTop)
+                    let distBottom = abs(viewportBottom - groupBottom)
+
+                    if distTop < distBottom {
+                        distance = distTop
+                        targetY = groupTop
+                    } else {
+                        distance = distBottom
+                        targetY = groupBottom - viewportHeight
+                    }
+                }
+            }
 
             if distance < closestDistance {
                 closestDistance = distance
-                closestGroup = group
-
-                closestGroupCenterY = scaledCenterY + startY - (view.bounds.height / 2)
+                closestGroupScrollY = targetY
+                shouldFreeScroll = isFreeScroll
             }
         }
 
-        if let targetGroup = closestGroup, let closestGroupCenterY = closestGroupCenterY, var index = groups.firstIndex(of: targetGroup) {
-            // stop the scrolling
+        if let clampedClosestGroupScrollY = closestGroupScrollY {
+            if shouldFreeScroll {
+                return
+            }
+
+            let maxScrollY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+            let maxScrollX = max(0, scrollView.contentSize.width - scrollView.bounds.width)
+
+            let clampedY = max(0, min(clampedClosestGroupScrollY, maxScrollY))
+            let clampedX = max(0, min(scrollView.contentOffset.x, maxScrollX))
+
             if cachedSoftSnap {
-                // Soft snap: animate to the target group
-                targetContentOffset.pointee.y = closestGroupCenterY
+                targetContentOffset.pointee.y = clampedY
             } else {
-                if let currentGroup = currentGroup, let currentIndex = groups.firstIndex(of: currentGroup) {
-                    index = max(currentIndex - 1, min(currentIndex + 1, index))
-                }
-
-                // Hard snap: jump directly to the target group
                 targetContentOffset.pointee.y = scrollView.contentOffset.y
+                targetContentOffset.pointee.x = scrollView.contentOffset.x
 
-                DispatchQueue.main.async {
-                    // TODO: Snap to top/bottom of page if in the same group
-                    self.navigateToGroup(index, animated: true)
-                }
+                scrollView.setContentOffset(
+                    CGPoint(x: clampedX, y: clampedY),
+                    animated: true
+                )
             }
         }
     }
