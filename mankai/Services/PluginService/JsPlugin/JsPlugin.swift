@@ -164,7 +164,6 @@ class JsPlugin: Plugin {
         )
     }
 
-    // TODO: not tested
     static func fromUrl(_ url: URL) async -> JsPlugin? {
         guard let (data, _) = try? await URLSession.shared.data(from: url) else {
             return nil
