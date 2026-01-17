@@ -6,80 +6,37 @@
 //
 
 import Foundation
+import OpenCC
 import WebKit
-
-let JS_LOG = """
-function log(mesg, from = "JS") {
-  window.webkit.messageHandlers.DEFAULT_BRIDGE.postMessage({
-    method: "log",
-    params: {
-      from: from,
-      message: mesg,
-    },
-  });
-}
-"""
-
-let JS_FETCH = """
-async function fetch(url, options = {}) {
-  let headers = options.headers || {};
-  if (headers instanceof Headers)
-    headers = Object.fromEntries(headers.entries());
-
-  const params = {
-    url: url,
-    method: options.method || "GET",
-    headers: headers,
-    body: options.body,
-  };
-
-  try {
-    const result =
-      await window.webkit.messageHandlers.DEFAULT_BRIDGE.postMessage({
-        method: "fetch",
-        params: params,
-      });
-
-    const headers = {
-      get: (name) => result.headers[name] || result.headers[name.toLowerCase()],
-      has: (name) =>
-        name in result.headers || name.toLowerCase() in result.headers,
-      entries: () => Object.entries(result.headers),
-      keys: () => Object.keys(result.headers),
-      values: () => Object.values(result.headers),
-    };
-
-    const binaryString = atob(result.data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-
-    return {
-      ok: result.ok,
-      status: result.status,
-      statusText: result.statusText,
-      headers: headers,
-      url: result.url,
-      text: async () => new TextDecoder().decode(bytes),
-      json: async () => JSON.parse(new TextDecoder().decode(bytes)),
-      blob: async () => new Blob([bytes]),
-      arrayBuffer: async () => bytes.buffer,
-    };
-  } catch (error) {
-    throw new Error(`Fetch failed: ${error.message}`);
-  }
-}
-"""
 
 enum Method: String {
     case log
     case fetch
     case setConfig
+    case s2t
+    case t2s
 }
 
 class JsRuntime: NSObject {
     static let shared = JsRuntime()
+
+    private lazy var jsLog: String = loadScript("log")
+    private lazy var jsFetch: String = loadScript("fetch")
+    private lazy var jsOpenCC: String = loadScript("opencc")
+
+    private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .traditionalize)
+    private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .simplify)
+
+    private func loadScript(_ name: String) -> String {
+        if let url = Bundle.main.url(forResource: name, withExtension: "js") {
+            if let content = try? String(contentsOf: url) {
+                return content
+            }
+        }
+
+        Logger.jsRuntime.warning("Failed to load script: \(name).js")
+        return ""
+    }
 
     private var webview: WKWebView?
 
@@ -120,7 +77,7 @@ class JsRuntime: NSObject {
 
     private func inject(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) -> String {
         // TODO: inject getValue and setValue functions
-        var injectedJs = JS_LOG + JS_FETCH
+        var injectedJs = jsLog + jsFetch + jsOpenCC
 
         if let plugin = plugin {
             let configValuesArray = plugin.configValues.map { configValue in
@@ -228,6 +185,11 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
         let methodStr = body["method"] as? String ?? "unknown"
         Logger.jsRuntime.debug("Received message from JS: \(methodStr)")
 
+        let start = Date()
+        defer {
+            Logger.jsRuntime.debug("\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms")
+        }
+
         let method = Method(rawValue: body["method"] as! String)
         let params = body["params"] as! [String: Any]
 
@@ -245,6 +207,20 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
                 Logger.jsRuntime.error("Fetch failed", error: error)
                 return (nil, error.localizedDescription)
             }
+        case .s2t:
+            let text = params["text"] as? String ?? ""
+            guard let converter = s2tConverter else {
+                return (text, "Failed to initialize OpenCC s2t")
+            }
+            let result = converter.convert(text)
+            return (result, nil)
+        case .t2s:
+            let text = params["text"] as? String ?? ""
+            guard let converter = t2sConverter else {
+                return (text, "Failed to initialize OpenCC t2s")
+            }
+            let result = converter.convert(text)
+            return (result, nil)
         default:
             Logger.jsRuntime.warning("Unexpected Method: \(methodStr)")
             fatalError("Unexpected Method")

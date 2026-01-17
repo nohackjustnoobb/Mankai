@@ -180,6 +180,17 @@ struct DebugScreen: View {
                                 "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
                             ) as Any
                             Logger.jsRuntime.debug("\(result)")
+
+                            // Test t2s s2t
+                            let t2s = try! await JsRuntime.shared.execute(
+                                "return await t2s('繁體轉簡體')"
+                            )
+                            Logger.jsRuntime.debug("t2s: \(t2s ?? "nil")")
+
+                            let s2t = try! await JsRuntime.shared.execute(
+                                "return await s2t('简体转繁体')"
+                            )
+                            Logger.jsRuntime.debug("s2t: \(s2t ?? "nil")")
                         }
                     }
                 }
