@@ -61,9 +61,10 @@ class JsPlugin: Plugin {
 
     // MARK: - Methods Scripts
 
-    var _scripts: [ScriptType: String]
-    var _funcName: [ScriptType: String] = [:]
-    var _scriptsNoExport: [ScriptType: String] = [:]
+    private var _getImageHeaders: [String: String]?
+    private var _scripts: [ScriptType: String]
+    private var _funcName: [ScriptType: String] = [:]
+    private var _scriptsNoExport: [ScriptType: String] = [:]
 
     private func setConfigValues(_ configValues: [ConfigValue]) {
         for configValue in configValues {
@@ -80,7 +81,8 @@ class JsPlugin: Plugin {
         updatesUrl: String? = nil,
         availableGenres: [Genre] = [],
         scripts: [ScriptType: String] = [:],
-        configs: [Config] = []
+        configs: [Config] = [],
+        getImageHeaders: [String: String]? = nil
     ) {
         Logger.jsPlugin.debug("Initializing JsPlugin: \(id)")
         _id = id
@@ -92,6 +94,7 @@ class JsPlugin: Plugin {
         _updatesUrl = updatesUrl
         _availableGenres = availableGenres
         _configs = configs
+        _getImageHeaders = getImageHeaders
 
         _scripts = scripts
         for (scriptType, script) in scripts {
@@ -156,11 +159,12 @@ class JsPlugin: Plugin {
                 }
             } ?? [:]
         let configs = (json["configs"] as? [[String: Any]]).map { parseConfigArray($0) } ?? []
+        let getImageHeaders = json["getImageHeaders"] as? [String: String]
 
         return JsPlugin(
             id: id, name: name, version: version, description: description, authors: authors,
             repository: repository, updatesUrl: updatesUrl, availableGenres: availableGenres,
-            scripts: scripts, configs: configs
+            scripts: scripts, configs: configs, getImageHeaders: getImageHeaders
         )
     }
 
@@ -347,6 +351,7 @@ class JsPlugin: Plugin {
                     "options": config.options as Any,
                 ]
             },
+            "getImageHeaders": _getImageHeaders as Any,
         ]
 
         let metaData = try JSONSerialization.data(withJSONObject: metaDict, options: [])
@@ -660,6 +665,27 @@ class JsPlugin: Plugin {
             if let data = try? Data(contentsOf: imageCacheFile) {
                 return data
             }
+        }
+
+        if let headers = _getImageHeaders {
+            guard let url = URL(string: url) else {
+                throw NSError(
+                    domain: "JsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
+                )
+            }
+
+            var request = URLRequest(url: url)
+            for (key, value) in headers {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+
+            // Write to disk cache
+            try? data.write(to: imageCacheFile)
+
+            return data
         }
 
         if _scripts[.getImage] == nil {
