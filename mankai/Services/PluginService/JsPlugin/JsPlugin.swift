@@ -30,7 +30,7 @@ struct CacheEntry {
 
 enum JsPluginConstants {
     /// Default cache expiry duration
-    static let defaultCacheExpiryDuration: TimeInterval = CacheDuration.oneHour.rawValue
+    static let defaultInMemoryCacheExpiryDuration: TimeInterval = CacheDuration.oneHour.rawValue
 
     /// Maximum number of cache entries before triggering cleanup of expired entries
     static let maxCacheSize: Int = 100
@@ -249,10 +249,10 @@ class JsPlugin: Plugin {
     private var cache: [String: CacheEntry] = [:]
     private let cacheLock = NSLock()
 
-    private func getCacheExpiryDuration() -> TimeInterval {
+    private func getInMemoryCacheExpiryDuration() -> TimeInterval {
         let defaults = UserDefaults.standard
-        let duration = defaults.double(forKey: SettingsKey.cacheExpiryDuration.rawValue)
-        return duration > 0 ? duration : JsPluginConstants.defaultCacheExpiryDuration
+        let duration = defaults.double(forKey: SettingsKey.inMemoryCacheExpiryDuration.rawValue)
+        return duration > 0 ? duration : JsPluginConstants.defaultInMemoryCacheExpiryDuration
     }
 
     private func getCacheKey(for method: ScriptType, with parameters: [String]) -> String {
@@ -289,7 +289,7 @@ class JsPlugin: Plugin {
         cacheLock.lock()
         defer { cacheLock.unlock() }
 
-        let expiryTime = Date().addingTimeInterval(getCacheExpiryDuration())
+        let expiryTime = Date().addingTimeInterval(getInMemoryCacheExpiryDuration())
         cache[key] = CacheEntry(data: data, expiryTime: expiryTime)
     }
 

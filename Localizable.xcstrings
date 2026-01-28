@@ -526,18 +526,18 @@
         }
       }
     },
-    "cacheExpiryDuration" : {
+    "cacheSize" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cache Expiry Duration"
+            "value" : "Cache Size"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "快取過期時間"
+            "value" : "快取大小"
           }
         }
       }
@@ -651,6 +651,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "章節標題"
+          }
+        }
+      }
+    },
+    "clear" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除"
+          }
+        }
+      }
+    },
+    "clearCache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Cache"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除快取"
+          }
+        }
+      }
+    },
+    "clearCacheMessage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to clear the cache?"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您確定要清除快取嗎？"
           }
         }
       }
@@ -1856,6 +1904,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "資訊"
+          }
+        }
+      }
+    },
+    "inMemoryCacheExpiryDuration" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In-Memory Cache Expiry Duration"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶體快取過期時間"
           }
         }
       }

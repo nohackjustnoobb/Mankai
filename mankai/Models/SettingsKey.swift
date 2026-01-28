@@ -8,7 +8,7 @@
 import Foundation
 
 enum SettingsKey: String {
-    case cacheExpiryDuration
+    case inMemoryCacheExpiryDuration
     case imageLayout
     case readingDirection
     case tapNavigation

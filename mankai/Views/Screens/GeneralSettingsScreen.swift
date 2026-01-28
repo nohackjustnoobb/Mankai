@@ -8,18 +8,20 @@
 import SwiftUI
 
 struct GeneralSettingsScreen: View {
-    @AppStorage(SettingsKey.cacheExpiryDuration.rawValue) private var cacheExpiryDurationRawValue:
+    @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue:
         Double = CacheDuration.auto.rawValue
     @ObservedObject private var updateService = UpdateService.shared
+    @State private var cacheSize: String = ""
+    @State private var showClearCacheAlert = false
 
     var body: some View {
         List {
             Section {
                 Picker(
-                    "cacheExpiryDuration",
+                    "inMemoryCacheExpiryDuration",
                     selection: Binding(
-                        get: { CacheDuration(rawValue: cacheExpiryDurationRawValue) ?? .auto },
-                        set: { cacheExpiryDurationRawValue = $0.rawValue }
+                        get: { CacheDuration(rawValue: inMemoryCacheExpiryDurationRawValue) ?? .auto },
+                        set: { inMemoryCacheExpiryDurationRawValue = $0.rawValue }
                     )
                 ) {
                     Text("auto").tag(CacheDuration.auto)
@@ -30,6 +32,29 @@ struct GeneralSettingsScreen: View {
                     Text("6h").tag(CacheDuration.sixHours)
                     Text("12h").tag(CacheDuration.twelveHours)
                     Text("1d").tag(CacheDuration.oneDay)
+                }
+
+                LabeledContent("cacheSize") {
+                    Button(role: .destructive) {
+                        showClearCacheAlert = true
+                    } label: {
+                        if cacheSize.isEmpty {
+                            ProgressView()
+                        } else {
+                            HStack(spacing: 4) {
+                                Text(cacheSize)
+                                Image(systemName: "trash")
+                            }
+                        }
+                    }
+                }
+                .confirmationDialog("clearCache", isPresented: $showClearCacheAlert, titleVisibility: .visible) {
+                    Button("clear", role: .destructive) {
+                        clearCache()
+                    }
+                    Button("cancel", role: .cancel) {}
+                } message: {
+                    Text("clearCacheMessage")
                 }
 
                 LabeledContent("lastUpdateTime") {
@@ -55,6 +80,9 @@ struct GeneralSettingsScreen: View {
         }
         .navigationTitle("general")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            updateCacheSize()
+        }
     }
 
     private var appVersion: String {
@@ -66,6 +94,54 @@ struct GeneralSettingsScreen: View {
             return version
         } else {
             return String(localized: "nil")
+        }
+    }
+
+    private func updateCacheSize() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fileManager = FileManager.default
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
+
+            var size: Int64 = 0
+            if let enumerator = fileManager.enumerator(at: cacheDir, includingPropertiesForKeys: [.fileSizeKey]) {
+                for case let url as URL in enumerator {
+                    if let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey]),
+                       let fileSize = resourceValues.fileSize
+                    {
+                        size += Int64(fileSize)
+                    }
+                }
+            }
+
+            let formatter = ByteCountFormatter()
+            formatter.allowedUnits = [.useAll]
+            formatter.countStyle = .file
+            let formattedSize = formatter.string(fromByteCount: size)
+
+            DispatchQueue.main.async {
+                self.cacheSize = formattedSize
+            }
+        }
+    }
+
+    private func clearCache() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let fileManager = FileManager.default
+            guard let cacheDir = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
+
+            do {
+                let contents = try fileManager.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil)
+                for url in contents {
+                    try fileManager.removeItem(at: url)
+                }
+            } catch {
+                print("Failed to clear cache: \(error)")
+            }
+
+            DispatchQueue.main.async {
+                // Determine new size (should be small/zero)
+                self.updateCacheSize()
+            }
         }
     }
 }
