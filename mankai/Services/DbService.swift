@@ -26,19 +26,21 @@ class DbService {
             return nil
         }
         let fullUrl = documentsURL.appendingPathComponent("db.sqlite3")
-        Logger.dbService.info("Database path: \(fullUrl.path())")
+        Logger.dbService.info("Database path: \(fullUrl.path(percentEncoded: false))")
 
         do {
             var config = Configuration()
             config.busyMode = .timeout(5.0)
-            let dbPool = try DatabasePool(path: fullUrl.path(), configuration: config)
+            let dbPool = try DatabasePool(path: fullUrl.path(percentEncoded: false), configuration: config)
 
             try dbPool.write { db in
                 try MangaModel.createTable(db)
                 try SavedModel.createTable(db)
                 try RecordModel.createTable(db)
                 try JsPluginModel.createTable(db)
+                try FsPluginModel.createTable(db)
             }
+
             Logger.dbService.info("appDb initialized successfully")
             return dbPool
         } catch {

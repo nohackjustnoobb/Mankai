@@ -16,6 +16,30 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         return _db
     }
 
+    convenience init(url: URL) throws {
+        guard url.startAccessingSecurityScopedResource() else {
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
+            )
+        }
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+
+        let idFile = url.appendingPathComponent("mankai.id")
+        let id: String
+
+        if FileManager.default.fileExists(atPath: idFile.path) {
+            id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            id = UUID().uuidString
+            try id.write(to: idFile, atomically: true, encoding: .utf8)
+        }
+
+        self.init(url: url, id: id)
+    }
+
     // MARK: - Metadata
 
     override var tag: String? {
@@ -87,11 +111,11 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                 .deleteAll(db)
 
             let fileManager = FileManager.default
-            let pathURL = URL(fileURLWithPath: self.path)
-                .appendingPathComponent(manga.id)
+
             for chapterId in chapterIdsToDelete {
                 let chapterDir =
-                    pathURL
+                    url
+                        .appendingPathComponent(manga.id)
                         .appendingPathComponent("chapters")
                         .appendingPathComponent(String(chapterId))
 
@@ -222,8 +246,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-        let mangaDir = pathURL.appendingPathComponent(mangaId)
+        let mangaDir = url.appendingPathComponent(mangaId)
 
         if fileManager.fileExists(atPath: mangaDir.path) {
             try? fileManager.removeItem(at: mangaDir)
@@ -245,8 +268,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-        let mangaCoverDir = pathURL.appendingPathComponent(mangaId)
+        let mangaCoverDir = url.appendingPathComponent(mangaId)
 
         let imageInfo = getImageInfo(from: image)
         let coverFileName = "cover.\(imageInfo.format)"
@@ -265,7 +287,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         if let existingCover = existingCover {
-            let oldCoverPath = pathURL.appendingPathComponent(existingCover.path)
+            let oldCoverPath = url.appendingPathComponent(existingCover.path)
             if fileManager.fileExists(atPath: oldCoverPath.path) {
                 try fileManager.removeItem(at: oldCoverPath)
             }
@@ -309,9 +331,8 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
         let chapterDir =
-            pathURL
+            url
                 .appendingPathComponent(mangaId)
                 .appendingPathComponent("chapters")
                 .appendingPathComponent(chapterId)
@@ -388,7 +409,6 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
 
         let imageModels = try await db.read { db in
             let imageIds = ids.compactMap { Int($0) }
@@ -411,7 +431,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         for imageModel in imageModels {
-            let imagePath = pathURL.appendingPathComponent(imageModel.path)
+            let imagePath = url.appendingPathComponent(imageModel.path)
             if fileManager.fileExists(atPath: imagePath.path) {
                 try? fileManager.removeItem(at: imagePath)
             }

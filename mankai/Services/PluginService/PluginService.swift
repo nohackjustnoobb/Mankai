@@ -13,9 +13,15 @@ class PluginService: ObservableObject {
 
     private init() {
         Logger.pluginService.debug("Initializing PluginService")
+
+        // Add built-in plugins
         _plugins[AppDirPlugin.shared.id] = AppDirPlugin.shared
 
-        loadJsPluginsFromCoreData()
+        // Load JS plugins
+        loadJsPlugins()
+
+        // Load FS plugins
+        loadFsPlugins()
     }
 
     private var _plugins: [String: Plugin] = [:]
@@ -24,13 +30,23 @@ class PluginService: ObservableObject {
         return Array(_plugins.values)
     }
 
-    private func loadJsPluginsFromCoreData() {
-        Logger.pluginService.debug("Loading JS plugins from CoreData")
+    private func loadJsPlugins() {
+        Logger.pluginService.debug("Loading JS plugins")
         let jsPlugins = JsPlugin.loadPlugins()
         Logger.pluginService.info("Loaded \(jsPlugins.count) JS plugins")
 
         for jsPlugin in jsPlugins {
             _plugins[jsPlugin.id] = jsPlugin
+        }
+    }
+
+    private func loadFsPlugins() {
+        Logger.pluginService.debug("Loading FS plugins")
+        let fsPlugins = ReadFsPlugin.loadPlugins()
+        Logger.pluginService.info("Loaded \(fsPlugins.count) FS plugins")
+
+        for fsPlugin in fsPlugins {
+            _plugins[fsPlugin.id] = fsPlugin
         }
     }
 

@@ -57,7 +57,7 @@ struct HomeTab: View {
             Group {
                 if orders.isEmpty {
                     VStack(spacing: 8) {
-                        Image(systemName: "bookmark.slash")
+                        Image(systemName: "bookmark.slash.fill")
                             .font(.title)
                         Text("noSavedManga")
                             .font(.headline)

@@ -8,15 +8,15 @@
 import SwiftUI
 
 struct ReaderSettingsScreen: View {
-    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int = ReaderScreenConstants.defaultImageLayout.rawValue
+    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int = SettingsDefaults.imageLayout.rawValue
     @AppStorage(SettingsKey.readingDirection.rawValue) private var readingDirectionRawValue: Int =
-        ReaderScreenConstants.defaultReadingDirection.rawValue
+        SettingsDefaults.readingDirection.rawValue
     @AppStorage(SettingsKey.tapNavigation.rawValue) private var tapNavigation: Bool =
-        ReaderScreenConstants.defaultTapNavigation
+        SettingsDefaults.tapNavigation
     @AppStorage(SettingsKey.snapToPage.rawValue) private var snapToPage: Bool =
-        ReaderScreenConstants.defaultSnapToPage
+        SettingsDefaults.snapToPage
     @AppStorage(SettingsKey.softSnap.rawValue) private var softSnap: Bool =
-        ReaderScreenConstants.defaultSoftSnap
+        SettingsDefaults.softSnap
 
     var body: some View {
         List {
@@ -31,7 +31,7 @@ struct ReaderSettingsScreen: View {
                 Picker(
                     "imageLayout",
                     selection: Binding(
-                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? ReaderScreenConstants.defaultImageLayout },
+                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout },
                         set: { imageLayoutRawValue = $0.rawValue }
                     )
                 ) {
@@ -45,7 +45,7 @@ struct ReaderSettingsScreen: View {
                     selection: Binding(
                         get: {
                             ReadingDirection(rawValue: readingDirectionRawValue)
-                                ?? ReaderScreenConstants.defaultReadingDirection
+                                ?? SettingsDefaults.readingDirection
                         },
                         set: { readingDirectionRawValue = $0.rawValue }
                     )

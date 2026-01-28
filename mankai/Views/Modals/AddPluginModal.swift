@@ -10,9 +10,22 @@ import SwiftUI
 struct AddPluginModal: View {
     @Environment(\.dismiss) var dismiss
 
+    enum PluginType: String, CaseIterable, Identifiable {
+        case jsPlugin
+        case fsPlugin
+
+        var id: String { rawValue }
+    }
+
+    @State private var selectedPluginType: PluginType = .jsPlugin
     @State private var useJson = false
     @State private var jsonInput: String = ""
     @State private var urlInput: String = ""
+
+    // FsPlugin States
+    @State private var selectedFolder: URL?
+    @State private var isReadOnly: Bool = true
+    @State private var showFileImporter: Bool = false
 
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
@@ -22,19 +35,51 @@ struct AddPluginModal: View {
         NavigationView {
             List {
                 Section {
-                    Toggle(isOn: $useJson) {
-                        Text("useJson")
+                    Picker("pluginType", selection: $selectedPluginType) {
+                        ForEach(PluginType.allCases) { type in
+                            Text(LocalizedStringKey(type.rawValue)).tag(type)
+                        }
                     }
-                    if useJson {
-                        TextField("json", text: $jsonInput)
-                            .textInputAutocapitalization(.never)
-                    } else {
-                        TextField("url", text: $urlInput)
-                            .keyboardType(.URL)
-                            .textInputAutocapitalization(.never)
+                }
+
+                if selectedPluginType == .jsPlugin {
+                    Section {
+                        Toggle(isOn: $useJson) {
+                            Text("useJson")
+                        }
+                        if useJson {
+                            TextField("json", text: $jsonInput)
+                                .textInputAutocapitalization(.never)
+                        } else {
+                            TextField("url", text: $urlInput)
+                                .keyboardType(.URL)
+                                .textInputAutocapitalization(.never)
+                        }
+                    } header: {
+                        Text("jsPluginSettings")
                     }
-                } header: {
-                    Spacer(minLength: 0)
+                } else if selectedPluginType == .fsPlugin {
+                    Section {
+                        Button(action: {
+                            showFileImporter = true
+                        }) {
+                            HStack {
+                                Text("selectFolder")
+                                Spacer()
+                                if let selectedFolder = selectedFolder {
+                                    Text(selectedFolder.lastPathComponent)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("none")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+
+                        Toggle("readOnly", isOn: $isReadOnly)
+                    } header: {
+                        Text("fsPluginSettings")
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -54,27 +99,58 @@ struct AddPluginModal: View {
                                 isProcessing = true
                                 defer { isProcessing = false }
 
-                                let plugin: JsPlugin?
+                                switch selectedPluginType {
+                                case .jsPlugin:
+                                    let plugin: JsPlugin?
 
-                                if useJson {
-                                    plugin = parsePluginFromJson(jsonInput)
-                                } else {
-                                    plugin = await parsePluginFromUrl(urlInput)
-                                }
+                                    if useJson {
+                                        plugin = parsePluginFromJson(jsonInput)
+                                    } else {
+                                        plugin = await parsePluginFromUrl(urlInput)
+                                    }
 
-                                guard let plugin = plugin else {
-                                    errorMessage = String(localized: "failedToParsePlugin")
-                                    showError = true
-                                    return
-                                }
+                                    guard let plugin = plugin else {
+                                        errorMessage = String(localized: "failedToParsePlugin")
+                                        showError = true
+                                        return
+                                    }
 
-                                do {
-                                    try PluginService.shared.addPlugin(plugin)
-                                    dismiss()
-                                } catch {
-                                    errorMessage =
-                                        error.localizedDescription
-                                    showError = true
+                                    do {
+                                        try PluginService.shared.addPlugin(plugin)
+                                        dismiss()
+                                    } catch {
+                                        errorMessage = error.localizedDescription
+                                        showError = true
+                                    }
+                                case .fsPlugin:
+                                    guard let selectedFolder = selectedFolder else {
+                                        errorMessage = String(localized: "noFolderSelected")
+                                        showError = true
+                                        return
+                                    }
+
+                                    // Check if the folder is accessible
+                                    guard selectedFolder.startAccessingSecurityScopedResource() else {
+                                        errorMessage = String(localized: "failedToAccessFolder")
+                                        showError = true
+                                        return
+                                    }
+                                    defer { selectedFolder.stopAccessingSecurityScopedResource() }
+
+                                    let plugin: ReadFsPlugin
+                                    do {
+                                        if isReadOnly {
+                                            plugin = try ReadFsPlugin(url: selectedFolder)
+                                        } else {
+                                            plugin = try ReadWriteFsPlugin(url: selectedFolder)
+                                        }
+
+                                        try PluginService.shared.addPlugin(plugin)
+                                        dismiss()
+                                    } catch {
+                                        errorMessage = error.localizedDescription
+                                        showError = true
+                                    }
                                 }
                             }
                         }
@@ -85,7 +161,22 @@ struct AddPluginModal: View {
                             Text("add")
                         }
                     }
-                    .disabled(isProcessing || (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
+                    .disabled(isProcessing || (selectedPluginType == .jsPlugin && (useJson ? jsonInput.isEmpty : urlInput.isEmpty)) || (selectedPluginType == .fsPlugin && selectedFolder == nil))
+                }
+            }
+            .fileImporter(
+                isPresented: $showFileImporter,
+                allowedContentTypes: [.folder],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case let .success(urls):
+                    if let url = urls.first {
+                        selectedFolder = url
+                    }
+                case let .failure(error):
+                    errorMessage = error.localizedDescription
+                    showError = true
                 }
             }
             .alert("failedToAddPlugin", isPresented: $showError) {

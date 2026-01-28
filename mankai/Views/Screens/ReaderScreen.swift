@@ -8,14 +8,6 @@
 import SwiftUI
 import UIKit
 
-enum ReaderScreenConstants {
-    static let defaultImageLayout: ImageLayout = .auto
-    static let defaultReadingDirection: ReadingDirection = .rightToLeft
-    static let defaultTapNavigation: Bool = true
-    static let defaultSnapToPage: Bool = false
-    static let defaultSoftSnap: Bool = false
-}
-
 let LOADER_VIEW_ID = 1
 let ERROR_VIEW_ID = 2
 let LOADING_IMAGE_VIEW_ID = 3
@@ -72,11 +64,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     var isNavigationBarAnimating = false
 
     // Cached settings
-    private var cachedTapNavigation: Bool = ReaderScreenConstants.defaultTapNavigation
-    private var cachedSnapToPage: Bool = ReaderScreenConstants.defaultSnapToPage
-    private var cachedImageLayout: ImageLayout = ReaderScreenConstants.defaultImageLayout
-    private var cachedReadingDirection: ReadingDirection = ReaderScreenConstants.defaultReadingDirection
-    private var cachedSoftSnap: Bool = ReaderScreenConstants.defaultSoftSnap
+    private var cachedTapNavigation: Bool = SettingsDefaults.tapNavigation
+    private var cachedSnapToPage: Bool = SettingsDefaults.snapToPage
+    private var cachedImageLayout: ImageLayout = SettingsDefaults.imageLayout
+    private var cachedReadingDirection: ReadingDirection = SettingsDefaults.readingDirection
+    private var cachedSoftSnap: Bool = SettingsDefaults.softSnap
 
     // UI Components
     private let scrollView = UIScrollView()
@@ -234,11 +226,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     private func updateCachedSettings() {
         let defaults = UserDefaults.standard
-        cachedTapNavigation = defaults.object(forKey: SettingsKey.tapNavigation.rawValue) as? Bool ?? ReaderScreenConstants.defaultTapNavigation
-        cachedSnapToPage = defaults.object(forKey: SettingsKey.snapToPage.rawValue) as? Bool ?? ReaderScreenConstants.defaultSnapToPage
-        cachedImageLayout = ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue)) ?? ReaderScreenConstants.defaultImageLayout
-        cachedReadingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? ReaderScreenConstants.defaultReadingDirection
-        cachedSoftSnap = defaults.object(forKey: SettingsKey.softSnap.rawValue) as? Bool ?? ReaderScreenConstants.defaultSoftSnap
+        cachedTapNavigation = defaults.object(forKey: SettingsKey.tapNavigation.rawValue) as? Bool ?? SettingsDefaults.tapNavigation
+        cachedSnapToPage = defaults.object(forKey: SettingsKey.snapToPage.rawValue) as? Bool ?? SettingsDefaults.snapToPage
+        cachedImageLayout = ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue)) ?? SettingsDefaults.imageLayout
+        cachedReadingDirection = ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.readingDirection.rawValue)) ?? SettingsDefaults.readingDirection
+        cachedSoftSnap = defaults.object(forKey: SettingsKey.softSnap.rawValue) as? Bool ?? SettingsDefaults.softSnap
     }
 
     // MARK: - Scroll Event Monitoring
@@ -1464,7 +1456,6 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     @objc private func previousChapterButtonTapped() {
         currentChapterIndex -= 1
-        initialPage = -1
         loadChapter()
     }
 

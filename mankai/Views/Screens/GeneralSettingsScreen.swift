@@ -9,7 +9,9 @@ import SwiftUI
 
 struct GeneralSettingsScreen: View {
     @AppStorage(SettingsKey.inMemoryCacheExpiryDuration.rawValue) private var inMemoryCacheExpiryDurationRawValue:
-        Double = CacheDuration.auto.rawValue
+        Double = SettingsDefaults.inMemoryCacheExpiryDuration
+    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool = SettingsDefaults.hideBuiltInPlugins
+    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool = SettingsDefaults.showDebugScreen
     @ObservedObject private var updateService = UpdateService.shared
     @State private var cacheSize: String = ""
     @State private var showClearCacheAlert = false
@@ -17,6 +19,20 @@ struct GeneralSettingsScreen: View {
     var body: some View {
         List {
             Section {
+                Toggle("hideBuiltInPlugins", isOn: $hideBuiltInPlugins)
+
+                LabeledContent("lastUpdateTime") {
+                    if let lastUpdateTime = updateService.lastUpdateTime {
+                        Text(lastUpdateTime, style: .relative)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("never")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
+            Section("cache") {
                 Picker(
                     "inMemoryCacheExpiryDuration",
                     selection: Binding(
@@ -56,16 +72,10 @@ struct GeneralSettingsScreen: View {
                 } message: {
                     Text("clearCacheMessage")
                 }
+            }
 
-                LabeledContent("lastUpdateTime") {
-                    if let lastUpdateTime = updateService.lastUpdateTime {
-                        Text(lastUpdateTime, style: .relative)
-                            .foregroundColor(.secondary)
-                    } else {
-                        Text("never")
-                            .foregroundColor(.secondary)
-                    }
-                }
+            Section {
+                Toggle("showDebugScreen", isOn: $showDebugScreen)
             }
 
             Section("about") {

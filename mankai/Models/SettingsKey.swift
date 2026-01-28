@@ -14,6 +14,8 @@ enum SettingsKey: String {
     case tapNavigation
     case snapToPage
     case softSnap
+    case hideBuiltInPlugins
+    case showDebugScreen
 }
 
 enum ImageLayout: Int {

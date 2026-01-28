@@ -19,13 +19,9 @@ class AppDirPlugin: ReadWriteFsPlugin {
             try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
         }
 
-        Logger.appDirPlugin.info("AppDirPlugin initialized with PATH: \(mangaDir.path())")
+        Logger.appDirPlugin.info("AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
 
-        super.init(mangaDir.path())
-    }
-
-    override var id: String {
-        "mankai"
+        super.init(url: mangaDir, id: "mankai")
     }
 
     override var tag: String? {
@@ -39,4 +35,10 @@ class AppDirPlugin: ReadWriteFsPlugin {
     override var name: String? {
         String(localized: "appName")
     }
+
+    // Built-in plugin, do nothing
+    override func savePlugin() throws {}
+
+    // Built-in plugin, do nothing
+    override func deletePlugin() throws {}
 }

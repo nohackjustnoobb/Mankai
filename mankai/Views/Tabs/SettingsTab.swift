@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SettingsTab: View {
+    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool = SettingsDefaults.showDebugScreen
+
     var body: some View {
         NavigationStack {
             List {
@@ -29,7 +31,7 @@ struct SettingsTab: View {
                     NavigationLink(
                         destination: PluginSettingsScreen()
                     ) {
-                        Label("plugins", systemImage: "puzzlepiece.fill")
+                        Label("plugins", systemImage: "powerplug.portrait.fill")
                             .labelStyle(ColorfulIconLabelStyle(color: .red, imageScale: .small))
                     }
                 }
@@ -56,12 +58,14 @@ struct SettingsTab: View {
                     }
                 }
 
-                Section {
-                    NavigationLink(
-                        destination: DebugScreen()
-                    ) {
-                        Label("debug", systemImage: "curlybraces")
-                            .labelStyle(ColorfulIconLabelStyle(color: .yellow))
+                if showDebugScreen {
+                    Section {
+                        NavigationLink(
+                            destination: DebugScreen()
+                        ) {
+                            Label("debug", systemImage: "curlybraces")
+                                .labelStyle(ColorfulIconLabelStyle(color: .yellow))
+                        }
                     }
                 }
             }

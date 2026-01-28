@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LibraryTab: View {
     let pluginService = PluginService.shared
+    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool = SettingsDefaults.hideBuiltInPlugins
     @State var plugins: [Plugin] = []
 
     @State var query: String = ""
@@ -19,19 +20,35 @@ struct LibraryTab: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(plugins) { plugin in
-                        PluginListMangasRowListView(plugin: plugin)
+            Group {
+                if plugins.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "powerplug.portrait.fill")
+                            .font(.title)
+                        Text("noPluginAvailable")
+                            .font(.headline)
+                    }
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(plugins) { plugin in
+                                PluginListMangasRowListView(plugin: plugin)
+                            }
+                        }
+                        .padding()
                     }
                 }
-                .padding()
             }
             .navigationTitle("library")
             .onAppear {
                 updatePlugins()
             }
             .onReceive(pluginService.objectWillChange) {
+                updatePlugins()
+            }
+            .onChange(of: hideBuiltInPlugins) {
                 updatePlugins()
             }
             .searchable(text: $query, prompt: "searchManga") {
@@ -70,7 +87,12 @@ struct LibraryTab: View {
     }
 
     private func updatePlugins() {
-        plugins = pluginService.plugins.sorted { plugin1, plugin2 in
+        plugins = pluginService.plugins.filter { plugin in
+            if hideBuiltInPlugins, plugin is AppDirPlugin {
+                return false
+            }
+            return true
+        }.sorted { plugin1, plugin2 in
             let name1 = plugin1.name ?? plugin1.id
             let name2 = plugin2.name ?? plugin2.id
             return name1.localizedCaseInsensitiveCompare(name2) == .orderedAscending

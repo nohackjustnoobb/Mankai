@@ -352,6 +352,21 @@ class HttpEngine: SyncEngine {
         Logger.httpEngine.debug("Sync completed")
     }
 
+    override func saveSaveds(_ saveds: [SavedModel]) async throws {
+        Logger.httpEngine.debug("HttpEngine saving \(saveds.count) saveds")
+        let bodyArr: [[String: Any]] = saveds.map { saved in
+            [
+                "mangaId": saved.mangaId,
+                "pluginId": saved.pluginId,
+                "datetime": Int(saved.datetime.timeIntervalSince1970 * 1000),
+                "updates": saved.updates,
+                "latestChapter": saved.latestChapter,
+            ]
+        }
+        let bodyData = try JSONSerialization.data(withJSONObject: bodyArr, options: [])
+        _ = try await request(method: "PUT", path: "/saveds", body: bodyData)
+    }
+
     // MARK: - Internal Sync Logic
 
     private func syncSaveds(defaults: UserDefaults) async throws {
@@ -504,21 +519,6 @@ class HttpEngine: SyncEngine {
         }
 
         return SavedModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates, latestChapter: latestChapter)
-    }
-
-    override func saveSaveds(_ saveds: [SavedModel]) async throws {
-        Logger.httpEngine.debug("HttpEngine saving \(saveds.count) saveds")
-        let bodyArr: [[String: Any]] = saveds.map { saved in
-            [
-                "mangaId": saved.mangaId,
-                "pluginId": saved.pluginId,
-                "datetime": Int(saved.datetime.timeIntervalSince1970 * 1000),
-                "updates": saved.updates,
-                "latestChapter": saved.latestChapter,
-            ]
-        }
-        let bodyData = try JSONSerialization.data(withJSONObject: bodyArr, options: [])
-        _ = try await request(method: "PUT", path: "/saveds", body: bodyData)
     }
 
     private func updateSaveds(_ saveds: [SavedModel]) async throws {

@@ -18,23 +18,137 @@ enum ReadFsPluginConstants {
 }
 
 class ReadFsPlugin: Plugin {
-    let path: String
+    let url: URL
 
     // MARK: - Cache
 
-    private lazy var dirName: String = URL(fileURLWithPath: path).lastPathComponent
-    lazy var _dbPath: String = URL(fileURLWithPath: path).appendingPathComponent("data.db").path()
+    private lazy var dirName: String = url.lastPathComponent
+    lazy var _dbPath: String = url.appendingPathComponent("data.db").path(percentEncoded: false)
     private let _id: String
+    private var _isAccessing: Bool = false
 
     private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: true)
     var db: DatabasePool? {
         _db
     }
 
-    init(_ path: String) {
-        Logger.fsPlugin.debug("Initializing ReadFsPlugin with path: \(path)")
-        self.path = path
-        _id = UUID().uuidString
+    init(url: URL, id: String) {
+        Logger.fsPlugin.debug("Initializing ReadFsPlugin with url: \(url.path)")
+        self.url = url
+        _id = id
+
+        _isAccessing = url.startAccessingSecurityScopedResource()
+        if !_isAccessing {
+            Logger.fsPlugin.error("Failed to start accessing security scoped resource for plugin: \(_id)")
+        }
+    }
+
+    convenience init(url: URL) throws {
+        guard url.startAccessingSecurityScopedResource() else {
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToAccessFolder")]
+            )
+        }
+        defer {
+            url.stopAccessingSecurityScopedResource()
+        }
+
+        let idFile = url.appendingPathComponent("mankai.id")
+        guard FileManager.default.fileExists(atPath: idFile.path) else {
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdNotFound")]
+            )
+        }
+
+        let id = try String(contentsOf: idFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty else {
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "pluginIdEmpty")]
+            )
+        }
+
+        self.init(url: url, id: id)
+    }
+
+    deinit {
+        if _isAccessing {
+            url.stopAccessingSecurityScopedResource()
+        }
+    }
+
+    static func loadPlugins() -> [ReadFsPlugin] {
+        Logger.fsPlugin.debug("Loading FS plugins")
+        guard let dbPool = DbService.shared.appDb else {
+            Logger.fsPlugin.error("Database not available")
+            return []
+        }
+
+        var results: [ReadFsPlugin] = []
+
+        var models: [FsPluginModel] = []
+        do {
+            try dbPool.read { db in
+                models = try FsPluginModel.fetchAll(db)
+            }
+        } catch {
+            Logger.fsPlugin.error("Failed to fetch FsPluginModels: \(error)")
+            return []
+        }
+
+        for var model in models {
+            var isStale = false
+            do {
+                let url = try URL(
+                    resolvingBookmarkData: model.bookmarkData,
+                    options: .withoutUI,
+                    relativeTo: nil,
+                    bookmarkDataIsStale: &isStale
+                )
+
+                if isStale {
+                    Logger.fsPlugin.warning("Bookmark data is stale for plugin: \(model.id)")
+                    do {
+                        let newBookmarkData = try url.bookmarkData(
+                            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
+                        )
+                        model.bookmarkData = newBookmarkData
+                        try dbPool.write { db in
+                            try model.update(db)
+                        }
+                        Logger.fsPlugin.info("Updated stale bookmark for plugin: \(model.id)")
+                    } catch {
+                        Logger.fsPlugin.error("Failed to update stale bookmark for plugin \(model.id): \(error)")
+                        continue
+                    }
+                }
+
+                if !url.startAccessingSecurityScopedResource() {
+                    Logger.fsPlugin.error("Failed to start accessing security scoped resource for plugin: \(model.id)")
+                    continue
+                }
+
+                defer {
+                    url.stopAccessingSecurityScopedResource()
+                }
+
+                let plugin: ReadFsPlugin
+
+                if model.isWriteable {
+                    plugin = ReadWriteFsPlugin(url: url, id: model.id)
+                } else {
+                    plugin = ReadFsPlugin(url: url, id: model.id)
+                }
+
+                results.append(plugin)
+            } catch {
+                Logger.fsPlugin.error("Failed to resolve bookmark for plugin \(model.id): \(error)")
+            }
+        }
+
+        return results
     }
 
     // MARK: - Metadata
@@ -58,11 +172,43 @@ class ReadFsPlugin: Plugin {
     // MARK: - Override Methods
 
     override func savePlugin() throws {
-        fatalError("Not Implemented")
+        Logger.fsPlugin.debug("Saving plugin: \(id)")
+        guard let db = DbService.shared.appDb else {
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        let bookmarkData = try url.bookmarkData(
+            options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
+        )
+
+        let isWriteable = self is ReadWriteFsPlugin
+
+        let pluginModel = FsPluginModel(
+            id: id,
+            isWriteable: isWriteable,
+            bookmarkData: bookmarkData
+        )
+
+        try db.write { db in
+            try pluginModel.save(db)
+        }
     }
 
     override func deletePlugin() throws {
-        fatalError("Not Implemented")
+        Logger.fsPlugin.debug("Deleting plugin: \(id)")
+        guard let db = DbService.shared.appDb else {
+            throw NSError(
+                domain: "ReadFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        _ = try db.write { db in
+            try FsPluginModel.deleteOne(db, key: id)
+        }
     }
 
     override func isOnline() async throws -> Bool {
@@ -356,11 +502,10 @@ class ReadFsPlugin: Plugin {
         }
     }
 
-    override func getImage(_ url: String) async throws -> Data {
-        Logger.fsPlugin.debug("Getting image: \(url)")
+    override func getImage(_ path: String) async throws -> Data {
+        Logger.fsPlugin.debug("Getting image: \(path)")
         let fileManager = FileManager.default
-        let pathURL = URL(fileURLWithPath: path)
-        let fullImagePath = pathURL.appendingPathComponent(url).path
+        let fullImagePath = url.appendingPathComponent(path).path
 
         guard fileManager.fileExists(atPath: fullImagePath) else {
             Logger.fsPlugin.error("Image file not found: \(fullImagePath)")
