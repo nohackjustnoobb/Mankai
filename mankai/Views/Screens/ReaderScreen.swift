@@ -370,6 +370,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         if offsetY < -OVERSCROLL_THRESHOLD {
             if currentChapterIndex > 0 {
                 currentChapterIndex -= 1
+                initialPage = -1
                 loadChapter()
             }
         } else if offsetY > maxScrollY {
@@ -508,8 +509,15 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                     manga: manga, chapter: chapter
                 )
 
-                if let initialPage = self.initialPage {
-                    self.jumpToPage = urls[initialPage]
+                if var initialPage = self.initialPage {
+                    if initialPage == -1 {
+                        initialPage = urls.count - 1
+                        self.initialPage = initialPage
+                    }
+
+                    if initialPage >= 0 && initialPage < urls.count {
+                        self.jumpToPage = urls[initialPage]
+                    }
                 }
 
                 scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
@@ -1456,6 +1464,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     @objc private func previousChapterButtonTapped() {
         currentChapterIndex -= 1
+        initialPage = -1
         loadChapter()
     }
 
