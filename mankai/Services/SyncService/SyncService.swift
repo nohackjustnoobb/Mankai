@@ -55,7 +55,7 @@ class SyncService: ObservableObject {
             }
 
             Task {
-                try? await onEngineChange()
+                try? await self.onEngineChange()
             }
         }
     }
@@ -84,37 +84,9 @@ class SyncService: ObservableObject {
 
         // Reset last sync time in UserDefaults
         let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: "SyncService.lastSyncTime.records")
-        defaults.removeObject(forKey: "SyncService.lastSyncTime.saveds")
         defaults.removeObject(forKey: "SyncService.lastSyncTime")
 
-        // Get hash from remote server
-        let remoteHash = try await engine.getSavedsHash()
-
-        // Get local hash
-        let localHash = SavedService.shared.generateHash()
-
-        // Compare hashes
-        if remoteHash != localHash {
-            Logger.syncService.info("Hashes mismatch, syncing saveds")
-            // Pull saveds from remote
-            let remoteSaveds = try await engine.getSaveds()
-
-            // Update local database without deleting existing saveds
-            if !remoteSaveds.isEmpty {
-                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
-            }
-
-            // Push all local saveds to remote
-            let localSaveds = SavedService.shared.getAll()
-            try await engine.saveSaveds(localSaveds)
-        } else {
-            Logger.syncService.debug("Hashes match, skipping saveds sync")
-        }
-
-        // Call sync
-        try await internalSync()
-        try await UpdateService.shared.update()
+        try await engine.onSelected()
     }
 
     private func subscribeToEngine() {
@@ -153,6 +125,7 @@ class SyncService: ObservableObject {
 
     deinit {
         stopPeriodicSync()
+        engineCancellable?.cancel()
     }
 
     func sync(wait: Bool = false) async throws {
@@ -185,16 +158,10 @@ class SyncService: ObservableObject {
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
-        let defaults = UserDefaults.standard
-
-        // Sync Saveds
-        try await syncSaveds(engine: engine, defaults: defaults)
-
-        // Sync Records
-        try await syncRecords(engine: engine, defaults: defaults)
+        try await engine.sync()
 
         // Update sync time
-        defaults.set(Date(), forKey: "SyncService.lastSyncTime")
+        UserDefaults.standard.set(Date(), forKey: "SyncService.lastSyncTime")
 
         await MainActor.run {
             self.objectWillChange.send()
@@ -215,123 +182,5 @@ class SyncService: ObservableObject {
         // Push all saveds to remote
         try await engine.saveSaveds(localSaveds)
         Logger.syncService.info("Pushed \(localSaveds.count) saveds to remote")
-    }
-
-    private func syncSaveds(engine: SyncEngine, defaults: UserDefaults) async throws {
-        Logger.syncService.debug("Syncing saveds")
-        // Get hash from remote server
-        let remoteHash = try await engine.getSavedsHash()
-
-        // Get local hash
-        let localHash = SavedService.shared.generateHash()
-
-        // Compare hashes
-        if remoteHash != localHash {
-            Logger.syncService.info("Hashes mismatch, full sync for saveds")
-            // Hashes don't match, pull all saveds from remote
-            let remoteSaveds = try await engine.getSaveds()
-
-            // Get all local saveds
-            let localSaveds = SavedService.shared.getAll()
-
-            // Create sets for efficient lookup
-            let remoteKeys = Set(remoteSaveds.map { "\($0.mangaId)|\($0.pluginId)" })
-
-            // Delete saveds that exist locally but not in remote
-            for saved in localSaveds {
-                let key = "\(saved.mangaId)|\(saved.pluginId)"
-                if !remoteKeys.contains(key) {
-                    _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
-                }
-            }
-
-            // Add or update saveds from remote
-            if !remoteSaveds.isEmpty {
-                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
-            }
-        }
-
-        // Get latest saved from remote
-        let remoteLatest = try await engine.getLatestSaved()
-
-        // Get latest saved from local
-        let localLatest = SavedService.shared.getLatest()
-
-        // Check if already synced (comparing primary key and datetime)
-        if let remote = remoteLatest, let local = localLatest,
-           remote.mangaId == local.mangaId,
-           remote.pluginId == local.pluginId,
-           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
-        {
-            // Already synced
-            Logger.syncService.debug("Saveds already synced")
-            defaults.set(Date(), forKey: "SyncService.lastSyncTime.saveds")
-            return
-        }
-
-        // Get last sync time for saveds
-        let lastSyncTime = defaults.object(forKey: "SyncService.lastSyncTime.saveds") as? Date
-
-        // Fetch and upload new local saveds since last sync
-        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
-        if !newLocalSaveds.isEmpty {
-            Logger.syncService.info("Uploading \(newLocalSaveds.count) new local saveds")
-            try await engine.updateSaveds(newLocalSaveds)
-        }
-
-        // Get remote saveds since last sync
-        let remoteSavedsUpdates = try await engine.getSaveds(lastSyncTime)
-
-        // Update local database with remote saveds
-        if !remoteSavedsUpdates.isEmpty {
-            Logger.syncService.info("Downloading \(remoteSavedsUpdates.count) remote saveds updates")
-            _ = await SavedService.shared.batchUpdate(saveds: remoteSavedsUpdates)
-        }
-
-        // Update last sync time for saveds
-        defaults.set(Date(), forKey: "SyncService.lastSyncTime.saveds")
-    }
-
-    private func syncRecords(engine: SyncEngine, defaults: UserDefaults) async throws {
-        Logger.syncService.debug("Syncing records")
-        // Get latest record from remote
-        let remoteLatest = try await engine.getLatestRecord()
-
-        // Get latest record from local
-        let localLatest = HistoryService.shared.getLatest()
-
-        // Check if already synced (comparing primary key and datetime)
-        if let remote = remoteLatest, let local = localLatest,
-           remote.mangaId == local.mangaId,
-           remote.pluginId == local.pluginId,
-           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
-        {
-            // Already synced
-            Logger.syncService.debug("Records already synced")
-            defaults.set(Date(), forKey: "SyncService.lastSyncTime.records")
-            return
-        }
-
-        // Get last sync time
-        let lastSyncTime = defaults.object(forKey: "SyncService.lastSyncTime.records") as? Date
-
-        // Fetch and upload new local data since last sync
-        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime)
-        if !newLocalRecords.isEmpty {
-            Logger.syncService.info("Uploading \(newLocalRecords.count) new local records")
-            try await engine.updateRecords(newLocalRecords)
-        }
-
-        // Get remote records since last sync
-        let remoteRecords = try await engine.getRecords(lastSyncTime)
-
-        // Update local database with remote records
-        if !remoteRecords.isEmpty {
-            Logger.syncService.info("Downloading \(remoteRecords.count) remote records updates")
-            _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
-        }
-
-        // Update last sync time
-        defaults.set(Date(), forKey: "SyncService.lastSyncTime.records")
     }
 }

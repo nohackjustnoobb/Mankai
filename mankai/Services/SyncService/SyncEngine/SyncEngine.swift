@@ -28,35 +28,15 @@ class SyncEngine: Identifiable, ObservableObject, Hashable {
         fatalError("Not Implemented")
     }
 
-    func getSavedsHash() async throws -> String {
+    func sync() async throws {
         fatalError("Not Implemented")
     }
 
-    func getLatestSaved() async throws -> SavedModel? {
+    func onSelected() async throws {
         fatalError("Not Implemented")
     }
 
     func saveSaveds(_: [SavedModel]) async throws {
-        fatalError("Not Implemented")
-    }
-
-    func updateSaveds(_: [SavedModel]) async throws {
-        fatalError("Not Implemented")
-    }
-
-    func getLatestRecord() async throws -> RecordModel? {
-        fatalError("Not Implemented")
-    }
-
-    func updateRecords(_: [RecordModel]) async throws {
-        fatalError("Not Implemented")
-    }
-
-    func getSaveds(_: Date? = nil) async throws -> [SavedModel] {
-        fatalError("Not Implemented")
-    }
-
-    func getRecords(_: Date? = nil) async throws -> [RecordModel] {
         fatalError("Not Implemented")
     }
 }

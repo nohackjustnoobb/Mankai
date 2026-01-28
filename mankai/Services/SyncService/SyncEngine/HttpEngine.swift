@@ -228,7 +228,7 @@ class HttpEngine: SyncEngine {
 
     // MARK: - High-level HTTP Methods
 
-    func get(path: String, query: [String: String]? = nil) async throws -> (Data, HTTPURLResponse) {
+    private func get(path: String, query: [String: String]? = nil) async throws -> (Data, HTTPURLResponse) {
         return try await request(method: "GET", path: path, query: query, body: nil)
     }
 
@@ -302,7 +302,177 @@ class HttpEngine: SyncEngine {
 
     // MARK: - SyncEngine Overrides
 
-    override func getSavedsHash() async throws -> String {
+    override func onSelected() async throws {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "HttpEngine.lastSyncTime.records")
+        defaults.removeObject(forKey: "HttpEngine.lastSyncTime.saveds")
+
+        Logger.httpEngine.debug("HttpEngine selected handling")
+
+        // Get hash from remote server
+        let remoteHash = try await getSavedsHash()
+
+        // Get local hash
+        let localHash = SavedService.shared.generateHash()
+
+        // Compare hashes
+        if remoteHash != localHash {
+            Logger.httpEngine.info("Hashes mismatch, syncing saveds")
+            // Pull saveds from remote
+            let remoteSaveds = try await getSaveds()
+
+            // Update local database without deleting existing saveds
+            if !remoteSaveds.isEmpty {
+                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
+            }
+
+            // Push all local saveds to remote
+            let localSaveds = SavedService.shared.getAll()
+            try await saveSaveds(localSaveds)
+        } else {
+            Logger.httpEngine.debug("Hashes match, skipping saveds sync")
+        }
+
+        // Call sync
+        try await sync()
+        try await UpdateService.shared.update()
+    }
+
+    override func sync() async throws {
+        Logger.httpEngine.debug("Starting sync")
+
+        let defaults = UserDefaults.standard
+
+        // Sync Saveds
+        try await syncSaveds(defaults: defaults)
+
+        // Sync Records
+        try await syncRecords(defaults: defaults)
+
+        Logger.httpEngine.debug("Sync completed")
+    }
+
+    // MARK: - Internal Sync Logic
+
+    private func syncSaveds(defaults: UserDefaults) async throws {
+        Logger.httpEngine.debug("Syncing saveds")
+        // Get hash from remote server
+        let remoteHash = try await getSavedsHash()
+
+        // Get local hash
+        let localHash = SavedService.shared.generateHash()
+
+        // Compare hashes
+        if remoteHash != localHash {
+            Logger.httpEngine.info("Hashes mismatch, full sync for saveds")
+            // Hashes don't match, pull all saveds from remote
+            let remoteSaveds = try await getSaveds()
+
+            // Get all local saveds
+            let localSaveds = SavedService.shared.getAll()
+
+            // Create sets for efficient lookup
+            let remoteKeys = Set(remoteSaveds.map { "\($0.mangaId)|\($0.pluginId)" })
+
+            // Delete saveds that exist locally but not in remote
+            for saved in localSaveds {
+                let key = "\(saved.mangaId)|\(saved.pluginId)"
+                if !remoteKeys.contains(key) {
+                    _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+                }
+            }
+
+            // Add or update saveds from remote
+            if !remoteSaveds.isEmpty {
+                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
+            }
+        }
+
+        // Get latest saved from remote
+        let remoteLatest = try await getLatestSaved()
+
+        // Get latest saved from local
+        let localLatest = SavedService.shared.getLatest()
+
+        // Check if already synced (comparing primary key and datetime)
+        if let remote = remoteLatest, let local = localLatest,
+           remote.mangaId == local.mangaId,
+           remote.pluginId == local.pluginId,
+           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
+        {
+            // Already synced
+            Logger.httpEngine.debug("Saveds already synced")
+            defaults.set(Date(), forKey: "HttpEngine.lastSyncTime.saveds")
+            return
+        }
+
+        // Get last sync time for saveds
+        let lastSyncTime = defaults.object(forKey: "HttpEngine.lastSyncTime.saveds") as? Date
+
+        // Fetch and upload new local saveds since last sync
+        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
+        if !newLocalSaveds.isEmpty {
+            Logger.httpEngine.info("Uploading \(newLocalSaveds.count) new local saveds")
+            try await updateSaveds(newLocalSaveds)
+        }
+
+        // Get remote saveds since last sync
+        let remoteSavedsUpdates = try await getSaveds(lastSyncTime)
+
+        // Update local database with remote saveds
+        if !remoteSavedsUpdates.isEmpty {
+            Logger.httpEngine.info("Downloading \(remoteSavedsUpdates.count) remote saveds updates")
+            _ = await SavedService.shared.batchUpdate(saveds: remoteSavedsUpdates)
+        }
+
+        // Update last sync time for saveds
+        defaults.set(Date(), forKey: "HttpEngine.lastSyncTime.saveds")
+    }
+
+    private func syncRecords(defaults: UserDefaults) async throws {
+        Logger.httpEngine.debug("Syncing records")
+        // Get latest record from remote
+        let remoteLatest = try await getLatestRecord()
+
+        // Get latest record from local
+        let localLatest = HistoryService.shared.getLatest()
+
+        // Check if already synced (comparing primary key and datetime)
+        if let remote = remoteLatest, let local = localLatest,
+           remote.mangaId == local.mangaId,
+           remote.pluginId == local.pluginId,
+           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
+        {
+            // Already synced
+            Logger.httpEngine.debug("Records already synced")
+            defaults.set(Date(), forKey: "HttpEngine.lastSyncTime.records")
+            return
+        }
+
+        // Get last sync time
+        let lastSyncTime = defaults.object(forKey: "HttpEngine.lastSyncTime.records") as? Date
+
+        // Fetch and upload new local data since last sync
+        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime)
+        if !newLocalRecords.isEmpty {
+            Logger.httpEngine.info("Uploading \(newLocalRecords.count) new local records")
+            try await updateRecords(newLocalRecords)
+        }
+
+        // Get remote records since last sync
+        let remoteRecords = try await getRecords(lastSyncTime)
+
+        // Update local database with remote records
+        if !remoteRecords.isEmpty {
+            Logger.httpEngine.info("Downloading \(remoteRecords.count) remote records updates")
+            _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
+        }
+
+        // Update last sync time
+        defaults.set(Date(), forKey: "HttpEngine.lastSyncTime.records")
+    }
+
+    private func getSavedsHash() async throws -> String {
         Logger.httpEngine.debug("HttpEngine getting saveds hash")
         let (data, _) = try await get(path: "/saveds/hash")
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -317,7 +487,7 @@ class HttpEngine: SyncEngine {
         return hash
     }
 
-    override func getLatestSaved() async throws -> SavedModel? {
+    private func getLatestSaved() async throws -> SavedModel? {
         Logger.httpEngine.debug("HttpEngine getting latest saved")
         let (data, _) = try await get(path: "/saveds", query: ["lm": "1"])
         guard let arr = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], let dict = arr.first else { return nil }
@@ -351,7 +521,7 @@ class HttpEngine: SyncEngine {
         _ = try await request(method: "PUT", path: "/saveds", body: bodyData)
     }
 
-    override func updateSaveds(_ saveds: [SavedModel]) async throws {
+    private func updateSaveds(_ saveds: [SavedModel]) async throws {
         Logger.httpEngine.debug("HttpEngine updating \(saveds.count) saveds")
         let bodyArr: [[String: Any]] = saveds.map { saved in
             [
@@ -366,7 +536,7 @@ class HttpEngine: SyncEngine {
         _ = try await request(method: "POST", path: "/saveds", body: bodyData)
     }
 
-    override func getLatestRecord() async throws -> RecordModel? {
+    private func getLatestRecord() async throws -> RecordModel? {
         Logger.httpEngine.debug("HttpEngine getting latest record")
         let (data, _) = try await get(path: "/records", query: ["lm": "1"])
         guard let arr = try JSONSerialization.jsonObject(with: data) as? [[String: Any]], let dict = arr.first else { return nil }
@@ -386,7 +556,7 @@ class HttpEngine: SyncEngine {
         return RecordModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId, chapterTitle: chapterTitle, page: page)
     }
 
-    override func updateRecords(_ records: [RecordModel]) async throws {
+    private func updateRecords(_ records: [RecordModel]) async throws {
         Logger.httpEngine.debug("HttpEngine updating \(records.count) records")
         let bodyArr: [[String: Any]] = records.map { record in
             var dict: [String: Any] = [
@@ -403,7 +573,7 @@ class HttpEngine: SyncEngine {
         _ = try await request(method: "POST", path: "/records", body: bodyData)
     }
 
-    override func getSaveds(_ since: Date? = nil) async throws -> [SavedModel] {
+    private func getSaveds(_ since: Date? = nil) async throws -> [SavedModel] {
         Logger.httpEngine.debug("HttpEngine getting saveds since: \(String(describing: since))")
         var allResults: [SavedModel] = []
         var offset = 0
@@ -448,7 +618,7 @@ class HttpEngine: SyncEngine {
         return allResults
     }
 
-    override func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
+    private func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
         Logger.httpEngine.debug("HttpEngine getting records since: \(String(describing: since))")
         var allResults: [RecordModel] = []
         var offset = 0
