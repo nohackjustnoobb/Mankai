@@ -2,7 +2,7 @@
 //  Logger.swift
 //  mankai
 //
-//  Created on 21/12/2025.
+//  Created by Travis XU on 21/12/2025.
 //
 
 import Foundation
@@ -37,7 +37,7 @@ enum LogCategory: String {
     case general = "General"
 
     var subsystem: String {
-        return "com.mankai.app"
+        return "app.mankai"
     }
 
     var category: String {
