@@ -9,9 +9,9 @@
 
 <!-- [![Swift](https://img.shields.io/badge/swift-F54A2A?style=for-the-badge&logo=swift&logoColor=white)](https://developer.apple.com/swift/) -->
 
-[![GitHub License](https://img.shields.io/github/license/nohackjustnoobb/Mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/Mankai/blob/master/LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/nohackjustnoobb/Mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/Mankai/commits/master)
-[![GitHub stars](https://img.shields.io/github/stars/nohackjustnoobb/Mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/Mankai/stargazers)
+[![GitHub License](https://img.shields.io/github/license/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/blob/master/LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/commits/master)
+[![GitHub stars](https://img.shields.io/github/stars/nohackjustnoobb/mankai?style=for-the-badge)](https://github.com/nohackjustnoobb/mankai/stargazers)
 
 </div>
 
@@ -42,10 +42,10 @@ Mankai supports extensions through JsPlugin and FsPlugin.
 
 ### JavaScript Plugin (JsPlugin)
 
-You can find the official plugins in the [Mankai Plugins](https://github.com/nohackjustnoobb/Mankai-Plugins) repository.
+You can find the official plugins in the [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins) repository.
 
-- **Source Code**: [nohackjustnoobb/Mankai-Plugins](https://github.com/nohackjustnoobb/Mankai-Plugins)
-- **Compiled Plugins**: [static branch](https://github.com/nohackjustnoobb/Mankai-Plugins/tree/static)
+- **Source Code**: [nohackjustnoobb/mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
+- **Compiled Plugins**: [static branch](https://github.com/nohackjustnoobb/mankai-plugins/tree/static)
 
 ### File System Plugin (FsPlugin)
 
@@ -61,7 +61,7 @@ Mankai supports syncing your library and reading history across devices. Current
 
 ### HttpEngine
 
-The **HttpEngine** requires a self-hosted server to function. You can host the server yourself using the [Mankai-Sync](https://github.com/nohackjustnoobb/Mankai-Sync) repository.
+The **HttpEngine** requires a self-hosted server to function. You can host the server yourself using the [mankai-sync](https://github.com/nohackjustnoobb/mankai-sync) repository.
 
 Once hosted, you can configure the server URL in the app settings to enable syncing.
 
