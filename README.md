@@ -38,10 +38,37 @@ Mankai is a powerful and extensible manga reader for iPhone and iPad, written in
 
 ## Plugins
 
-Mankai supports extensions through JavaScript plugins. You can find the official plugins in the [Mankai Plugins](https://github.com/nohackjustnoobb/Mankai-Plugins) repository.
+Mankai supports extensions through JsPlugin and FsPlugin.
+
+### JavaScript Plugin (JsPlugin)
+
+You can find the official plugins in the [Mankai Plugins](https://github.com/nohackjustnoobb/Mankai-Plugins) repository.
 
 - **Source Code**: [nohackjustnoobb/Mankai-Plugins](https://github.com/nohackjustnoobb/Mankai-Plugins)
 - **Compiled Plugins**: [static branch](https://github.com/nohackjustnoobb/Mankai-Plugins/tree/static)
+
+### File System Plugin (FsPlugin)
+
+The **FsPlugin** allows you to choose a folder to store or read manga from. This folder can be shared across different devices using iCloud Drive or other remote storage solutions (like SMB).
+
+### Http Plugin (HttpPlugin) (Planned)
+
+The **HttpPlugin** will connect to external sources that provide a standard API for Mankai. An official implementation of a standard HTTP server will also be maintained.
+
+## Syncing
+
+Mankai supports syncing your library and reading history across devices. Currently, only one sync engine is implemented:
+
+### HttpEngine
+
+The **HttpEngine** requires a self-hosted server to function. You can host the server yourself using the [Mankai-Sync](https://github.com/nohackjustnoobb/Mankai-Sync) repository.
+
+Once hosted, you can configure the server URL in the app settings to enable syncing.
+
+### Planned Sync Engines
+
+- **Supabase**
+- **iCloud** - Pending availability of resources (aka. I have no money)
 
 ## Development Notes
 
