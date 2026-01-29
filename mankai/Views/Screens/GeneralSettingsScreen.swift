@@ -74,10 +74,6 @@ struct GeneralSettingsScreen: View {
                 }
             }
 
-            Section {
-                Toggle("showDebugScreen", isOn: $showDebugScreen)
-            }
-
             Section("about") {
                 LabeledContent("version") {
                     Text(appVersion)
@@ -86,6 +82,10 @@ struct GeneralSettingsScreen: View {
                 LabeledContent("license") {
                     Text("MIT License")
                 }
+            }
+
+            Section {
+                Toggle("showDebugScreen", isOn: $showDebugScreen)
             }
         }
         .navigationTitle("general")

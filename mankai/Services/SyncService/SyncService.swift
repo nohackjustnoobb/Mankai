@@ -66,18 +66,8 @@ class SyncService: ObservableObject {
     }
 
     func onEngineChange() async throws {
-        if isSyncing {
-            Logger.syncService.warning("Sync in progress, skipping engine change sync")
-            return
-        }
-
-        await MainActor.run { isSyncing = true }
-        defer {
-            Task { @MainActor in isSyncing = false }
-        }
-
         Logger.syncService.debug("Handling engine change")
-        guard let engine = _engine else {
+        guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
@@ -91,7 +81,7 @@ class SyncService: ObservableObject {
 
     private func subscribeToEngine() {
         engineCancellable?.cancel()
-        engineCancellable = _engine?.objectWillChange.sink { [weak self] _ in
+        engineCancellable = engine?.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async {
                 self?.objectWillChange.send()
             }
@@ -101,7 +91,7 @@ class SyncService: ObservableObject {
     private func startPeriodicSync() {
         stopPeriodicSync()
 
-        guard _engine != nil else { return }
+        guard engine != nil else { return }
 
         // Initial
         Logger.syncService.debug("Starting periodic sync")
@@ -153,7 +143,7 @@ class SyncService: ObservableObject {
 
     private func internalSync() async throws {
         Logger.syncService.debug("Starting sync")
-        guard let engine = _engine else {
+        guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
@@ -171,7 +161,7 @@ class SyncService: ObservableObject {
 
     func pushSaveds() async throws {
         Logger.syncService.debug("Pushing saveds")
-        guard let engine = _engine else {
+        guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }

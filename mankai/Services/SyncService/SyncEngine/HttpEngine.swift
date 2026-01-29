@@ -60,6 +60,8 @@ class HttpEngine: SyncEngine {
         return _serverUrl != nil && _email != nil && _password != nil
     }
 
+    // MARK: - Authentication
+
     func login(email: String, password: String) async throws {
         Logger.httpEngine.info("HttpEngine logging in with email: \(email)")
         _email = email
@@ -178,8 +180,8 @@ class HttpEngine: SyncEngine {
         }
 
         if httpResponse.statusCode == 401 {
-            Logger.httpEngine.warning("HttpEngine refresh token expired, trying to re-login")
             // maybe the refresh token is expired, try to get a new one
+            Logger.httpEngine.warning("HttpEngine refresh token expired, trying to re-login")
             try await getRefreshToken()
             return try await refreshAccessToken()
         }
@@ -321,13 +323,24 @@ class HttpEngine: SyncEngine {
             // Pull saveds from remote
             let remoteSaveds = try await getSaveds()
 
-            // Update local database without deleting existing saveds
+            // Fetch local saveds once for both filtering and pushing
+            let localSaveds = SavedService.shared.getAll()
+
+            // Add saveds from remote
             if !remoteSaveds.isEmpty {
-                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
+                let localKeys = Set(localSaveds.map { "\($0.mangaId)|\($0.pluginId)" })
+
+                let newRemoteSaveds = remoteSaveds.filter { saved in
+                    let key = "\(saved.mangaId)|\(saved.pluginId)"
+                    return !localKeys.contains(key)
+                }
+
+                if !newRemoteSaveds.isEmpty {
+                    _ = await SavedService.shared.batchUpdate(saveds: newRemoteSaveds)
+                }
             }
 
             // Push all local saveds to remote
-            let localSaveds = SavedService.shared.getAll()
             try await saveSaveds(localSaveds)
         } else {
             Logger.httpEngine.debug("Hashes match, skipping saveds sync")
@@ -379,7 +392,8 @@ class HttpEngine: SyncEngine {
 
         // Compare hashes
         if remoteHash != localHash {
-            Logger.httpEngine.info("Hashes mismatch, full sync for saveds")
+            Logger.httpEngine.info("Hashes mismatch, updating saveds")
+
             // Hashes don't match, pull all saveds from remote
             let remoteSaveds = try await getSaveds()
 
@@ -397,9 +411,17 @@ class HttpEngine: SyncEngine {
                 }
             }
 
-            // Add or update saveds from remote
+            // Add saveds from remote
             if !remoteSaveds.isEmpty {
-                _ = await SavedService.shared.batchUpdate(saveds: remoteSaveds)
+                let localKeys = Set(localSaveds.map { "\($0.mangaId)|\($0.pluginId)" })
+                let newRemoteSaveds = remoteSaveds.filter { saved in
+                    let key = "\(saved.mangaId)|\(saved.pluginId)"
+                    return !localKeys.contains(key)
+                }
+
+                if !newRemoteSaveds.isEmpty {
+                    _ = await SavedService.shared.batchUpdate(saveds: newRemoteSaveds)
+                }
             }
         }
 

@@ -161,7 +161,20 @@ struct HistoryItemView: View {
             }
         }
 
-        isLoading = false
+        // If not found locally, try fetching from plugin
+        if manga == nil, let plugin = plugin {
+            Task {
+                do {
+                    manga = try await plugin.getManga(id: record.mangaId)
+                } catch {
+                    Logger.ui.error("Failed to fetch manga from plugin", error: error)
+                }
+
+                isLoading = false
+            }
+        } else {
+            isLoading = false
+        }
     }
 
     private func getMangaModel(mangaId: String, pluginId: String) -> MangaModel? {

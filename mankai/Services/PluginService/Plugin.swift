@@ -151,6 +151,19 @@ class Plugin: Identifiable, ObservableObject {
         fatalError("Not Implemented")
     }
 
+    func getManga(id: String) async throws -> Manga {
+        let mangas = try await getMangas([id])
+
+        if let manga = mangas.first {
+            return manga
+        } else {
+            throw NSError(
+                domain: "Plugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
+            )
+        }
+    }
+
     func getDetailedManga(_: String) async throws -> DetailedManga {
         fatalError("Not Implemented")
     }

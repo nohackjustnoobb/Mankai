@@ -132,16 +132,9 @@ class SavedService: ObservableObject {
                         .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
                         .deleteAll(db)
 
-                let recordExists =
-                    try RecordModel
-                        .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-                        .fetchCount(db) > 0
-
-                if !recordExists {
-                    try MangaModel
-                        .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
-                        .deleteAll(db)
-                }
+                try MangaModel
+                    .filter(Column("mangaId") == mangaId && Column("pluginId") == pluginId)
+                    .deleteAll(db)
 
                 return deleted > 0
             }

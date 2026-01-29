@@ -73,7 +73,7 @@ class HistoryService: ObservableObject {
         do {
             result = try await DbService.shared.appDb?.write { db in
                 if let manga = manga {
-                    try manga.upsert(db)
+                    try? manga.update(db)
                 }
                 try record.upsert(db)
 
@@ -102,7 +102,7 @@ class HistoryService: ObservableObject {
             result = try await DbService.shared.appDb?.write { db in
                 if let mangas = mangas {
                     for manga in mangas {
-                        try manga.upsert(db)
+                        try? manga.update(db)
                     }
                 }
 
