@@ -18,6 +18,7 @@ struct DetailedManga: Identifiable, Codable {
     var authors: [String]
     var genres: [Genre]
     var chapters: [String: [Chapter]]
+    var remarks: [String: String]? // TODO: not used
 
     var meta: String?
 
@@ -33,6 +34,7 @@ struct DetailedManga: Identifiable, Codable {
         cover = dict["cover"] as? String
         description = dict["description"] as? String
         meta = dict["meta"] as? String
+        remarks = dict["remarks"] as? [String: String]
 
         // Parse status
         if let statusValue = dict["status"] {
@@ -113,7 +115,7 @@ struct DetailedManga: Identifiable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, cover, status, latestChapter, description, updatedAt, authors, genres,
-             chapters, meta
+             chapters, meta, remarks
     }
 
     init(from decoder: Decoder) throws {
@@ -139,6 +141,7 @@ struct DetailedManga: Identifiable, Codable {
             try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
 
         meta = try container.decodeIfPresent(String.self, forKey: .meta)
+        remarks = try container.decodeIfPresent([String: String].self, forKey: .remarks)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -161,5 +164,6 @@ struct DetailedManga: Identifiable, Codable {
         try container.encode(chapters, forKey: .chapters)
 
         try container.encodeIfPresent(meta, forKey: .meta)
+        try container.encodeIfPresent(remarks, forKey: .remarks)
     }
 }

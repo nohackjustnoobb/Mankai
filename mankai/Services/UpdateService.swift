@@ -8,19 +8,24 @@
 import Foundation
 
 class UpdateService: ObservableObject {
+    /// The shared singleton instance of UpdateService.
     static let shared = UpdateService()
 
     private init() {
         Logger.updateService.debug("Initializing UpdateService")
     }
 
+    /// The timestamp of the last update check.
     var lastUpdateTime: Date? {
         let defaults = UserDefaults.standard
         return defaults.object(forKey: "UpdateService.lastUpdateTime") as? Date
     }
 
+    /// A flag indicating if an update process is currently in progress.
     @Published var isUpdating = false
 
+    /// Triggers the update process to check for new manga chapters.
+    /// - Throws: An error if the update process fails.
     func update() async throws {
         if isUpdating {
             Logger.updateService.debug("Update already in progress, skipping")

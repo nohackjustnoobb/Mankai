@@ -10,7 +10,9 @@ import Foundation
 import GRDB
 
 class SyncService: ObservableObject {
+    /// The shared singleton instance of SyncService.
     static let shared = SyncService()
+    /// The list of available synchronization engines.
     static let engines: [SyncEngine] =
         [HttpEngine.shared]
 
@@ -29,8 +31,10 @@ class SyncService: ObservableObject {
     private var syncTimer: Timer?
     private let syncInterval: TimeInterval = 60 // 1 minute
 
+    /// A flag indicating if a synchronization process is currently in progress.
     @Published var isSyncing = false
 
+    /// The currently active synchronization engine.
     var engine: SyncEngine? {
         get {
             _engine
@@ -60,11 +64,14 @@ class SyncService: ObservableObject {
         }
     }
 
+    /// The timestamp of the last successful synchronization.
     var lastSyncTime: Date? {
         let defaults = UserDefaults.standard
         return defaults.object(forKey: "SyncService.lastSyncTime") as? Date
     }
 
+    /// Handles changes when the sync engine is updated.
+    /// - Throws: An error if the new engine cannot be initialized.
     func onEngineChange() async throws {
         Logger.syncService.debug("Handling engine change")
         guard let engine = engine else {
@@ -118,6 +125,9 @@ class SyncService: ObservableObject {
         engineCancellable?.cancel()
     }
 
+    /// Triggers a synchronization process.
+    /// - Parameter wait: If true, waits for an ongoing sync to complete before proceeding (or skipping).
+    /// - Throws: An error if the synchronization fails.
     func sync(wait: Bool = false) async throws {
         if isSyncing {
             if !wait {
@@ -159,6 +169,8 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Sync completed")
     }
 
+    /// Pushes all local saved manga data to the remote server.
+    /// - Throws: An error if the push operation fails.
     func pushSaveds() async throws {
         Logger.syncService.debug("Pushing saveds")
         guard let engine = engine else {

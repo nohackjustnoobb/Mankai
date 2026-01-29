@@ -9,6 +9,7 @@ import CoreData
 import Foundation
 
 class PluginService: ObservableObject {
+    /// The shared singleton instance of `PluginService`.
     static let shared = PluginService()
 
     private init() {
@@ -26,6 +27,7 @@ class PluginService: ObservableObject {
 
     private var _plugins: [String: Plugin] = [:]
 
+    /// A list of all available plugins.
     var plugins: [Plugin] {
         return Array(_plugins.values)
     }
@@ -50,10 +52,16 @@ class PluginService: ObservableObject {
         }
     }
 
+    /// Retrieves a plugin by its identifier.
+    /// - Parameter id: The unique identifier of the plugin.
+    /// - Returns: The `Plugin` instance if found, otherwise `nil`.
     func getPlugin(_ id: String) -> Plugin? {
         return _plugins[id]
     }
 
+    /// Adds a new plugin to the service.
+    /// - Parameter plugin: The `Plugin` instance to add.
+    /// - Throws: An error if saving the plugin fails.
     func addPlugin(_ plugin: Plugin) throws {
         Logger.pluginService.debug("Adding plugin: \(plugin.id)")
         _plugins[plugin.id] = plugin
@@ -71,6 +79,9 @@ class PluginService: ObservableObject {
         }
     }
 
+    /// Removes a plugin from the service by its identifier.
+    /// - Parameter id: The unique identifier of the plugin to remove.
+    /// - Throws: An error if deleting the plugin fails.
     func removePlugin(_ id: String) throws {
         Logger.pluginService.debug("Removing plugin: \(id)")
         if let plugin = _plugins.removeValue(forKey: id) {

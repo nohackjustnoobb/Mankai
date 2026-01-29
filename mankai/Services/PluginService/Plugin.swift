@@ -31,6 +31,8 @@ struct ConfigValue {
 class Plugin: Identifiable, ObservableObject {
     // MARK: - Metadata
 
+    /// The unique identifier of the plugin.
+    /// - Returns: A unique string identifier.
     var id: String {
         fatalError("Not Implemented")
     }
@@ -123,34 +125,90 @@ class Plugin: Identifiable, ObservableObject {
 
     // MARK: - Abstract Methods
 
+    /// Saves the plugin configuration or state.
+    /// - Throws: An error if saving fails.
     func savePlugin() throws {
         fatalError("Not Implemented")
     }
 
+    /// Deletes the plugin and cleans up resources.
+    /// - Throws: An error if deletion fails.
     func deletePlugin() throws {
         fatalError("Not Implemented")
     }
 
+    /// Checks if the plugin is currently online and reachable.
+    /// - Returns: `true` if online, `false` otherwise.
+    /// - Throws: An error if the check fails.
     func isOnline() async throws -> Bool {
         fatalError("Not Implemented")
     }
 
+    /// Gets search suggestions based on a query.
+    /// - Parameter query: The search query string.
+    /// - Returns: A list of suggested search terms.
+    /// - Throws: An error if the request fails.
     func getSuggestions(_: String) async throws -> [String] {
         fatalError("Not Implemented")
     }
 
+    /// Searches for manga based on a query.
+    /// - Parameters:
+    ///   - query: The search query string.
+    ///   - page: The page number for pagination.
+    /// - Returns: A list of `Manga` objects matching the query.
+    /// - Throws: An error if the search fails.
     func search(_: String, page _: UInt) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
+    /// Retrieves a list of manga based on optional filters.
+    /// - Parameters:
+    ///   - page: The page number for pagination.
+    ///   - genre: The genre to filter by.
+    ///   - status: The status to filter by.
+    /// - Returns: A list of `Manga` objects.
+    /// - Throws: An error if the request fails.
     func getList(page _: UInt, genre _: Genre, status _: Status) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
+    /// Retrieves details for multiple mangas by their IDs.
+    /// - Parameter ids: A list of manga IDs.
+    /// - Returns: A list of `Manga` objects.
+    /// - Throws: An error if the request fails.
     func getMangas(_: [String]) async throws -> [Manga] {
         fatalError("Not Implemented")
     }
 
+    /// Retrieves detailed information for a specific manga.
+    /// - Parameter id: The ID of the manga.
+    /// - Returns: A `DetailedManga` object.
+    /// - Throws: An error if the request fails.
+    func getDetailedManga(_: String) async throws -> DetailedManga {
+        fatalError("Not Implemented")
+    }
+
+    /// Retrieves the list of image URLs for a specific chapter.
+    /// - Parameters:
+    ///   - manga: The manga containing the chapter.
+    ///   - chapter: The chapter to retrieve images for.
+    /// - Returns: A list of image URLs.
+    /// - Throws: An error if the request fails.
+    func getChapter(manga _: DetailedManga, chapter _: Chapter) async throws -> [String] {
+        fatalError("Not Implemented")
+    }
+
+    /// Retrieves image data from a URL.
+    /// - Parameter url: The URL of the image.
+    /// - Returns: The image data.
+    /// - Throws: An error if the request fails.
+    func getImage(_: String) async throws -> Data {
+        fatalError("Not Implemented")
+    }
+}
+
+extension Plugin {
     func getManga(id: String) async throws -> Manga {
         let mangas = try await getMangas([id])
 
@@ -162,17 +220,5 @@ class Plugin: Identifiable, ObservableObject {
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "mangaNotFound")]
             )
         }
-    }
-
-    func getDetailedManga(_: String) async throws -> DetailedManga {
-        fatalError("Not Implemented")
-    }
-
-    func getChapter(manga _: DetailedManga, chapter _: Chapter) async throws -> [String] {
-        fatalError("Not Implemented")
-    }
-
-    func getImage(_: String) async throws -> Data {
-        fatalError("Not Implemented")
     }
 }

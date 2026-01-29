@@ -10,12 +10,14 @@ import Foundation
 import GRDB
 
 class DbService {
+    /// The shared singleton instance of DbService.
     static let shared = DbService()
 
     private init() {
         Logger.dbService.debug("Initializing DbService")
     }
 
+    /// The database pool for the main application database.
     lazy var appDb: DatabasePool? = {
         Logger.dbService.debug("Initializing appDb")
         guard
@@ -51,6 +53,11 @@ class DbService {
 
     private var fsDb: [String: DatabasePool] = [:]
 
+    /// Opens a file-system based database at the specified path.
+    /// - Parameters:
+    ///   - path: The file system path to the database.
+    ///   - readOnly: Whether to open the database in read-only mode.
+    /// - Returns: The `DatabasePool` if successful, otherwise `nil`.
     func openFsDb(_ path: String, readOnly: Bool) -> DatabasePool? {
         Logger.dbService.debug("Opening FsDb at \(path), readOnly: \(readOnly)")
         var config = Configuration()
@@ -76,6 +83,9 @@ class DbService {
         }
     }
 
+    /// Retrieves an open file-system database pool by its path.
+    /// - Parameter path: The file system path to the database.
+    /// - Returns: The `DatabasePool` if found, otherwise `nil`.
     func getFsDb(_ path: String) -> DatabasePool? {
         return fsDb[path]
     }

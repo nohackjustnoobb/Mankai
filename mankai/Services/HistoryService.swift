@@ -9,12 +9,18 @@ import Foundation
 import GRDB
 
 class HistoryService: ObservableObject {
+    /// The shared singleton instance of HistoryService.
     static let shared = HistoryService()
 
     private init() {
         Logger.historyService.debug("Initializing HistoryService")
     }
 
+    /// Retrieves a history record for a specific manga.
+    /// - Parameters:
+    ///   - mangaId: The ID of the manga.
+    ///   - pluginId: The ID of the plugin providing the manga.
+    /// - Returns: The `RecordModel` if found, otherwise `nil`.
     func get(mangaId: String, pluginId: String) -> RecordModel? {
         Logger.historyService.debug("Getting history for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
@@ -30,6 +36,9 @@ class HistoryService: ObservableObject {
         }
     }
 
+    /// Retrieves multiple history records based on a list of IDs.
+    /// - Parameter ids: A list of tuples containing mangaId and pluginId.
+    /// - Returns: A list of `RecordModel` objects found.
     func get(ids: [(mangaId: String, pluginId: String)]) -> [RecordModel] {
         Logger.historyService.debug("Getting history for \(ids.count) records")
         do {
@@ -44,6 +53,11 @@ class HistoryService: ObservableObject {
         }
     }
 
+    /// Adds or updates a history record and updates the corresponding saved record if it exists.
+    /// - Parameters:
+    ///   - record: The `RecordModel` to add.
+    ///   - manga: The optional `MangaModel` associated with the record.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func add(record: RecordModel, manga: MangaModel? = nil) async -> Bool? {
         Logger.historyService.debug("Adding history record for mangaId: \(record.mangaId)")
         let result = await update(record: record, manga: manga)
@@ -67,6 +81,11 @@ class HistoryService: ObservableObject {
         return result
     }
 
+    /// Updates or inserts a history record.
+    /// - Parameters:
+    ///   - record: The `RecordModel` to update.
+    ///   - manga: The optional `MangaModel` to update.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func update(record: RecordModel, manga: MangaModel? = nil) async -> Bool? {
         Logger.historyService.debug("Updating history record for mangaId: \(record.mangaId)")
         var result: Bool?
@@ -95,6 +114,11 @@ class HistoryService: ObservableObject {
         return result
     }
 
+    /// Batch updates multiple history records and manga models.
+    /// - Parameters:
+    ///   - records: The list of `RecordModel` objects to update.
+    ///   - mangas: The optional list of `MangaModel` objects to update.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func batchUpdate(records: [RecordModel], mangas: [MangaModel]? = nil) async -> Bool? {
         Logger.historyService.debug("Batch updating \(records.count) records")
         var result: Bool?
@@ -128,6 +152,11 @@ class HistoryService: ObservableObject {
         return result
     }
 
+    /// Retrieves all history records with optional pagination.
+    /// - Parameters:
+    ///   - limit: The maximum number of records to retrieve.
+    ///   - offset: The offset to start retrieving records from.
+    /// - Returns: A list of `RecordModel` objects.
     func getAll(limit: Int? = nil, offset: Int = 0) -> [RecordModel] {
         Logger.historyService.debug("Getting all history records, limit: \(String(describing: limit)), offset: \(offset)")
         do {
@@ -147,6 +176,9 @@ class HistoryService: ObservableObject {
         }
     }
 
+    /// Retrieves all history records updated since a specific date.
+    /// - Parameter date: The date to filter records by.
+    /// - Returns: A list of `RecordModel` objects.
     func getAllSince(date: Date?) -> [RecordModel] {
         Logger.historyService.debug("Getting history records since: \(String(describing: date))")
         do {
@@ -169,6 +201,8 @@ class HistoryService: ObservableObject {
         }
     }
 
+    /// Retrieves the most recent history record.
+    /// - Returns: The latest `RecordModel` if found, otherwise `nil`.
     func getLatest() -> RecordModel? {
         Logger.historyService.debug("Getting latest history record")
         do {

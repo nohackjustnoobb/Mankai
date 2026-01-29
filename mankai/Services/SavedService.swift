@@ -10,12 +10,18 @@ import Foundation
 import GRDB
 
 class SavedService: ObservableObject {
+    /// The shared singleton instance of SavedService.
     static let shared = SavedService()
 
     private init() {
         Logger.savedService.debug("Initializing SavedService")
     }
 
+    /// Retrieves a saved manga record.
+    /// - Parameters:
+    ///   - mangaId: The ID of the manga.
+    ///   - pluginId: The ID of the plugin providing the manga.
+    /// - Returns: The `SavedModel` if found, otherwise `nil`.
     func get(mangaId: String, pluginId: String) -> SavedModel? {
         Logger.savedService.debug("Getting saved manga for mangaId: \(mangaId), pluginId: \(pluginId)")
         do {
@@ -31,11 +37,16 @@ class SavedService: ObservableObject {
         }
     }
 
+    /// Adds a manga to the saved list and push to remote.
+    /// - Parameters:
+    ///   - saved: The `SavedModel` to add.
+    ///   - manga: The optional `MangaModel` associated with the saved item.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func add(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
         Logger.savedService.debug("Adding saved manga: \(saved.mangaId)")
         let result = await update(saved: saved, manga: manga)
 
-        if let result = result, result {
+        if let result = result, result, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.pushSaveds()
             } catch {
@@ -46,11 +57,16 @@ class SavedService: ObservableObject {
         return result
     }
 
+    /// Removes a manga from the saved list and push to remote.
+    /// - Parameters:
+    ///   - mangaId: The ID of the manga to remove.
+    ///   - pluginId: The ID of the plugin providing the manga.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func remove(mangaId: String, pluginId: String) async -> Bool? {
         Logger.savedService.debug("Removing saved manga: \(mangaId)")
         let result = await delete(mangaId: mangaId, pluginId: pluginId)
 
-        if let result = result, result {
+        if let result = result, result, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.pushSaveds()
             } catch {
@@ -61,6 +77,11 @@ class SavedService: ObservableObject {
         return result
     }
 
+    /// Updates an existing saved manga record.
+    /// - Parameters:
+    ///   - saved: The `SavedModel` to update.
+    ///   - manga: The optional `MangaModel` to update.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func update(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
         Logger.savedService.debug("Updating saved manga: \(saved.mangaId)")
         var result: Bool?
@@ -89,6 +110,11 @@ class SavedService: ObservableObject {
         return result
     }
 
+    /// Batch updates multiple saved manga records and manga models.
+    /// - Parameters:
+    ///   - saveds: The list of `SavedModel` objects to update.
+    ///   - mangas: The optional list of `MangaModel` objects to update.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) async -> Bool? {
         Logger.savedService.debug("Batch updating \(saveds.count) saved mangas")
         var result: Bool?
@@ -122,6 +148,11 @@ class SavedService: ObservableObject {
         return result
     }
 
+    /// Deletes a saved manga record and its associated manga model.
+    /// - Parameters:
+    ///   - mangaId: The ID of the manga to delete.
+    ///   - pluginId: The ID of the plugin providing the manga.
+    /// - Returns: `true` if successful, `nil` if an error occurred.
     func delete(mangaId: String, pluginId: String) async -> Bool? {
         Logger.savedService.debug("Deleting saved manga: \(mangaId)")
         var result: Bool?
@@ -154,6 +185,8 @@ class SavedService: ObservableObject {
         return result
     }
 
+    /// Retrieves all saved manga records.
+    /// - Returns: A list of `SavedModel` objects.
     func getAll() -> [SavedModel] {
         Logger.savedService.debug("Getting all saved mangas")
         do {
@@ -169,6 +202,9 @@ class SavedService: ObservableObject {
         }
     }
 
+    /// Retrieves all saved manga records updated since a specific date.
+    /// - Parameter date: The date to filter records by.
+    /// - Returns: A list of `SavedModel` objects.
     func getAllSince(date: Date?) -> [SavedModel] {
         Logger.savedService.debug("Getting saved mangas since: \(String(describing: date))")
         do {
@@ -191,6 +227,8 @@ class SavedService: ObservableObject {
         }
     }
 
+    /// Retrieves the most recently updated saved manga record.
+    /// - Returns: The latest `SavedModel` if found, otherwise `nil`.
     func getLatest() -> SavedModel? {
         Logger.savedService.debug("Getting latest saved manga")
         do {
@@ -207,6 +245,8 @@ class SavedService: ObservableObject {
         }
     }
 
+    /// Generates a hash string representing the current state of saved mangas.
+    /// - Returns: A SHA256 hash string, or `nil` if generation fails.
     func generateHash() -> String? {
         Logger.savedService.debug("Generating hash for saved mangas")
         do {
