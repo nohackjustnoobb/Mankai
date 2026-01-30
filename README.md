@@ -15,7 +15,7 @@
 
 </div>
 
-Mankai is a powerful and extensible manga reader for iPhone and iPad, written in Swift. It features a **plugin system** for multi-source support (JavaScript & filesystem), **library management** to organize your collection, **reading history** tracking, and a **modern UI** built with SwiftUI.
+Mankai is a powerful and extensible manga reader for iPhone and iPad, written in Swift. It features a **plugin system** for multi-source support (JavaScript, filesystem, and HTTP), **library management** to organize your collection, **reading history** tracking, and a **modern UI** built with SwiftUI.
 
 ![Demo](assets/demo.png)
 
@@ -38,22 +38,26 @@ Mankai is a powerful and extensible manga reader for iPhone and iPad, written in
 
 ## Plugins
 
-Mankai supports extensions through JsPlugin and FsPlugin.
+Mankai is designed to be extensible. It supports three types of plugins, each serving a distinct function:
 
 ### JavaScript Plugin (JsPlugin)
 
-You can find the official plugins in the [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins) repository.
+This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
 
-- **Source Code**: [nohackjustnoobb/mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
-- **Compiled Plugins**: [static branch](https://github.com/nohackjustnoobb/mankai-plugins/tree/static)
+- **Official Plugins**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins) (includes source code and compiled plugins).
 
 ### File System Plugin (FsPlugin)
 
-The **FsPlugin** allows you to choose a folder to store or read manga from. This folder can be shared across different devices using iCloud Drive or other remote storage solutions (like SMB).
+This plugin manages manga stored as local files stored on your device or a connected service.
 
-### Http Plugin (HttpPlugin) (Planned)
+- **Syncing**: Point it to a folder in iCloud Drive or other remote storage solutions (e.g., SMB) to sync your library across devices.
 
-The **HttpPlugin** will connect to external sources that provide a standard API for Mankai. An official implementation of a standard HTTP server will also be maintained.
+### Http Plugin (HttpPlugin)
+
+This plugin is designed for external providers to use Mankai as a reader and manager. It connects to servers implementing the standard API and supports authentication.
+
+- **Specification**: [Mankai API Specification](https://github.com/nohackjustnoobb/mankai-server/blob/master/api.md)
+- **Reference Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server)
 
 ## Syncing
 

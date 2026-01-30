@@ -40,6 +40,7 @@ class DbService {
                 try SavedModel.createTable(db)
                 try RecordModel.createTable(db)
                 try JsPluginModel.createTable(db)
+                try HttpPluginModel.createTable(db)
                 try FsPluginModel.createTable(db)
             }
 

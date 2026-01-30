@@ -37,9 +37,13 @@ class ReadFsPlugin: Plugin {
         self.url = url
         _id = id
 
-        _isAccessing = url.startAccessingSecurityScopedResource()
-        if !_isAccessing {
-            Logger.fsPlugin.error("Failed to start accessing security scoped resource for plugin: \(_id)")
+        super.init()
+
+        if !(self is AppDirPlugin) {
+            _isAccessing = url.startAccessingSecurityScopedResource()
+            if !_isAccessing {
+                Logger.fsPlugin.error("Failed to start accessing security scoped resource for plugin: \(_id)")
+            }
         }
     }
 

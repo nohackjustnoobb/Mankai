@@ -13,6 +13,7 @@ struct AddPluginModal: View {
     enum PluginType: String, CaseIterable, Identifiable {
         case jsPlugin
         case fsPlugin
+        case httpPlugin
 
         var id: String { rawValue }
     }
@@ -79,6 +80,14 @@ struct AddPluginModal: View {
                         Toggle("readOnly", isOn: $isReadOnly)
                     } header: {
                         Text("fsPluginSettings")
+                    }
+                } else if selectedPluginType == .httpPlugin {
+                    Section {
+                        TextField("url", text: $urlInput)
+                            .keyboardType(.URL)
+                            .textInputAutocapitalization(.never)
+                    } header: {
+                        Text("httpPluginSettings")
                     }
                 }
             }
@@ -151,6 +160,20 @@ struct AddPluginModal: View {
                                         errorMessage = error.localizedDescription
                                         showError = true
                                     }
+                                case .httpPlugin:
+                                    guard let plugin = await parseHttpPluginFromUrl(urlInput) else {
+                                        errorMessage = String(localized: "failedToParsePlugin")
+                                        showError = true
+                                        return
+                                    }
+
+                                    do {
+                                        try PluginService.shared.addPlugin(plugin)
+                                        dismiss()
+                                    } catch {
+                                        errorMessage = error.localizedDescription
+                                        showError = true
+                                    }
                                 }
                             }
                         }
@@ -161,7 +184,7 @@ struct AddPluginModal: View {
                             Text("add")
                         }
                     }
-                    .disabled(isProcessing || (selectedPluginType == .jsPlugin && (useJson ? jsonInput.isEmpty : urlInput.isEmpty)) || (selectedPluginType == .fsPlugin && selectedFolder == nil))
+                    .disabled(isProcessing || (selectedPluginType == .jsPlugin && (useJson ? jsonInput.isEmpty : urlInput.isEmpty)) || (selectedPluginType == .fsPlugin && selectedFolder == nil) || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
                 }
             }
             .fileImporter(
@@ -206,4 +229,12 @@ private func parsePluginFromUrl(_ urlString: String) async -> JsPlugin? {
     }
 
     return await JsPlugin.fromUrl(url)
+}
+
+private func parseHttpPluginFromUrl(_ urlString: String) async -> HttpPlugin? {
+    guard let url = URL(string: urlString) else {
+        return nil
+    }
+
+    return await HttpPlugin.fromUrl(url)
 }

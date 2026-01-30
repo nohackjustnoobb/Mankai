@@ -33,3 +33,23 @@ extension SavedModel: TableRecord {
 }
 
 extension SavedModel: Codable, FetchableRecord, PersistableRecord {}
+
+// Encoding for latestChapter
+extension Chapter {
+    func encode() -> String {
+        let id = self.id ?? ""
+        let title = self.title ?? ""
+        let locked = self.locked ?? false
+        return "\(id)|\(title)|\(locked)"
+    }
+
+    static func decode(_ encoded: String) -> Chapter {
+        let parts = encoded.split(separator: "|", maxSplits: 1, omittingEmptySubsequences: false)
+
+        let id = parts.count > 0 && !parts[0].isEmpty ? String(parts[0]) : nil
+        let title = parts.count > 1 && !parts[1].isEmpty ? String(parts[1]) : nil
+        let locked = parts.count > 2 && !parts[2].isEmpty ? Bool(String(parts[2])) : nil
+
+        return Chapter(id: id, title: title, locked: locked)
+    }
+}

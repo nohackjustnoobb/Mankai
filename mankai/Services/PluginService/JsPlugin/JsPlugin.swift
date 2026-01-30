@@ -45,7 +45,6 @@ class JsPlugin: Plugin {
     private var _description: String?
     private var _authors: [String]
     private var _repository: String?
-    private var _updatesUrl: String?
     private var _availableGenres: [Genre]
     private var _configs: [Config]
 
@@ -55,9 +54,11 @@ class JsPlugin: Plugin {
     override var description: String? { _description }
     override var authors: [String] { _authors }
     override var repository: String? { _repository }
-    override var updatesUrl: String? { _updatesUrl }
     override var availableGenres: [Genre] { _availableGenres }
     override var configs: [Config] { _configs }
+
+    private var _updatesUrl: String?
+    var updatesUrl: String? { _updatesUrl } // TODO: auto-update
 
     // MARK: - Methods Scripts
 
@@ -65,12 +66,6 @@ class JsPlugin: Plugin {
     private var _scripts: [ScriptType: String]
     private var _funcName: [ScriptType: String] = [:]
     private var _scriptsNoExport: [ScriptType: String] = [:]
-
-    private func setConfigValues(_ configValues: [ConfigValue]) {
-        for configValue in configValues {
-            _configValues[configValue.key] = configValue
-        }
-    }
 
     // MARK: - Init
 
@@ -137,8 +132,14 @@ class JsPlugin: Plugin {
                 description: dict["description"] as? String,
                 type: ConfigType(rawValue: type)!,
                 defaultValue: dict["defaultValue"] as Any,
-                options: dict["options"] as? [Any]
+                options: dict["options"] as? [String]
             )
+        }
+    }
+
+    private func setConfigValues(_ configValues: [ConfigValue]) {
+        for configValue in configValues {
+            _configValues[configValue.key] = configValue
         }
     }
 

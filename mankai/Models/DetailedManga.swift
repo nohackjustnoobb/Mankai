@@ -18,7 +18,7 @@ struct DetailedManga: Identifiable, Codable {
     var authors: [String]
     var genres: [Genre]
     var chapters: [String: [Chapter]]
-    var remarks: [String: String]? // TODO: not used
+    var remarks: String? // TODO: not used
 
     var meta: String?
 
@@ -34,7 +34,7 @@ struct DetailedManga: Identifiable, Codable {
         cover = dict["cover"] as? String
         description = dict["description"] as? String
         meta = dict["meta"] as? String
-        remarks = dict["remarks"] as? [String: String]
+        remarks = dict["remarks"] as? String
 
         // Parse status
         if let statusValue = dict["status"] {
@@ -141,7 +141,7 @@ struct DetailedManga: Identifiable, Codable {
             try container.decodeIfPresent([String: [Chapter]].self, forKey: .chapters) ?? [:]
 
         meta = try container.decodeIfPresent(String.self, forKey: .meta)
-        remarks = try container.decodeIfPresent([String: String].self, forKey: .remarks)
+        remarks = try container.decodeIfPresent(String.self, forKey: .remarks)
     }
 
     func encode(to encoder: Encoder) throws {

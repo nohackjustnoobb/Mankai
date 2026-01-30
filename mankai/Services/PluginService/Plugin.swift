@@ -20,7 +20,7 @@ struct Config {
     var description: String?
     var type: ConfigType
     var defaultValue: Any
-    var options: [Any]?
+    var options: [String]?
 }
 
 struct ConfigValue {
@@ -58,10 +58,6 @@ class Plugin: Identifiable, ObservableObject {
     }
 
     var repository: String? {
-        nil
-    }
-
-    var updatesUrl: String? {
         nil
     }
 

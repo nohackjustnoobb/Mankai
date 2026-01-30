@@ -137,7 +137,7 @@ struct SyncSettingsScreen: View {
 struct HttpEngineConfigView: View {
     @ObservedObject private var httpEngine = HttpEngine.shared
     @State private var serverUrl: String = ""
-    @State private var email: String = ""
+    @State private var username: String = ""
     @State private var password: String = ""
     @State private var isLoggingIn = false
     @State private var showErrorAlert = false
@@ -146,14 +146,14 @@ struct HttpEngineConfigView: View {
 
     var body: some View {
         Section("httpEngineConfig") {
-            if httpEngine.email != nil {
+            if httpEngine.username != nil {
                 LabeledContent("serverUrl") {
                     Text(serverUrl)
                         .foregroundColor(.secondary)
                 }
 
-                LabeledContent("email") {
-                    Text(httpEngine.email ?? "")
+                LabeledContent("username") {
+                    Text(httpEngine.username ?? "")
                         .foregroundColor(.secondary)
                 }
 
@@ -171,9 +171,9 @@ struct HttpEngineConfigView: View {
                         httpEngine.serverUrl = newValue.isEmpty ? nil : newValue
                     }
 
-                TextField("email", text: $email)
-                    .textContentType(.emailAddress)
-                    .keyboardType(.emailAddress)
+                TextField("username", text: $username)
+                    .textContentType(.username)
+                    .keyboardType(.default)
                     .autocapitalization(.none)
 
                 SecureField("password", text: $password)
@@ -190,12 +190,12 @@ struct HttpEngineConfigView: View {
                         Text("login")
                     }
                 }
-                .disabled(email.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn)
+                .disabled(username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn)
             }
         }
         .onAppear {
             serverUrl = httpEngine.serverUrl ?? ""
-            email = httpEngine.email ?? ""
+            username = httpEngine.username ?? ""
         }
         .alert("loginFailed", isPresented: $showErrorAlert) {
             Button("ok", role: .cancel) {}
@@ -211,7 +211,7 @@ struct HttpEngineConfigView: View {
         ) {
             Button("logout", role: .destructive) {
                 httpEngine.logout()
-                email = ""
+                username = ""
                 password = ""
             }
             Button("cancel", role: .cancel) {}
@@ -222,11 +222,11 @@ struct HttpEngineConfigView: View {
         isLoggingIn = true
 
         do {
-            try await httpEngine.login(email: email, password: password)
+            try await httpEngine.login(username: username, password: password)
             // Clear password after successful login
             password = ""
             // Update local state to reflect logged-in state
-            email = httpEngine.email ?? ""
+            username = httpEngine.username ?? ""
             serverUrl = httpEngine.serverUrl ?? ""
         } catch {
             errorMessage = error.localizedDescription

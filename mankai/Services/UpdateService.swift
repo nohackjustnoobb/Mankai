@@ -61,8 +61,6 @@ class UpdateService: ObservableObject {
                         try await SyncService.shared.sync(wait: true)
                     } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
-                        let message = String(localized: "failedToSync")
-                        NotificationService.shared.showError(String(format: message, error.localizedDescription))
                         throw error
                     }
                 }
@@ -73,8 +71,6 @@ class UpdateService: ObservableObject {
                     try await SyncService.shared.sync(wait: true)
                 } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
-                    let message = String(localized: "failedToSync")
-                    NotificationService.shared.showError(String(format: message, error.localizedDescription))
                     throw error
                 }
             }

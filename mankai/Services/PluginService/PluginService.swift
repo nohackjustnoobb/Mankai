@@ -23,6 +23,9 @@ class PluginService: ObservableObject {
 
         // Load FS plugins
         loadFsPlugins()
+
+        // Load HTTP plugins
+        loadHttpPlugins()
     }
 
     private var _plugins: [String: Plugin] = [:]
@@ -49,6 +52,16 @@ class PluginService: ObservableObject {
 
         for fsPlugin in fsPlugins {
             _plugins[fsPlugin.id] = fsPlugin
+        }
+    }
+
+    private func loadHttpPlugins() {
+        Logger.pluginService.debug("Loading HTTP plugins")
+        let httpPlugins = HttpPlugin.loadPlugins()
+        Logger.pluginService.info("Loaded \(httpPlugins.count) HTTP plugins")
+
+        for httpPlugin in httpPlugins {
+            _plugins[httpPlugin.id] = httpPlugin
         }
     }
 

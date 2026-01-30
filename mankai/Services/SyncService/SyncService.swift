@@ -29,6 +29,7 @@ class SyncService: ObservableObject {
     private var _engine: SyncEngine?
     private var engineCancellable: AnyCancellable?
     private var syncTimer: Timer?
+    private var syncTask: Task<Void, Error>?
     private let syncInterval: TimeInterval = 60 // 1 minute
 
     /// A flag indicating if a synchronization process is currently in progress.
@@ -74,10 +75,7 @@ class SyncService: ObservableObject {
     /// - Throws: An error if the new engine cannot be initialized.
     func onEngineChange() async throws {
         Logger.syncService.debug("Handling engine change")
-        guard let engine = engine else {
-            Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
-        }
+        guard let engine = engine else { return }
 
         // Reset last sync time in UserDefaults
         let defaults = UserDefaults.standard
@@ -129,26 +127,38 @@ class SyncService: ObservableObject {
     /// - Parameter wait: If true, waits for an ongoing sync to complete before proceeding (or skipping).
     /// - Throws: An error if the synchronization fails.
     func sync(wait: Bool = false) async throws {
-        if isSyncing {
+        let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
+            if let current = syncTask {
+                return (current, true)
+            }
+
+            isSyncing = true
+            let newTask = Task {
+                defer {
+                    Task { @MainActor in
+                        self.isSyncing = false
+                        self.syncTask = nil
+                    }
+                }
+                try await internalSync()
+            }
+            syncTask = newTask
+            return (newTask, false)
+        }
+
+        if wasAlreadyRunning {
             if !wait {
                 Logger.syncService.debug("Sync already in progress, skipping")
                 return
             }
-
             Logger.syncService.debug("Waiting for ongoing sync to complete")
-            while isSyncing {
-                try await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
-            }
+        }
+
+        try await task.value
+
+        if wasAlreadyRunning {
             Logger.syncService.debug("Ongoing sync completed, proceeding")
-            return
         }
-
-        await MainActor.run { isSyncing = true }
-        defer {
-            Task { @MainActor in isSyncing = false }
-        }
-
-        try await internalSync()
     }
 
     private func internalSync() async throws {

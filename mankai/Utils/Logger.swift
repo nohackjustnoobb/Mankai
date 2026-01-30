@@ -25,6 +25,7 @@ enum LogCategory: String {
     case fsPlugin = "FsPlugin"
     case jsPlugin = "JsPlugin"
     case appDirPlugin = "AppDirPlugin"
+    case httpPlugin = "HttpPlugin"
 
     // Runtime
     case jsRuntime = "JsRuntime"
@@ -35,6 +36,7 @@ enum LogCategory: String {
 
     // General
     case general = "General"
+    case authManager = "AuthManager"
 
     var subsystem: String {
         return "app.mankai"
@@ -154,6 +156,7 @@ extension Logger {
     // Plugin Types
     static let fsPlugin = Logger(category: .fsPlugin)
     static let jsPlugin = Logger(category: .jsPlugin)
+    static let httpPlugin = Logger(category: .httpPlugin)
     static let appDirPlugin = Logger(category: .appDirPlugin)
 
     // Runtime
@@ -165,4 +168,5 @@ extension Logger {
 
     // General
     static let general = Logger(category: .general)
+    static let authManager = Logger(category: .authManager)
 }

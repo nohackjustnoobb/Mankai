@@ -64,12 +64,6 @@ struct PluginInfoScreen: View {
                         }
                     }
 
-                    if let updatesUrl = plugin.updatesUrl {
-                        LabeledContent("updatesUrl") {
-                            Text(updatesUrl)
-                        }
-                    }
-
                     if plugin.availableGenres.isEmpty {
                         LabeledContent("availableGenres") {
                             Text("noGenresAvailable")
@@ -193,7 +187,7 @@ struct TextConfigView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading) {
-                Text(config.name)
+                Text(LocalizedStringKey(config.name))
 
                 if let description = config.description {
                     Text(description)
@@ -204,6 +198,7 @@ struct TextConfigView: View {
 
             TextField(LocalizedStringKey(config.type.rawValue), text: $textValue)
                 .textFieldStyle(ConfigTextFieldStyle())
+                .autocapitalization(.none)
                 .onAppear {
                     updateTextValue()
                 }
@@ -246,7 +241,7 @@ struct NumberConfigView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading) {
-                Text(config.name)
+                Text(LocalizedStringKey(config.name))
 
                 if let description = config.description {
                     Text(description)
@@ -311,7 +306,7 @@ struct BooleanConfigView: View {
     var body: some View {
         Toggle(isOn: $boolValue) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(config.name)
+                Text(LocalizedStringKey(config.name))
                 if let description = config.description {
                     Text(description)
                         .font(.caption)
@@ -358,11 +353,7 @@ struct SelectConfigView: View {
     @State private var errorMessage = ""
 
     private var options: [String] {
-        if let optionArray = config.options as? [String] {
-            return optionArray
-        }
-
-        return []
+        return config.options ?? []
     }
 
     var body: some View {
@@ -375,7 +366,7 @@ struct SelectConfigView: View {
                     }
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(config.name)
+                        Text(LocalizedStringKey(config.name))
                         if let description = config.description {
                             Text(description)
                                 .font(.caption)
