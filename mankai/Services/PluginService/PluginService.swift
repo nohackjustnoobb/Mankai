@@ -43,6 +43,12 @@ class PluginService: ObservableObject {
         for jsPlugin in jsPlugins {
             _plugins[jsPlugin.id] = jsPlugin
         }
+
+        Task {
+            for jsPlugin in jsPlugins {
+                await jsPlugin.checkForUpdates()
+            }
+        }
     }
 
     private func loadFsPlugins() {

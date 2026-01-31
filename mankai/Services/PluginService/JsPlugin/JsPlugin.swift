@@ -57,12 +57,12 @@ class JsPlugin: Plugin {
     override var availableGenres: [Genre] { _availableGenres }
     override var configs: [Config] { _configs }
 
+    private var _getImageHeaders: [String: String]?
     private var _updatesUrl: String?
-    var updatesUrl: String? { _updatesUrl } // TODO: auto-update
+    var updatesUrl: String? { _updatesUrl }
 
     // MARK: - Methods Scripts
 
-    private var _getImageHeaders: [String: String]?
     private var _scripts: [ScriptType: String]
     private var _funcName: [ScriptType: String] = [:]
     private var _scriptsNoExport: [ScriptType: String] = [:]
@@ -719,5 +719,46 @@ class JsPlugin: Plugin {
         try? imageData.write(to: imageCacheFile)
 
         return imageData
+    }
+
+    func checkForUpdates() async {
+        guard let updatesUrl = updatesUrl, let url = URL(string: updatesUrl) else {
+            return
+        }
+
+        Logger.jsPlugin.info("Checking for updates for plugin: \(id)")
+
+        guard let newPlugin = await JsPlugin.fromUrl(url) else {
+            Logger.jsPlugin.error("Failed to fetch update for plugin: \(id)")
+            return
+        }
+
+        if newPlugin.version != version {
+            Logger.jsPlugin.info("Updating plugin: \(id) from version \(version ?? "nil") to \(newPlugin.version ?? "nil")")
+
+            do {
+                _name = newPlugin._name
+                _version = newPlugin._version
+                _description = newPlugin._description
+                _authors = newPlugin._authors
+                _repository = newPlugin._repository
+                _availableGenres = newPlugin._availableGenres
+                _configs = newPlugin._configs
+
+                _updatesUrl = newPlugin._updatesUrl
+                _getImageHeaders = newPlugin._getImageHeaders
+
+                _scripts = newPlugin._scripts
+                _funcName = newPlugin._funcName
+                _scriptsNoExport = newPlugin._scriptsNoExport
+
+                try savePlugin()
+                Logger.jsPlugin.info("Plugin updated successfully: \(id)")
+            } catch {
+                Logger.jsPlugin.error("Failed to save updated plugin: \(id)", error: error)
+            }
+        } else {
+            Logger.jsPlugin.info("Plugin is up to date: \(id)")
+        }
     }
 }
