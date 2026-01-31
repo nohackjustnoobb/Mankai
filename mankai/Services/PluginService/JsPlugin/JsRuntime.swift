@@ -15,6 +15,9 @@ enum Method: String {
     case setConfig
     case s2t
     case t2s
+    case getValue
+    case setValue
+    case removeValue
 }
 
 class JsRuntime: NSObject {
@@ -23,6 +26,7 @@ class JsRuntime: NSObject {
     private lazy var jsLog: String = loadScript("log")
     private lazy var jsFetch: String = loadScript("fetch")
     private lazy var jsOpenCC: String = loadScript("opencc")
+    private lazy var jsStorage: String = loadScript("storage")
 
     private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .traditionalize)
     private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .simplify)
@@ -76,10 +80,10 @@ class JsRuntime: NSObject {
     }
 
     private func inject(_ js: String, from: String? = nil, plugin: JsPlugin? = nil) -> String {
-        // TODO: inject getValue and setValue functions
         var injectedJs = jsLog + jsFetch + jsOpenCC
 
         if let plugin = plugin {
+            // inject getConfigs
             let configValuesArray = plugin.configValues.map { configValue in
                 [
                     "key": configValue.key,
@@ -104,13 +108,21 @@ class JsRuntime: NSObject {
             """
 
             injectedJs += getConfigs
+
+            // inject getValue and setValue
+            injectedJs += jsStorage
+            injectedJs += """
+            const getValue = (key) => _getValue(key, "\(plugin.id)");
+            const setValue = (key, value) => _setValue(key, value, "\(plugin.id)");
+            const removeValue = (key) => _removeValue(key, "\(plugin.id)");
+            """
         }
 
         var from = plugin?.id ?? from
         from = from == nil ? "undefined" : "\"\(from!)\""
 
         // Override console.log
-        injectedJs += "console.log = (...m) => log(m.join(' '), \(from!));"
+        injectedJs += "console.log = (...m) => _log(m.join(' '), \(from!));"
 
         injectedJs += js
         return injectedJs
@@ -221,6 +233,75 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
             }
             let result = converter.convert(text)
             return (result, nil)
+        case .setValue:
+            let key = params["key"] as? String ?? ""
+            let value = params["value"] as? String ?? ""
+            let from = params["from"] as? String
+
+            guard let pluginId = from else {
+                Logger.jsRuntime.error("Missing pluginId")
+                return (nil, String(localized: "missingPluginId"))
+            }
+
+            guard let dbPool = DbService.shared.appDb else {
+                Logger.jsRuntime.error("Database not available")
+                return (nil, String(localized: "databaseNotAvailable"))
+            }
+
+            do {
+                try await dbPool.write { db in
+                    let kvPair = JsRuntimeKvPairModel(pluginId: pluginId, key: key, value: value)
+                    try kvPair.save(db)
+                }
+            } catch {
+                Logger.jsRuntime.error("Failed to save value", error: error)
+                return (nil, error.localizedDescription)
+            }
+        case .getValue:
+            let key = params["key"] as? String ?? ""
+            let from = params["from"] as? String
+
+            guard let pluginId = from else {
+                Logger.jsRuntime.error("Missing pluginId")
+                return (nil, String(localized: "missingPluginId"))
+            }
+
+            guard let dbPool = DbService.shared.appDb else {
+                Logger.jsRuntime.error("Database not available")
+                return (nil, String(localized: "databaseNotAvailable"))
+            }
+
+            do {
+                let kvPair = try await dbPool.read { db in try JsRuntimeKvPairModel.fetchOne(db, key: ["pluginId": pluginId, "key": key]) }
+                return (kvPair?.value, nil)
+            } catch {
+                Logger.jsRuntime.error("Failed to fetch value", error: error)
+                return (nil, error.localizedDescription)
+            }
+        case .removeValue:
+            let key = params["key"] as? String ?? ""
+            let from = params["from"] as? String
+
+            guard let pluginId = from else {
+                Logger.jsRuntime.error("Missing pluginId")
+                return (nil, String(localized: "missingPluginId"))
+            }
+
+            guard let dbPool = DbService.shared.appDb else {
+                Logger.jsRuntime.error("Database not available")
+                return (nil, String(localized: "databaseNotAvailable"))
+            }
+
+            do {
+                let deleted = try await dbPool.write { db in
+                    try JsRuntimeKvPairModel.deleteOne(db, key: ["pluginId": pluginId, "key": key])
+                }
+
+                return (deleted, nil)
+            } catch {
+                Logger.jsRuntime.error("Failed to remove value", error: error)
+                return (nil, error.localizedDescription)
+            }
         default:
             Logger.jsRuntime.warning("Unexpected Method: \(methodStr)")
             fatalError("Unexpected Method")

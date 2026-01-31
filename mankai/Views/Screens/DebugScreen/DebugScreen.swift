@@ -181,7 +181,7 @@ struct DebugScreen: View {
                             ) as Any
                             Logger.jsRuntime.debug("\(result)")
 
-                            // Test t2s s2t
+                            // Test t2s/s2t
                             let t2s = try! await JsRuntime.shared.execute(
                                 "return await t2s('繁體轉簡體')"
                             )
@@ -191,6 +191,28 @@ struct DebugScreen: View {
                                 "return await s2t('简体转繁体')"
                             )
                             Logger.jsRuntime.debug("s2t: \(s2t ?? "nil")")
+
+                            // Test setValue/getValue/removeValue
+                            let jsPlugin = PluginService.shared.plugins.first(where: { $0 is JsPlugin }) as! JsPlugin
+                            let setValue = try! await JsRuntime.shared.execute(
+                                "return await setValue('test', 'test')", from: "DEBUG", plugin: jsPlugin
+                            )
+                            Logger.jsRuntime.debug("setValue: \(setValue ?? "nil")")
+
+                            let getValue = try! await JsRuntime.shared.execute(
+                                "return await getValue('test')", from: "DEBUG", plugin: jsPlugin
+                            )
+                            Logger.jsRuntime.debug("getValue: \(getValue ?? "nil")")
+
+                            let removeValue = try! await JsRuntime.shared.execute(
+                                "return await removeValue('test')", from: "DEBUG", plugin: jsPlugin
+                            )
+                            Logger.jsRuntime.debug("removeValue: \(removeValue ?? "nil")")
+
+                            let getValueAfterRemove = try! await JsRuntime.shared.execute(
+                                "return await getValue('test')", from: "DEBUG", plugin: jsPlugin
+                            )
+                            Logger.jsRuntime.debug("getValueAfterRemove: \(getValueAfterRemove ?? "nil")")
                         }
                     }
                 }
