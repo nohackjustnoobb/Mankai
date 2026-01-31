@@ -361,14 +361,20 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
         if offsetY < -OVERSCROLL_THRESHOLD {
             if currentChapterIndex > 0 {
-                currentChapterIndex -= 1
-                initialPage = -1
-                loadChapter()
+                let previousChapter = chapters[currentChapterIndex - 1]
+                if previousChapter.locked != true {
+                    currentChapterIndex -= 1
+                    initialPage = -1
+                    loadChapter()
+                }
             }
         } else if offsetY > maxScrollY {
             if currentChapterIndex < chapters.count - 1 {
-                currentChapterIndex += 1
-                loadChapter()
+                let nextChapter = chapters[currentChapterIndex + 1]
+                if nextChapter.locked != true {
+                    currentChapterIndex += 1
+                    loadChapter()
+                }
             }
         }
     }
@@ -471,14 +477,13 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     private func loadChapter() {
         guard currentChapterIndex >= 0, currentChapterIndex < chapters.count else {
-            addErrorView()
+            showErrorView()
             return
         }
 
         // Reset UI
         scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
         containerView.subviews.forEach { $0.removeFromSuperview() }
-        addLoadingView()
         updateOverscrollViewsVisibility()
         bottomOverscrollView.isHidden = true
         overscrollView.isHidden = true
@@ -491,9 +496,16 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         groupsLayout = [:]
         startY = 0.0
 
-        // Set title
         let chapter = chapters[currentChapterIndex]
+        // Set title
         parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+
+        if chapter.locked == true {
+            showErrorView()
+            return
+        }
+
+        showLoadingView()
 
         Task {
             do {
@@ -516,7 +528,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                 loadImages()
                 updateBottomBar()
             } catch {
-                addErrorView()
+                showErrorView()
             }
         }
     }
@@ -929,7 +941,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Loading View
 
-    private func addLoadingView() {
+    private func showLoadingView() {
         view.viewWithTag(ERROR_VIEW_ID)?.removeFromSuperview()
         guard view.viewWithTag(LOADER_VIEW_ID) == nil else { return }
 
@@ -950,7 +962,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Error View
 
-    private func addErrorView() {
+    private func showErrorView() {
         view.viewWithTag(LOADER_VIEW_ID)?.removeFromSuperview()
         guard view.viewWithTag(ERROR_VIEW_ID) == nil else { return }
 
@@ -1445,8 +1457,20 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         pageInfoButton.setTitle("\(currentPage + 1) / \(totalPages)", for: .normal)
         previousButton.isEnabled = currentPage != 0
         nextButton.isEnabled = currentPage < urls.count - 1
-        previousChapterButton.isEnabled = currentChapterIndex > 0
-        nextChapterButton.isEnabled = currentChapterIndex < chapters.count - 1
+
+        if currentChapterIndex > 0 {
+            let previousChapter = chapters[currentChapterIndex - 1]
+            previousChapterButton.isEnabled = previousChapter.locked != true
+        } else {
+            previousChapterButton.isEnabled = false
+        }
+
+        if currentChapterIndex < chapters.count - 1 {
+            let nextChapter = chapters[currentChapterIndex + 1]
+            nextChapterButton.isEnabled = nextChapter.locked != true
+        } else {
+            nextChapterButton.isEnabled = false
+        }
 
         pageSlider.maximumValue = Float(totalPages)
         pageSlider.value = Float(currentPage + 1)
@@ -1562,8 +1586,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
            let textLabel = overscrollView.viewWithTag(TOP_OVERSCROLL_TEXT_TAG) as? UILabel
         {
             if currentChapterIndex > 0 {
-                arrowImageView.image = UIImage(systemName: "chevron.up")
-                textLabel.text = String(localized: "releaseToLoadPreviousChapter")
+                let previousChapter = chapters[currentChapterIndex - 1]
+                if previousChapter.locked == true {
+                    arrowImageView.image = UIImage(systemName: "lock.fill")
+                    textLabel.text = String(localized: "previousChapterIsLocked")
+                } else {
+                    arrowImageView.image = UIImage(systemName: "chevron.up")
+                    textLabel.text = String(localized: "releaseToLoadPreviousChapter")
+                }
             } else {
                 arrowImageView.image = UIImage(systemName: "xmark")
                 textLabel.text = String(localized: "noPreviousChapter")
@@ -1576,8 +1606,14 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
             let textLabel = bottomOverscrollView.viewWithTag(BOTTOM_OVERSCROLL_TEXT_TAG) as? UILabel
         {
             if currentChapterIndex < chapters.count - 1 {
-                arrowImageView.image = UIImage(systemName: "chevron.down")
-                textLabel.text = String(localized: "releaseToLoadNextChapter")
+                let nextChapter = chapters[currentChapterIndex + 1]
+                if nextChapter.locked == true {
+                    arrowImageView.image = UIImage(systemName: "lock.fill")
+                    textLabel.text = String(localized: "nextChapterIsLocked")
+                } else {
+                    arrowImageView.image = UIImage(systemName: "chevron.down")
+                    textLabel.text = String(localized: "releaseToLoadNextChapter")
+                }
             } else {
                 arrowImageView.image = UIImage(systemName: "xmark")
                 textLabel.text = String(localized: "noNextChapter")

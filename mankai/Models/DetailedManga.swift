@@ -18,7 +18,7 @@ struct DetailedManga: Identifiable, Codable {
     var authors: [String]
     var genres: [Genre]
     var chapters: [String: [Chapter]]
-    var remarks: String? // TODO: not used
+    var remarks: String?
 
     var meta: String?
 

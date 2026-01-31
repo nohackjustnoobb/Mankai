@@ -175,6 +175,7 @@ class HttpPlugin: Plugin {
         }
 
         let newTask = Task {
+            defer { setupTask = nil }
             try await performSetup()
         }
         setupTask = newTask

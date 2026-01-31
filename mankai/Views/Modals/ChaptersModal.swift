@@ -45,10 +45,11 @@ struct ChaptersModal: View {
                                     Text(chapter.title ?? chapter.id ?? "nil")
                                         .foregroundColor(.primary)
                                     Spacer()
-                                    Image(systemName: "chevron.right")
+                                    Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
                                         .foregroundColor(.secondary)
                                 }
                             }
+                            .disabled(chapter.locked ?? false)
                         }
                     }
                 } header: {

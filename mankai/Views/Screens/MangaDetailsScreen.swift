@@ -127,6 +127,12 @@ struct MangaDetailsScreen: View {
 
     var info: some View {
         List {
+            if let remarks = detailedManga?.remarks, !remarks.isEmpty {
+                Section("remarks") {
+                    Text(remarks)
+                }
+            }
+
             Section {} header: {
                 VStack {
                     MangaCoverView(coverUrl: detailedManga?.title ?? manga.cover, plugin: plugin)
@@ -345,17 +351,18 @@ struct MangaDetailsScreen: View {
                                 } else {
                                     ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
                                         chapter in
-                                        HStack {
-                                            Text(chapter.title ?? chapter.id ?? "nil")
-                                                .foregroundColor(.primary)
-                                            Spacer()
-                                            Button(action: {
-                                                navigateToChapter(chapter)
-                                            }) {
-                                                Image(systemName: "chevron.right")
+                                        Button(action: {
+                                            navigateToChapter(chapter)
+                                        }) {
+                                            HStack {
+                                                Text(chapter.title ?? chapter.id ?? "nil")
+                                                    .foregroundColor(.primary)
+                                                Spacer()
+                                                Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
                                                     .foregroundColor(.secondary)
                                             }
                                         }
+                                        .disabled(chapter.locked ?? false)
                                     }
                                 }
 

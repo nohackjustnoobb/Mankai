@@ -39,7 +39,7 @@ enum Status: UInt, Codable {
 struct Chapter: Codable {
     var id: String?
     var title: String?
-    var locked: Bool? // TODO: not used
+    var locked: Bool?
 }
 
 struct Manga: Identifiable, Codable {
