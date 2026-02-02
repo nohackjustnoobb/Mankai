@@ -5,6 +5,7 @@
 //  Created by Travis XU on 10/12/2025.
 //
 
+import Supabase
 import SwiftUI
 
 struct SyncSettingsScreen: View {
@@ -72,6 +73,10 @@ struct SyncSettingsScreen: View {
             if let engine = syncService.engine {
                 if engine is HttpEngine {
                     HttpEngineConfigView()
+                }
+
+                if engine is SupabaseEngine {
+                    SupabaseEngineConfigView()
                 }
             }
 
@@ -143,54 +148,100 @@ struct HttpEngineConfigView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage: String?
     @State private var showLogoutConfirmation = false
+    @State private var showResetConfirmation = false
 
     var body: some View {
-        Section("httpEngineConfig") {
-            if httpEngine.username != nil {
-                LabeledContent("serverUrl") {
-                    Text(serverUrl)
-                        .foregroundColor(.secondary)
-                }
-
-                LabeledContent("username") {
-                    Text(httpEngine.username ?? "")
-                        .foregroundColor(.secondary)
-                }
-
-                Button(role: .destructive) {
-                    showLogoutConfirmation = true
-                } label: {
-                    Text("logout")
-                }
-            } else {
-                TextField("serverUrl", text: $serverUrl)
-                    .textContentType(.URL)
-                    .keyboardType(.URL)
-                    .autocapitalization(.none)
-                    .onChange(of: serverUrl) { _, newValue in
-                        httpEngine.serverUrl = newValue.isEmpty ? nil : newValue
+        Group {
+            Section("serverSettings") {
+                if let serverUrl = httpEngine.serverUrl, !serverUrl.isEmpty {
+                    LabeledContent("serverUrl") {
+                        Text(serverUrl)
+                            .foregroundColor(.secondary)
+                            .textSelection(.enabled)
                     }
 
-                TextField("username", text: $username)
-                    .textContentType(.username)
-                    .keyboardType(.default)
-                    .autocapitalization(.none)
-
-                SecureField("password", text: $password)
-                    .textContentType(.password)
-
-                Button {
-                    Task {
-                        await performLogin()
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Text("resetConfigs")
                     }
-                } label: {
-                    if isLoggingIn {
-                        ProgressView()
+                    .confirmationDialog(
+                        "resetServerSettingsConfirmationMessage",
+                        isPresented: $showResetConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("reset", role: .destructive) {
+                            httpEngine.serverUrl = nil
+                            httpEngine.logout()
+                            self.serverUrl = ""
+                            username = ""
+                            password = ""
+                        }
+                        Button("cancel", role: .cancel) {}
+                    }
+                } else {
+                    TextField("serverUrl", text: $serverUrl)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+
+                    Button {
+                        httpEngine.serverUrl = serverUrl
+                    } label: {
+                        Text("saveConfigs")
+                    }
+                    .disabled(serverUrl.isEmpty)
+                }
+            }
+
+            if httpEngine.serverUrl != nil {
+                Section("credentials") {
+                    if httpEngine.username != nil {
+                        LabeledContent("username") {
+                            Text(httpEngine.username ?? "")
+                                .foregroundColor(.secondary)
+                        }
+
+                        Button(role: .destructive) {
+                            showLogoutConfirmation = true
+                        } label: {
+                            Text("logout")
+                        }
+                        .confirmationDialog(
+                            "logoutConfirmationMessage",
+                            isPresented: $showLogoutConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("logout", role: .destructive) {
+                                httpEngine.logout()
+                                username = ""
+                                password = ""
+                            }
+                            Button("cancel", role: .cancel) {}
+                        }
                     } else {
-                        Text("login")
+                        TextField("username", text: $username)
+                            .textContentType(.username)
+                            .keyboardType(.default)
+                            .autocapitalization(.none)
+
+                        SecureField("password", text: $password)
+                            .textContentType(.password)
+
+                        Button {
+                            Task {
+                                await performLogin()
+                            }
+                        } label: {
+                            if isLoggingIn {
+                                ProgressView()
+                            } else {
+                                Text("login")
+                            }
+                        }
+                        .disabled(username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn)
                     }
                 }
-                .disabled(username.isEmpty || password.isEmpty || serverUrl.isEmpty || isLoggingIn)
             }
         }
         .onAppear {
@@ -204,28 +255,16 @@ struct HttpEngineConfigView: View {
                 Text(errorMessage)
             }
         }
-        .confirmationDialog(
-            "logoutConfirmationMessage",
-            isPresented: $showLogoutConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("logout", role: .destructive) {
-                httpEngine.logout()
-                username = ""
-                password = ""
-            }
-            Button("cancel", role: .cancel) {}
-        }
     }
 
     private func performLogin() async {
         isLoggingIn = true
 
         do {
+            httpEngine.serverUrl = serverUrl
             try await httpEngine.login(username: username, password: password)
-            // Clear password after successful login
+
             password = ""
-            // Update local state to reflect logged-in state
             username = httpEngine.username ?? ""
             serverUrl = httpEngine.serverUrl ?? ""
         } catch {
@@ -234,5 +273,145 @@ struct HttpEngineConfigView: View {
         }
 
         isLoggingIn = false
+    }
+}
+
+struct SupabaseEngineConfigView: View {
+    @ObservedObject private var supabaseEngine = SupabaseEngine.shared
+    @State private var url: String = ""
+    @State private var key: String = ""
+    @State private var showErrorAlert = false
+    @State private var errorMessage: String?
+    @State private var showResetConfirmation = false
+    @State private var showLogoutConfirmation = false
+    @State private var selectedProvider: Provider = .google
+    @State private var isLoggingIn = false
+
+    var body: some View {
+        Group {
+            Section("supabaseSettings") {
+                if supabaseEngine.isConfigured {
+                    LabeledContent("url") {
+                        Text(supabaseEngine.currentUrl ?? "")
+                            .foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    LabeledContent("key") {
+                        Text(supabaseEngine.currentKey ?? "")
+                            .foregroundColor(.secondary)
+                            .textSelection(.enabled)
+                    }
+
+                    Button(role: .destructive) {
+                        showResetConfirmation = true
+                    } label: {
+                        Text("resetConfigs")
+                    }
+                    .confirmationDialog(
+                        "resetSupabaseConfirmationMessage",
+                        isPresented: $showResetConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("reset", role: .destructive) {
+                            supabaseEngine.resetClient()
+                            url = ""
+                            key = ""
+                        }
+                        Button("cancel", role: .cancel) {}
+                    }
+                } else {
+                    TextField("url", text: $url)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocapitalization(.none)
+
+                    TextField("key", text: $key)
+                        .keyboardType(.default)
+                        .autocapitalization(.none)
+
+                    Button {
+                        performConfig()
+                    } label: {
+                        Text("saveConfigs")
+                    }
+                    .disabled(url.isEmpty || key.isEmpty)
+                }
+            }
+
+            if supabaseEngine.isConfigured {
+                Section("credentials") {
+                    if let user = supabaseEngine.currentUser {
+                        LabeledContent("email") {
+                            Text(user.email ?? "unknown")
+                                .foregroundColor(.secondary)
+                        }
+
+                        Button(role: .destructive) {
+                            showLogoutConfirmation = true
+                        } label: {
+                            Text("logout")
+                        }
+                        .confirmationDialog(
+                            "logoutConfirmationMessage",
+                            isPresented: $showLogoutConfirmation,
+                            titleVisibility: .visible
+                        ) {
+                            Button("logout", role: .destructive) {
+                                Task {
+                                    try? await supabaseEngine.logout()
+                                }
+                            }
+                            Button("cancel", role: .cancel) {}
+                        }
+                    } else {
+                        Picker("provider", selection: $selectedProvider) {
+                            ForEach(Provider.allCases, id: \ .self) { provider in
+                                Text(provider.rawValue.capitalized)
+                                    .tag(provider)
+                            }
+                        }
+
+                        Button {
+                            isLoggingIn = true
+                            Task {
+                                do {
+                                    try await supabaseEngine.login(provider: selectedProvider)
+                                } catch {
+                                    errorMessage = error.localizedDescription
+                                    showErrorAlert = true
+                                }
+                                isLoggingIn = false
+                            }
+                        } label: {
+                            if isLoggingIn {
+                                ProgressView()
+                            } else {
+                                Text("login")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            url = supabaseEngine.currentUrl ?? ""
+        }
+        .alert("configFailed", isPresented: $showErrorAlert) {
+            Button("ok", role: .cancel) {}
+        } message: {
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+
+    private func performConfig() {
+        do {
+            try supabaseEngine.configClient(url: url, key: key)
+        } catch {
+            errorMessage = error.localizedDescription
+            showErrorAlert = true
+        }
     }
 }

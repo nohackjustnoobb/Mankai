@@ -280,6 +280,8 @@ class AuthManager {
             )
         }
 
+        Logger.authManager.debug("AuthManager request URL: \(url)")
+
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")

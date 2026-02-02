@@ -61,7 +61,7 @@ This plugin is designed for external providers to use Mankai as a reader and man
 
 ## Syncing
 
-Mankai supports syncing your library and reading history across devices. Currently, only one sync engine is implemented:
+Mankai supports syncing your library and reading history across devices using the following sync engines:
 
 ### HttpEngine
 
@@ -69,9 +69,14 @@ The **HttpEngine** requires a self-hosted server to function. You can host the s
 
 Once hosted, you can configure the server URL in the app settings to enable syncing.
 
+### SupabaseEngine
+
+The **SupabaseEngine** allows you to sync using Supabase as the backend. You can set up your own Supabase project using the database schema provided in the [mankai-supabase](https://github.com/nohackjustnoobb/mankai-supabase) repository.
+
+Once configured, you can enter your Supabase URL and Key in the app settings to enable syncing.
+
 ### Planned Sync Engines
 
-- **Supabase**
 - **iCloud** - Pending availability of resources (aka. I have no money)
 
 ## Development Notes

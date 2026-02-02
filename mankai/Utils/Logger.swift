@@ -32,6 +32,7 @@ enum LogCategory: String {
 
     // Sync Engines
     case httpEngine = "HttpEngine"
+    case supabaseEngine = "SupabaseEngine"
     case syncEngine = "SyncEngine"
 
     // General
@@ -164,6 +165,7 @@ extension Logger {
 
     // Sync Engines
     static let httpEngine = Logger(category: .httpEngine)
+    static let supabaseEngine = Logger(category: .supabaseEngine)
     static let syncEngine = Logger(category: .syncEngine)
 
     // General

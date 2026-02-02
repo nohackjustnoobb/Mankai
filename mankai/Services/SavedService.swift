@@ -48,7 +48,7 @@ class SavedService: ObservableObject {
 
         if let result = result, result, SyncService.shared.engine != nil {
             do {
-                try await SyncService.shared.pushSaveds()
+                try await SyncService.shared.addSaved(saved)
             } catch {
                 Logger.savedService.error("Failed to push saveds after adding", error: error)
             }
@@ -68,7 +68,7 @@ class SavedService: ObservableObject {
 
         if let result = result, result, SyncService.shared.engine != nil {
             do {
-                try await SyncService.shared.pushSaveds()
+                try await SyncService.shared.removeSaved(mangaId: mangaId, pluginId: pluginId)
             } catch {
                 Logger.savedService.error("Failed to push saveds after removing", error: error)
             }

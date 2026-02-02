@@ -58,20 +58,20 @@ class UpdateService: ObservableObject {
                 if timeInterval > 60 { // 1 minute in seconds
                     Logger.updateService.info("Syncing before update (last sync: \(lastSyncTime))")
                     do {
-                        try await SyncService.shared.sync(wait: true)
+                        try await SyncService.shared.sync(wait: true, showError: false)
                     } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
-                        throw error
+                        throw NSError(domain: "UpdateService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")])
                     }
                 }
             } else {
                 // No sync has been performed yet
                 Logger.updateService.info("Syncing before update (first sync)")
                 do {
-                    try await SyncService.shared.sync(wait: true)
+                    try await SyncService.shared.sync(wait: true, showError: false)
                 } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
-                    throw error
+                    throw NSError(domain: "UpdateService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")])
                 }
             }
         }

@@ -14,7 +14,7 @@ class SyncService: ObservableObject {
     static let shared = SyncService()
     /// The list of available synchronization engines.
     static let engines: [SyncEngine] =
-        [HttpEngine.shared]
+        [HttpEngine.shared, SupabaseEngine.shared]
 
     private init() {
         Logger.syncService.debug("Initializing SyncService")
@@ -80,8 +80,11 @@ class SyncService: ObservableObject {
         // Reset last sync time in UserDefaults
         let defaults = UserDefaults.standard
         defaults.removeObject(forKey: "SyncService.lastSyncTime")
+        defaults.set(true, forKey: "SyncService.initialSync")
 
         try await engine.onSelected()
+        try await sync()
+        try await UpdateService.shared.update()
     }
 
     private func subscribeToEngine() {
@@ -126,7 +129,7 @@ class SyncService: ObservableObject {
     /// Triggers a synchronization process.
     /// - Parameter wait: If true, waits for an ongoing sync to complete before proceeding (or skipping).
     /// - Throws: An error if the synchronization fails.
-    func sync(wait: Bool = false) async throws {
+    func sync(wait: Bool = false, showError: Bool = true) async throws {
         let (task, wasAlreadyRunning) = await MainActor.run { () -> (Task<Void, Error>, Bool) in
             if let current = syncTask {
                 return (current, true)
@@ -154,7 +157,18 @@ class SyncService: ObservableObject {
             Logger.syncService.debug("Waiting for ongoing sync to complete")
         }
 
-        try await task.value
+        do {
+            try await task.value
+        } catch {
+            Logger.syncService.error("Sync failed: \(error)")
+
+            if showError {
+                let message = String(localized: "failedToSync")
+                NotificationService.shared.showWarning(String(format: message, error.localizedDescription))
+            }
+
+            throw error
+        }
 
         if wasAlreadyRunning {
             Logger.syncService.debug("Ongoing sync completed, proceeding")
@@ -168,6 +182,11 @@ class SyncService: ObservableObject {
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
+        if UserDefaults.standard.bool(forKey: "SyncService.initialSync") {
+            try await engine.initialSync()
+            UserDefaults.standard.set(false, forKey: "SyncService.initialSync")
+        }
+
         try await engine.sync()
 
         // Update sync time
@@ -179,20 +198,29 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Sync completed")
     }
 
-    /// Pushes all local saved manga data to the remote server.
-    /// - Throws: An error if the push operation fails.
-    func pushSaveds() async throws {
-        Logger.syncService.debug("Pushing saveds")
+    func addSaveds(_ saveds: [SavedModel]) async throws {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
             throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
         }
 
-        // Get all local saveds
-        let localSaveds = SavedService.shared.getAll()
+        try await engine.addSaveds(saveds)
+    }
 
-        // Push all saveds to remote
-        try await engine.saveSaveds(localSaveds)
-        Logger.syncService.info("Pushed \(localSaveds.count) saveds to remote")
+    func addSaved(_ saved: SavedModel) async throws {
+        try await addSaveds([saved])
+    }
+
+    func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
+        guard let engine = engine else {
+            Logger.syncService.error("No sync engine available")
+            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
+        }
+
+        try await engine.removeSaveds(saveds)
+    }
+
+    func removeSaved(mangaId: String, pluginId: String) async throws {
+        try await removeSaveds([(mangaId: mangaId, pluginId: pluginId)])
     }
 }
