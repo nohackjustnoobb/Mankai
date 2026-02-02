@@ -161,30 +161,19 @@ class HttpEngine: SyncEngine {
 
     private func syncSaveds(defaults: UserDefaults) async throws {
         Logger.httpEngine.debug("Syncing saveds")
-        // Get hash from remote server
-        let remoteHash = try await getSavedsHash()
 
-        // Get local hash
-        let localHash = SavedService.shared.generateHash()
+        // Get last sync time for saveds
+        let lastSyncTime = defaults.object(forKey: "HttpEngine.lastSyncTime.saveds") as? Date
 
-        // Compare hashes
-        if remoteHash != localHash {
-            Logger.httpEngine.info("Hashes mismatch, updating saveds")
-
-            // Hashes don't match, pull all saveds from remote
-            let remoteSaveds = try await getSaveds()
-
-            // Get all local saveds
-            let localSaveds = SavedService.shared.getAll()
-
-            // Create sets for efficient lookup
-            let remoteKeys = Set(remoteSaveds.map { "\($0.mangaId)|\($0.pluginId)" })
-
-            // Delete saveds that exist locally but not in remote
-            for saved in localSaveds {
-                let key = "\(saved.mangaId)|\(saved.pluginId)"
-                if !remoteKeys.contains(key) {
-                    _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+        // Check for deletions
+        let deletedSaveds = try await getDeletedSaveds(lastSyncTime)
+        if !deletedSaveds.isEmpty {
+            Logger.httpEngine.info("Found \(deletedSaveds.count) deleted saveds")
+            for deleted in deletedSaveds {
+                if let localSaved = SavedService.shared.get(mangaId: deleted.mangaId, pluginId: deleted.pluginId) {
+                    if deleted.datetime > localSaved.datetime {
+                        _ = await SavedService.shared.delete(mangaId: deleted.mangaId, pluginId: deleted.pluginId)
+                    }
                 }
             }
         }
@@ -206,9 +195,6 @@ class HttpEngine: SyncEngine {
             defaults.set(Date(), forKey: "HttpEngine.lastSyncTime.saveds")
             return
         }
-
-        // Get last sync time for saveds
-        let lastSyncTime = defaults.object(forKey: "HttpEngine.lastSyncTime.saveds") as? Date
 
         // Fetch and upload new local saveds since last sync
         let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
@@ -295,6 +281,49 @@ class HttpEngine: SyncEngine {
                     return nil
                 }
                 return SavedModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates, latestChapter: latestChapter)
+            }
+
+            allResults.append(contentsOf: results)
+
+            if results.count < limit {
+                break
+            }
+
+            offset += limit
+        }
+
+        return allResults
+    }
+
+    private func getDeletedSaveds(_ since: Date? = nil) async throws -> [(mangaId: String, pluginId: String, datetime: Date)] {
+        Logger.httpEngine.debug("HttpEngine getting deleted saveds since: \(String(describing: since))")
+        var allResults: [(mangaId: String, pluginId: String, datetime: Date)] = []
+        var offset = 0
+        let limit = 50
+
+        while true {
+            var query: [String: String] = [
+                "os": String(offset),
+                "lm": String(limit),
+            ]
+            if let since = since {
+                let ts = Int(since.timeIntervalSince1970 * 1000)
+                query["ts"] = String(ts)
+            }
+
+            let (data, _) = try await authManager.get(path: "/saveds/deleted", query: query)
+            guard let arr = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { break }
+
+            let results = arr.compactMap { dict -> (mangaId: String, pluginId: String, datetime: Date)? in
+                guard let mangaId = dict["mangaId"] as? String,
+                      let pluginId = dict["pluginId"] as? String,
+                      let datetimeStr = dict["datetime"] as? String,
+                      let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
+                else {
+                    Logger.httpEngine.error("HttpEngine failed to parse deleted saved item")
+                    return nil
+                }
+                return (mangaId, pluginId, datetime)
             }
 
             allResults.append(contentsOf: results)

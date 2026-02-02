@@ -176,6 +176,7 @@ class SupabaseEngine: SyncEngine {
 
         Logger.supabaseEngine.debug("SupabaseEngine adding \(saveds.count) saveds")
 
+        // TODO: optimize
         // Fetch all existing remote saveds for this user
         let existingSaveds = try await getSaveds()
 
@@ -270,6 +271,7 @@ class SupabaseEngine: SyncEngine {
     private func syncSaveds(defaults: UserDefaults) async throws {
         Logger.supabaseEngine.debug("Syncing saveds")
 
+        // TODO: optimize
         // Get remote saved keys to check for deletions (only fetch primary keys)
         let remoteKeys = try await getSavedKeys()
 
