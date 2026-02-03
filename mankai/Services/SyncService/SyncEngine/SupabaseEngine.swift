@@ -176,9 +176,14 @@ class SupabaseEngine: SyncEngine {
 
         Logger.supabaseEngine.debug("SupabaseEngine adding \(saveds.count) saveds")
 
-        // TODO: optimize
-        // Fetch all existing remote saveds for this user
-        let existingSaveds = try await getSaveds()
+        // Optimization: For small batches, fetch only relevant items
+        // For larger batches (e.g. initial sync), it's more efficient to fetch everything
+        let existingSaveds: [SavedModel]
+        if saveds.count <= 20 {
+            existingSaveds = try await getSaveds(for: saveds)
+        } else {
+            existingSaveds = try await getSaveds()
+        }
 
         // Create a map of existing saveds by key for conflict resolution
         let existingMap = Dictionary(
@@ -214,6 +219,36 @@ class SupabaseEngine: SyncEngine {
 
         try await supabase.from("Saved").upsert(supabaseSaveds).execute()
         Logger.supabaseEngine.info("Upserted \(savedsToUpsert.count) saveds")
+    }
+
+    private func getSaveds(for items: [SavedModel]) async throws -> [SavedModel] {
+        guard let supabase = supabase, let userId = currentUser?.id else {
+            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+        }
+
+        guard !items.isEmpty else { return [] }
+
+        // Build composite key filter
+        // Format: or(and(mangaId.eq.m1,pluginId.eq.p1),and(mangaId.eq.m2,pluginId.eq.p2),...)
+        let filters = items.map { "and(mangaId.eq.\($0.mangaId),pluginId.eq.\($0.pluginId))" }
+        let orFilter = filters.joined(separator: ",")
+
+        let query = supabase.from("Saved")
+            .select()
+            .eq("userId", value: userId)
+            .or(orFilter)
+
+        let chunk: [SupabaseSaved] = try await query.execute().value
+
+        return chunk.map { s in
+            SavedModel(
+                mangaId: s.mangaId,
+                pluginId: s.pluginId,
+                datetime: s.datetime,
+                updates: s.updates,
+                latestChapter: s.latestChapter
+            )
+        }
     }
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
