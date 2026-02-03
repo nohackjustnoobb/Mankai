@@ -156,99 +156,101 @@ class SupabaseEngine: SyncEngine {
     }
 
     override func sync() async throws {
+        guard let supabase = supabase else {
+            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+        }
+
         Logger.supabaseEngine.debug("Syncing")
 
         let defaults = UserDefaults.standard
+        let now = Date()
 
-        // Sync Saveds
-        try await syncSaveds(defaults: defaults)
+        // Get last sync time
+        let lastSavedsSync = defaults.object(forKey: "SupabaseEngine.lastSyncTime.saveds") as? Date
+        let lastRecordsSync = defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
 
-        // Sync Records
-        try await syncRecords(defaults: defaults)
+        // Get local data that needs to be synced
+        let localSaveds = SavedService.shared.getAllSince(date: lastSavedsSync)
+        let localRecords = HistoryService.shared.getAllSince(date: lastRecordsSync)
+
+        // Upload local data via edge function
+        let syncPayload = SyncPayload(
+            saveds: localSaveds.map { SyncSaved(from: $0) },
+            records: localRecords.map { SyncRecord(from: $0) }
+        )
+
+        Logger.supabaseEngine.debug("Uploading \(localSaveds.count) saveds and \(localRecords.count) records")
+        try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
+
+        // Pull data from remote
+        try await pullSaveds(defaults: defaults)
+        try await pullRecords(defaults: defaults)
+
+        // Update last sync time
+        defaults.set(now, forKey: "SupabaseEngine.lastSyncTime.saveds")
+        defaults.set(now, forKey: "SupabaseEngine.lastSyncTime.records")
 
         Logger.supabaseEngine.debug("Sync completed")
     }
 
-    override func addSaveds(_ saveds: [SavedModel]) async throws {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
+    // MARK: - Sync Payloads
 
-        Logger.supabaseEngine.debug("SupabaseEngine adding \(saveds.count) saveds")
-
-        // Optimization: For small batches, fetch only relevant items
-        // For larger batches (e.g. initial sync), it's more efficient to fetch everything
-        let existingSaveds: [SavedModel]
-        if saveds.count <= 20 {
-            existingSaveds = try await getSaveds(for: saveds)
-        } else {
-            existingSaveds = try await getSaveds()
-        }
-
-        // Create a map of existing saveds by key for conflict resolution
-        let existingMap = Dictionary(
-            existingSaveds.map { ("\($0.mangaId)|\($0.pluginId)", $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-
-        // Filter saveds: only include those with newer datetime than remote
-        let savedsToUpsert = saveds.filter { saved in
-            let key = "\(saved.mangaId)|\(saved.pluginId)"
-            if let existing = existingMap[key] {
-                return saved.datetime > existing.datetime
-            }
-            return true // No conflict, include it
-        }
-
-        if savedsToUpsert.isEmpty {
-            Logger.supabaseEngine.debug("No saveds to upsert after conflict resolution")
-            return
-        }
-
-        let supabaseSaveds = savedsToUpsert.map { s in
-            SupabaseSaved(
-                mangaId: s.mangaId,
-                pluginId: s.pluginId,
-                userId: userId,
-                datetime: s.datetime,
-                updates: s.updates,
-                latestChapter: s.latestChapter,
-                updatedAt: nil
-            )
-        }
-
-        try await supabase.from("Saved").upsert(supabaseSaveds).execute()
-        Logger.supabaseEngine.info("Upserted \(savedsToUpsert.count) saveds")
+    private struct SyncPayload: Encodable {
+        let saveds: [SyncSaved]
+        let records: [SyncRecord]
     }
 
-    private func getSaveds(for items: [SavedModel]) async throws -> [SavedModel] {
-        guard let supabase = supabase, let userId = currentUser?.id else {
+    private struct SyncSaved: Encodable {
+        let mangaId: String
+        let pluginId: String
+        let datetime: Date
+        let updates: Bool
+        let latestChapter: String
+
+        init(from saved: SavedModel) {
+            mangaId = saved.mangaId
+            pluginId = saved.pluginId
+            datetime = saved.datetime
+            updates = saved.updates
+            latestChapter = saved.latestChapter
+        }
+    }
+
+    private struct SyncRecord: Encodable {
+        let mangaId: String
+        let pluginId: String
+        let datetime: Date
+        let chapterId: String?
+        let chapterTitle: String?
+        let page: Int
+
+        init(from record: RecordModel) {
+            mangaId = record.mangaId
+            pluginId = record.pluginId
+            datetime = record.datetime
+            chapterId = record.chapterId
+            chapterTitle = record.chapterTitle
+            page = record.page
+        }
+    }
+
+    override func addSaveds(_ saveds: [SavedModel]) async throws {
+        guard let supabase = supabase else {
             throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
         }
 
-        guard !items.isEmpty else { return [] }
+        guard !saveds.isEmpty else { return }
 
-        // Build composite key filter
-        // Format: or(and(mangaId.eq.m1,pluginId.eq.p1),and(mangaId.eq.m2,pluginId.eq.p2),...)
-        let filters = items.map { "and(mangaId.eq.\($0.mangaId),pluginId.eq.\($0.pluginId))" }
-        let orFilter = filters.joined(separator: ",")
+        Logger.supabaseEngine.debug("SupabaseEngine adding \(saveds.count) saveds via edge function")
 
-        let query = supabase.from("Saved")
-            .select()
-            .eq("userId", value: userId)
-            .or(orFilter)
+        // Upload saveds via edge function (handles insert/update with conflict resolution)
+        let syncPayload = SyncPayload(
+            saveds: saveds.map { SyncSaved(from: $0) },
+            records: []
+        )
 
-        let chunk: [SupabaseSaved] = try await query.execute().value
-
-        return chunk.map { s in
-            SavedModel(
-                mangaId: s.mangaId,
-                pluginId: s.pluginId,
-                datetime: s.datetime,
-                updates: s.updates,
-                latestChapter: s.latestChapter
-            )
-        }
+        try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
+        Logger.supabaseEngine.info("Uploaded \(saveds.count) saveds")
     }
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
@@ -260,17 +262,26 @@ class SupabaseEngine: SyncEngine {
 
         Logger.supabaseEngine.debug("SupabaseEngine removing \(saveds.count) saveds")
 
-        // Delete each saved individually (composite key requires multiple conditions)
+        let now = Date()
+
+        // Mark each saved as deleted (soft delete)
+        struct SoftDeleteUpdate: Encodable {
+            let isDeleted: Bool
+            let datetime: Date
+        }
+
+        let updatePayload = SoftDeleteUpdate(isDeleted: true, datetime: now)
+
         for saved in saveds {
             try await supabase.from("Saved")
-                .delete()
+                .update(updatePayload)
                 .eq("userId", value: userId)
                 .eq("mangaId", value: saved.mangaId)
                 .eq("pluginId", value: saved.pluginId)
                 .execute()
         }
 
-        Logger.supabaseEngine.info("Removed \(saveds.count) saveds")
+        Logger.supabaseEngine.info("Marked \(saveds.count) saveds as deleted")
     }
 
     override func initialSync() async throws {
@@ -279,6 +290,54 @@ class SupabaseEngine: SyncEngine {
         let localSaveds = SavedService.shared.getAll()
 
         try await addSaveds(localSaveds)
+    }
+
+    // MARK: - Pull Logic
+
+    private func pullSaveds(defaults _: UserDefaults) async throws {
+        Logger.supabaseEngine.debug("Pulling saveds")
+
+        // Fetch all remote saveds
+        let allRemoteSaveds = try await getSaveds()
+
+        // Separate deleted and non-deleted saveds
+        let deletedSaveds = allRemoteSaveds.filter { $0.isDeleted }
+        let activeSaveds = allRemoteSaveds.filter { !$0.isDeleted }
+
+        // Delete local saveds that are marked as deleted in remote
+        for saved in deletedSaveds {
+            Logger.supabaseEngine.info("Deleting local saved marked as deleted: \(saved.mangaId)")
+            _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+        }
+
+        // Apply non-deleted saveds
+        if !activeSaveds.isEmpty {
+            let models = activeSaveds.map { s in
+                SavedModel(
+                    mangaId: s.mangaId,
+                    pluginId: s.pluginId,
+                    datetime: s.datetime,
+                    updates: s.updates,
+                    latestChapter: s.latestChapter
+                )
+            }
+            Logger.supabaseEngine.info("Applying \(models.count) remote saveds")
+            _ = await SavedService.shared.batchUpdate(saveds: models)
+        }
+    }
+
+    private func pullRecords(defaults: UserDefaults) async throws {
+        Logger.supabaseEngine.debug("Pulling records")
+
+        // Get last sync time for records
+        let lastSyncTime = defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
+
+        // Fetch remote records since last sync
+        let remoteRecords = try await getRecords(lastSyncTime)
+        if !remoteRecords.isEmpty {
+            Logger.supabaseEngine.info("Applying \(remoteRecords.count) remote records")
+            _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
+        }
     }
 
     // MARK: - Internal Sync Logic
@@ -290,6 +349,7 @@ class SupabaseEngine: SyncEngine {
         let datetime: Date
         let updates: Bool
         let latestChapter: String
+        let isDeleted: Bool
         let updatedAt: Date?
 
         enum CodingKeys: String, CodingKey {
@@ -299,167 +359,12 @@ class SupabaseEngine: SyncEngine {
             case datetime
             case updates
             case latestChapter
+            case isDeleted
             case updatedAt
         }
     }
 
-    private func syncSaveds(defaults: UserDefaults) async throws {
-        Logger.supabaseEngine.debug("Syncing saveds")
-
-        // TODO: optimize
-        // Get remote saved keys to check for deletions (only fetch primary keys)
-        let remoteKeys = try await getSavedKeys()
-
-        // Get all local saveds
-        let allLocalSaveds = SavedService.shared.getAll()
-
-        // Delete saveds that exist locally but not in remote
-        for saved in allLocalSaveds {
-            let key = "\(saved.mangaId)|\(saved.pluginId)"
-            if !remoteKeys.contains(key) {
-                Logger.supabaseEngine.info("Deleting local saved not in remote: \(saved.mangaId)")
-                _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
-            }
-        }
-
-        // Get latest saved from remote
-        let remoteLatest = try await getLatestSaved()
-
-        // Get latest saved from local
-        let localLatest = SavedService.shared.getLatest()
-
-        // Check if already synced (comparing primary key and datetime)
-        if let remote = remoteLatest, let local = localLatest,
-           remote.mangaId == local.mangaId,
-           remote.pluginId == local.pluginId,
-           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
-        {
-            // Already synced
-            Logger.supabaseEngine.debug("Saveds already synced")
-            defaults.set(Date(), forKey: "SupabaseEngine.lastSyncTime.saveds")
-            return
-        }
-
-        // Get last sync time
-        let lastSyncTime = defaults.object(forKey: "SupabaseEngine.lastSyncTime.saveds") as? Date
-
-        // 1. Fetch NEW local saveds (updated since last sync)
-        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
-
-        // 2. Fetch NEW remote saveds (updated since last sync)
-        let remoteSaveds = try await getSaveds(lastSyncTime)
-
-        // 3. Resolve Conflicts
-        var savedsToUpload = newLocalSaveds
-        var savedsToApply = remoteSaveds
-
-        if !newLocalSaveds.isEmpty, !remoteSaveds.isEmpty {
-            // Create maps for efficient lookup
-            let remoteMap = Dictionary(grouping: remoteSaveds, by: { "\($0.mangaId)|\($0.pluginId)" })
-                .compactMapValues { $0.first }
-
-            // Filter uploads: Only upload if local is newer than remote
-            savedsToUpload = newLocalSaveds.filter { local in
-                let key = "\(local.mangaId)|\(local.pluginId)"
-                if let remote = remoteMap[key] {
-                    return local.datetime > remote.datetime
-                }
-                return true
-            }
-
-            // Filter downloads: Only apply if remote is newer than local
-            let localMap = Dictionary(grouping: newLocalSaveds, by: { "\($0.mangaId)|\($0.pluginId)" })
-                .compactMapValues { $0.first }
-
-            savedsToApply = remoteSaveds.filter { remote in
-                let key = "\(remote.mangaId)|\(remote.pluginId)"
-                if let local = localMap[key] {
-                    return remote.datetime > local.datetime
-                }
-                return true
-            }
-        }
-
-        // 4. Upload filtered local saveds
-        if !savedsToUpload.isEmpty {
-            Logger.supabaseEngine.info("Uploading \(savedsToUpload.count) new local saveds")
-            try await updateSaveds(savedsToUpload)
-        }
-
-        // 5. Apply filtered remote saveds
-        if !savedsToApply.isEmpty {
-            Logger.supabaseEngine.info("Downloading \(savedsToApply.count) remote saveds updates")
-            _ = await SavedService.shared.batchUpdate(saveds: savedsToApply)
-        }
-
-        // Update last sync time
-        defaults.set(Date(), forKey: "SupabaseEngine.lastSyncTime.saveds")
-    }
-
-    private func getLatestSaved() async throws -> SavedModel? {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
-
-        Logger.supabaseEngine.debug("SupabaseEngine getting latest saved")
-
-        let query = supabase.from("Saved")
-            .select()
-            .eq("userId", value: userId)
-            .order("datetime", ascending: false)
-            .limit(1)
-
-        let saveds: [SupabaseSaved] = try await query.execute().value
-
-        guard let first = saveds.first else { return nil }
-
-        return SavedModel(
-            mangaId: first.mangaId,
-            pluginId: first.pluginId,
-            datetime: first.datetime,
-            updates: first.updates,
-            latestChapter: first.latestChapter
-        )
-    }
-
-    private func getSavedKeys() async throws -> Set<String> {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
-
-        Logger.supabaseEngine.debug("SupabaseEngine getting saved keys")
-
-        struct SavedKey: Codable {
-            let mangaId: String
-            let pluginId: String
-        }
-
-        var allKeys: Set<String> = []
-        var offset = 0
-        let limit = 1000
-
-        while true {
-            let chunkQuery = supabase.from("Saved")
-                .select("mangaId, pluginId")
-                .eq("userId", value: userId)
-                .range(from: offset, to: offset + limit - 1)
-
-            let chunk: [SavedKey] = try await chunkQuery.execute().value
-
-            for key in chunk {
-                allKeys.insert("\(key.mangaId)|\(key.pluginId)")
-            }
-
-            if chunk.count < limit {
-                break
-            }
-            offset += limit
-        }
-
-        return allKeys
-    }
-
-    private func getSaveds(_ since: Date? = nil) async throws -> [SavedModel] {
+    private func getSaveds(_ since: Date? = nil) async throws -> [SupabaseSaved] {
         guard let supabase = supabase, let userId = currentUser?.id else {
             throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
         }
@@ -472,10 +377,10 @@ class SupabaseEngine: SyncEngine {
 
         if let since = since {
             let isoDate = ISO8601DateFormatter().string(from: since)
-            query = query.gt("datetime", value: isoDate)
+            query = query.gt("updatedAt", value: isoDate)
         }
 
-        var allResults: [SavedModel] = []
+        var allResults: [SupabaseSaved] = []
         var offset = 0
         let limit = 1000
 
@@ -486,17 +391,7 @@ class SupabaseEngine: SyncEngine {
 
             let chunk: [SupabaseSaved] = try await chunkQuery.execute().value
 
-            let models = chunk.map { s in
-                SavedModel(
-                    mangaId: s.mangaId,
-                    pluginId: s.pluginId,
-                    datetime: s.datetime,
-                    updates: s.updates,
-                    latestChapter: s.latestChapter
-                )
-            }
-
-            allResults.append(contentsOf: models)
+            allResults.append(contentsOf: chunk)
 
             if chunk.count < limit {
                 break
@@ -505,28 +400,6 @@ class SupabaseEngine: SyncEngine {
         }
 
         return allResults
-    }
-
-    private func updateSaveds(_ saveds: [SavedModel]) async throws {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
-
-        Logger.supabaseEngine.debug("SupabaseEngine updating \(saveds.count) saveds")
-
-        let supabaseSaveds = saveds.map { s in
-            SupabaseSaved(
-                mangaId: s.mangaId,
-                pluginId: s.pluginId,
-                userId: userId,
-                datetime: s.datetime,
-                updates: s.updates,
-                latestChapter: s.latestChapter,
-                updatedAt: nil // Will be updated by DB
-            )
-        }
-
-        try await supabase.from("Saved").upsert(supabaseSaveds).execute()
     }
 
     private struct SupabaseRecord: Codable {
@@ -551,118 +424,6 @@ class SupabaseEngine: SyncEngine {
         }
     }
 
-    private func syncRecords(defaults: UserDefaults) async throws {
-        Logger.supabaseEngine.debug("Syncing records")
-
-        // Get latest record from remote
-        let remoteLatest = try await getLatestRecord()
-
-        // Get latest record from local
-        let localLatest = HistoryService.shared.getLatest()
-
-        // Check if already synced (comparing primary key and datetime)
-        if let remote = remoteLatest, let local = localLatest,
-           remote.mangaId == local.mangaId,
-           remote.pluginId == local.pluginId,
-           abs(remote.datetime.timeIntervalSince(local.datetime)) < 1e-3
-        {
-            // Already synced
-            Logger.supabaseEngine.debug("Records already synced")
-            defaults.set(Date(), forKey: "SupabaseEngine.lastSyncTime.records")
-            return
-        }
-
-        // Get last sync time
-        let lastSyncTime = defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
-
-        // 1. Fetch NEW local records (updated since last sync)
-        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime)
-
-        // 2. Fetch NEW remote records (updated since last sync)
-        let remoteRecords = try await getRecords(lastSyncTime)
-
-        // 3. Resolve Conflicts
-        // We need to decide:
-        // - What to upload (local > remote)
-        // - What to download/apply (remote > local)
-
-        var recordsToUpload = newLocalRecords
-        var recordsToApply = remoteRecords
-
-        if !newLocalRecords.isEmpty, !remoteRecords.isEmpty {
-            // Create maps for efficient lookup
-            let remoteMap = Dictionary(grouping: remoteRecords, by: { "\($0.mangaId)|\($0.pluginId)" })
-                .compactMapValues { $0.first } // Should be unique per ID
-
-            // Filter uploads: Only upload if local is newer than remote (or remote doesn't exist in conflict set)
-            recordsToUpload = newLocalRecords.filter { local in
-                let key = "\(local.mangaId)|\(local.pluginId)"
-                if let remote = remoteMap[key] {
-                    // Conflict found. Keep local if it's newer.
-                    return local.datetime > remote.datetime
-                }
-                // No conflict, safe to upload
-                return true
-            }
-
-            // Filter downloads: Only apply if remote is newer than local (or local doesn't exist in conflict set)
-            let localMap = Dictionary(grouping: newLocalRecords, by: { "\($0.mangaId)|\($0.pluginId)" })
-                .compactMapValues { $0.first }
-
-            recordsToApply = remoteRecords.filter { remote in
-                let key = "\(remote.mangaId)|\(remote.pluginId)"
-                if let local = localMap[key] {
-                    // Conflict found. Keep remote if it's newer.
-                    return remote.datetime > local.datetime
-                }
-                // No conflict, safe to apply
-                return true
-            }
-        }
-
-        // 4. Upload filtered local records
-        if !recordsToUpload.isEmpty {
-            Logger.supabaseEngine.info("Uploading \(recordsToUpload.count) new local records")
-            try await updateRecords(recordsToUpload)
-        }
-
-        // 5. Apply filtered remote records
-        if !recordsToApply.isEmpty {
-            Logger.supabaseEngine.info("Downloading \(recordsToApply.count) remote records updates")
-            _ = await HistoryService.shared.batchUpdate(records: recordsToApply)
-        }
-
-        // Update last sync time
-        defaults.set(Date(), forKey: "SupabaseEngine.lastSyncTime.records")
-    }
-
-    private func getLatestRecord() async throws -> RecordModel? {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
-
-        Logger.supabaseEngine.debug("SupabaseEngine getting latest record")
-
-        let query = supabase.from("Record")
-            .select()
-            .eq("userId", value: userId)
-            .order("datetime", ascending: false)
-            .limit(1)
-
-        let records: [SupabaseRecord] = try await query.execute().value
-
-        guard let first = records.first else { return nil }
-
-        return RecordModel(
-            mangaId: first.mangaId,
-            pluginId: first.pluginId,
-            datetime: first.datetime,
-            chapterId: first.chapterId,
-            chapterTitle: first.chapterTitle,
-            page: first.page
-        )
-    }
-
     private func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
         guard let supabase = supabase, let userId = currentUser?.id else {
             throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
@@ -677,7 +438,7 @@ class SupabaseEngine: SyncEngine {
 
         if let since = since {
             let isoDate = ISO8601DateFormatter().string(from: since)
-            query = query.gt("datetime", value: isoDate)
+            query = query.gt("updatedAt", value: isoDate)
         }
 
         // Pagination
@@ -713,29 +474,5 @@ class SupabaseEngine: SyncEngine {
         }
 
         return allResults
-    }
-
-    private func updateRecords(_ records: [RecordModel]) async throws {
-        guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
-        }
-
-        Logger.supabaseEngine.debug("SupabaseEngine updating \(records.count) records")
-
-        let supabaseRecords = records.map { r in
-            SupabaseRecord(
-                mangaId: r.mangaId,
-                pluginId: r.pluginId,
-                userId: userId,
-                datetime: r.datetime,
-                chapterId: r.chapterId,
-                chapterTitle: r.chapterTitle,
-                page: r.page,
-                updatedAt: nil // Will be updated by DB
-            )
-        }
-
-        // Upsert allows bulk
-        try await supabase.from("Record").upsert(supabaseRecords).execute()
     }
 }

@@ -99,6 +99,7 @@ class HttpEngine: SyncEngine {
 
         // Get last sync time
         let lastSyncTime = defaults.object(forKey: "HttpEngine.lastSyncTime") as? Date
+        let now = Date()
 
         // Fetch new local saveds since last sync
         let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
@@ -228,7 +229,7 @@ class HttpEngine: SyncEngine {
         }
 
         // Update last sync time
-        defaults.set(Date(), forKey: "HttpEngine.lastSyncTime")
+        defaults.set(now, forKey: "HttpEngine.lastSyncTime")
 
         Logger.httpEngine.debug("Sync completed")
     }
