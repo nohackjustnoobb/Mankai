@@ -1490,7 +1490,27 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     @objc private func pageInfoButtonTapped() {
         Logger.ui.debug("Page info button tapped")
-        // TODO: Implement page info action
+
+        let chaptersModal = ChaptersModal(
+            plugin: plugin,
+            manga: manga,
+            chaptersKey: chaptersKey
+        ) { [weak self] chapter, _, _ in
+            guard let self = self else { return }
+
+            if let index = self.chapters.firstIndex(where: { $0.id == chapter.id }) {
+                self.currentChapterIndex = index
+                self.loadChapter()
+                self.presentedViewController?.dismiss(animated: true)
+            }
+        }
+
+        let hostingController = UIHostingController(rootView: chaptersModal)
+        if let sheet = hostingController.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+        }
+
+        present(hostingController, animated: true)
     }
 
     @objc private func nextButtonTapped() {
