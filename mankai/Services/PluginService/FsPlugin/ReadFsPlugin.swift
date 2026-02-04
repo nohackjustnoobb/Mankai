@@ -302,23 +302,15 @@ class ReadFsPlugin: Plugin {
         var chaptersDict: [String: [[String: Any?]]] = [:]
         for group in chapterGroups {
             let chapters = try group.chapters.fetchAll(db)
-            let chaptersArray = chapters.map { chapter in
-                [
-                    "id": String(chapter.id!),
-                    "title": chapter.title,
-                ] as [String: Any?]
-            }
-
-            // Build a dictionary for fast lookup
-            let chapterDict = Dictionary(
-                uniqueKeysWithValues: chaptersArray.compactMap { item in
-                    (item["id"] as! String, item)
-                })
-            let orderIds = group.order.components(separatedBy: "|").map {
-                $0.trimmingCharacters(in: .whitespaces)
-            }
-            let sortedChaptersArray = orderIds.compactMap { chapterDict[$0] }
-            chaptersDict[group.title] = sortedChaptersArray
+            let chaptersArray = chapters
+                .sorted { $0.sequence < $1.sequence }
+                .map { chapter in
+                    [
+                        "id": String(chapter.id!),
+                        "title": chapter.title,
+                    ] as [String: Any?]
+                }
+            chaptersDict[group.title] = chaptersArray
         }
         mangaDict["chapters"] = chaptersDict
 
@@ -484,25 +476,14 @@ class ReadFsPlugin: Plugin {
         }
 
         return try await db.read { db in
-            guard let chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) else {
-                Logger.fsPlugin.warning("Chapter not found in DB: \(chapterIdInt)")
-                throw NSError(
-                    domain: "ReadFsPlugin", code: 1,
-                    userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterDirectoryNotFound")]
-                )
-            }
-
-            let imageIds = chapterModel.order.components(separatedBy: "|")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-
             let images =
                 try FsImageModel
                     .filter(Column("chapterId") == chapterIdInt)
                     .fetchAll(db)
 
-            let imageDict = Dictionary(uniqueKeysWithValues: images.map { ($0.id, $0.path) })
-
-            return imageIds.compactMap { imageDict[$0] }
+            return images
+                .sorted { ($0.sequence ?? 0) < ($1.sequence ?? 0) }
+                .map { $0.path }
         }
     }
 

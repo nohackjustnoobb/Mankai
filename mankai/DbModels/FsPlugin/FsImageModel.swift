@@ -14,6 +14,7 @@ struct FsImageModel {
     var height: Int
     var mangaId: String?
     var chapterId: Int?
+    var sequence: Int?
 
     static func createTable(_ db: Database) throws {
         try db.create(table: FsImageModel.databaseTableName, ifNotExists: true) {
@@ -25,6 +26,7 @@ struct FsImageModel {
 
             $0.column("mangaId", .text)
             $0.column("chapterId", .integer)
+            $0.column("sequence", .integer)
 
             $0.foreignKey(["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
             $0.foreignKey(["chapterId"], references: FsChapterModel.databaseTableName, onDelete: .cascade)

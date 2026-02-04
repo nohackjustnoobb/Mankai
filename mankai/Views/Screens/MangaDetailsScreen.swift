@@ -212,7 +212,7 @@ struct MangaDetailsScreen: View {
                                 Image(
                                     systemName: saved != nil
                                         ? "bookmark.slash.fill" : "bookmark.fill")
-                                Text(saved != nil ? "remove" : "save")
+                                Text(saved != nil ? "remove" : "bookmark")
                             }
                             .frame(maxWidth: .infinity)
                         }

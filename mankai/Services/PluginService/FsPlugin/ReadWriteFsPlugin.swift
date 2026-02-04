@@ -78,11 +78,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                 {
                     return latestIdInt
                 }
-
                 return nil
             }()
 
-            var mangaModel = FsMangaModel(
+            let mangaModel = FsMangaModel(
                 id: manga.id,
                 title: manga.title,
                 status: manga.status.map { Int($0.rawValue) },
@@ -94,134 +93,6 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             )
 
             try mangaModel.upsert(db)
-
-            // Delete chapters
-            let chaptersId = manga.chapters.flatMap { _, chapters in
-                chapters.compactMap { chapter in
-                    chapter.id.flatMap { String($0) }
-                }
-            }
-            let chapterIdsToDelete: [Int] =
-                try FsChapterModel
-                    .filter(!chaptersId.contains(Column("id")))
-                    .fetchAll(db)
-                    .map { $0.id! }
-            try FsChapterModel
-                .filter(keys: chapterIdsToDelete)
-                .deleteAll(db)
-
-            let fileManager = FileManager.default
-
-            for chapterId in chapterIdsToDelete {
-                let chapterDir =
-                    url
-                        .appendingPathComponent(manga.id)
-                        .appendingPathComponent("chapters")
-                        .appendingPathComponent(String(chapterId))
-
-                if fileManager.fileExists(atPath: chapterDir.path) {
-                    try? fileManager.removeItem(at: chapterDir)
-                }
-            }
-
-            // Create or update chapter groups
-            let chapterKeys = Set(manga.chapters.map { $0.key })
-
-            let chapterKeysToDelete: [Int] =
-                try FsChapterGroupModel
-                    .filter(!chapterKeys.contains(Column("title")) && Column("mangaId") == manga.id)
-                    .fetchAll(db)
-                    .map { $0.id! }
-
-            let existingChapterGroupTitles: [String] =
-                try FsChapterGroupModel
-                    .filter(Column("mangaId") == manga.id)
-                    .fetchAll(db)
-                    .map { $0.title }
-            let missingChapterGroupKeys = chapterKeys.filter { !existingChapterGroupTitles.contains($0) }
-
-            for key in missingChapterGroupKeys {
-                let chapterGroup = FsChapterGroupModel(
-                    mangaId: manga.id,
-                    title: key,
-                    order: ""
-                )
-                try chapterGroup.insert(db)
-            }
-
-            // Update chapters
-            let allChapterGroups =
-                try FsChapterGroupModel
-                    .filter(Column("mangaId") == manga.id)
-                    .fetchAll(db)
-            var chapterGroupIdByKey: [String: Int] = [:]
-            for group in allChapterGroups {
-                if let groupId = group.id {
-                    chapterGroupIdByKey[group.title] = groupId
-                }
-            }
-
-            var chapterInfoById: [Int: (title: String, chapterKey: String)] = [:]
-            var chapterIdsByKey: [String: [Int]] = [:]
-            for (chapterKey, chapters) in manga.chapters {
-                for chapter in chapters {
-                    if let chapterIdStr = chapter.id, let chapterId = Int(chapterIdStr) {
-                        chapterInfoById[chapterId] = (chapter.title ?? "", chapterKey)
-                        chapterIdsByKey[chapterKey, default: []].append(chapterId)
-                    } else {
-                        let groupId = chapterGroupIdByKey[chapterKey]!
-                        var newChapter = FsChapterModel(
-                            title: chapter.title ?? "",
-                            order: "",
-                            chapterGroupId: groupId
-                        )
-                        newChapter = try newChapter.insertAndFetch(db)
-
-                        if let newId = newChapter.id {
-                            chapterInfoById[newId] = (chapter.title ?? "", chapterKey)
-                            chapterIdsByKey[chapterKey, default: []].append(newId)
-
-                            if manga.latestChapter?.title == chapter.title {
-                                mangaModel.latestChapterId = newId
-                                try mangaModel.update(db)
-                            }
-                        }
-                    }
-                }
-            }
-
-            let existingChapters =
-                try FsChapterModel
-                    .filter(chaptersId.contains(Column("id")))
-                    .fetchAll(db)
-            for var existingChapter in existingChapters {
-                if let info = chapterInfoById[existingChapter.id ?? -1],
-                   let groupId = chapterGroupIdByKey[info.chapterKey]
-                {
-                    existingChapter.title = info.title
-                    existingChapter.chapterGroupId = groupId
-                    try existingChapter.update(db)
-                }
-            }
-
-            // Delete chapter groups that are no longer needed
-            try FsChapterGroupModel
-                .filter(keys: chapterKeysToDelete)
-                .deleteAll(db)
-
-            // Update the order of chapters in each group
-            for (chapterKey, chapterIds) in chapterIdsByKey {
-                if let groupId = chapterGroupIdByKey[chapterKey] {
-                    let chapterOrder = chapterIds.map { String($0) }.joined(separator: "|")
-                    let chapterGroup = FsChapterGroupModel(
-                        id: groupId,
-                        mangaId: manga.id,
-                        title: chapterKey,
-                        order: chapterOrder
-                    )
-                    try chapterGroup.update(db)
-                }
-            }
         }
 
         await MainActor.run {
@@ -298,9 +169,11 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         try await db.write { db in
             if let existingCover = existingCover {
                 var updatedCover = existingCover
+
                 updatedCover.path = relativeCoverPath
                 updatedCover.width = imageInfo.width
                 updatedCover.height = imageInfo.height
+
                 try updatedCover.update(db)
             } else {
                 let coverImage = FsImageModel(
@@ -312,6 +185,202 @@ class ReadWriteFsPlugin: ReadFsPlugin {
                     chapterId: nil
                 )
                 try coverImage.insert(db)
+            }
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    // MARK: - Chapter Group Methods
+
+    func upsertChapterGroup(id: Int? = nil, mangaId: String, title: String) async throws {
+        Logger.fsPlugin.debug("Upserting chapter group: \(title) for manga: \(mangaId)")
+        guard let db = db else {
+            Logger.fsPlugin.error("Database not available for upsertChapterGroup")
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        try await db.write { db in
+            let newGroup = FsChapterGroupModel(
+                id: id,
+                mangaId: mangaId,
+                title: title
+            )
+            try newGroup.upsert(db)
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    func deleteChapterGroup(id: Int) async throws {
+        Logger.fsPlugin.debug("Deleting chapter group: \(id)")
+        guard let db = db else {
+            Logger.fsPlugin.error("Database not available for deleteChapterGroup")
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        // Fetch the chapter group and its chapters before deletion
+        let (mangaId, chapterIds) = try await db.read { db in
+            guard let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: id) else {
+                throw NSError(
+                    domain: "ReadWriteFsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"]
+                )
+            }
+
+            let chapters = try FsChapterModel
+                .filter(Column("chapterGroupId") == id)
+                .fetchAll(db)
+
+            return (chapterGroup.mangaId, chapters.compactMap { $0.id })
+        }
+
+        // Delete chapter directories from filesystem
+        let fileManager = FileManager.default
+        for chapterId in chapterIds {
+            let chapterDir = url
+                .appendingPathComponent(mangaId)
+                .appendingPathComponent("chapters")
+                .appendingPathComponent(String(chapterId))
+
+            if fileManager.fileExists(atPath: chapterDir.path) {
+                try? fileManager.removeItem(at: chapterDir)
+            }
+        }
+
+        // Delete the chapter group (cascade deletes chapters)
+        _ = try await db.write { db in
+            try FsChapterGroupModel
+                .filter(key: id)
+                .deleteAll(db)
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    func getChapterGroupId(mangaId: String, title: String) async throws -> Int? {
+        guard let db = db else {
+            return nil
+        }
+
+        return try await db.read { db in
+            try FsChapterGroupModel
+                .filter(Column("mangaId") == mangaId && Column("title") == title)
+                .fetchOne(db)?.id
+        }
+    }
+
+    func getChapters(groupId: Int) async throws -> [FsChapterModel] {
+        guard let db = db else {
+            return []
+        }
+
+        return try await db.read { db in
+            let chapters = try FsChapterModel
+                .filter(Column("chapterGroupId") == groupId)
+                .fetchAll(db)
+
+            return chapters.sorted { $0.sequence < $1.sequence }
+        }
+    }
+
+    // MARK: - Chapter Methods
+
+    func upsertChapter(id: Int? = nil, title: String, sequence: Int, chapterGroupId: Int) async throws {
+        Logger.fsPlugin.debug("Upserting chapter: \(title) (id: \(id ?? -1), sequence: \(sequence), groupId: \(chapterGroupId))")
+        guard let db = db else {
+            Logger.fsPlugin.error("Database not available for upsertChapter")
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        try await db.write { db in
+            let chapter =
+                try FsChapterModel(
+                    id: id,
+                    title: title,
+                    sequence: sequence,
+                    chapterGroupId: chapterGroupId
+                ).upsertAndFetch(db)
+
+            if id == nil, let newChapterId = chapter.id {
+                if let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: chapterGroupId) {
+                    if var manga = try FsMangaModel.fetchOne(db, key: chapterGroup.mangaId) {
+                        manga.latestChapterId = newChapterId
+                        try manga.update(db)
+                    }
+                }
+            }
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    func deleteChapter(id: Int, mangaId: String) async throws {
+        Logger.fsPlugin.debug("Deleting chapter: \(id) from manga: \(mangaId)")
+        guard let db = db else {
+            Logger.fsPlugin.error("Database not available for deleteChapter")
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        _ = try await db.write { db in
+            try FsChapterModel
+                .filter(key: id)
+                .deleteAll(db)
+        }
+
+        // Delete chapter directory if it exists
+        let fileManager = FileManager.default
+        let chapterDir = url
+            .appendingPathComponent(mangaId)
+            .appendingPathComponent("chapters")
+            .appendingPathComponent(String(id))
+
+        if fileManager.fileExists(atPath: chapterDir.path) {
+            try? fileManager.removeItem(at: chapterDir)
+        }
+
+        await MainActor.run {
+            objectWillChange.send()
+        }
+    }
+
+    func arrangeChapterOrder(ids: [Int]) async throws {
+        Logger.fsPlugin.debug("Arranging chapter order for chapter group")
+        guard let db = db else {
+            Logger.fsPlugin.error("Database not available for arrangeChapterOrder")
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
+            )
+        }
+
+        try await db.write { db in
+            // Update sequence for each chapter based on its position in the ids array
+            for (index, id) in ids.enumerated() {
+                if var chapterModel = try FsChapterModel.fetchOne(db, key: id) {
+                    chapterModel.sequence = index
+                    try chapterModel.update(db)
+                }
             }
         }
 
@@ -360,29 +429,28 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
             let pathsToInsert = imagePaths
             try await db.write { db in
-                var imageIds: [String] = []
-
-                for (relativeImagePath, imageId, width, height) in pathsToInsert {
-                    var imageModel = FsImageModel(
-                        id: imageId,
-                        path: relativeImagePath,
-                        width: width,
-                        height: height,
-                        mangaId: nil,
-                        chapterId: Int(chapterId)
-                    )
-                    imageModel = try imageModel.insertAndFetch(db)
-
-                    imageIds.append(imageModel.id)
-                }
-
+                // Get the current max sequence for this chapter
                 if let chapterIdInt = Int(chapterId) {
-                    if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
-                        let existingIds =
-                            chapterModel.order.isEmpty ? [] : chapterModel.order.components(separatedBy: "|")
-                        let newOrder = existingIds + imageIds
-                        chapterModel.order = newOrder.joined(separator: "|")
-                        try chapterModel.update(db)
+                    let maxSequence = try (FsImageModel
+                        .filter(Column("chapterId") == chapterIdInt)
+                        .select(max(Column("sequence")))
+                        .asRequest(of: Int?.self)
+                        .fetchOne(db) ?? nil) ?? -1
+
+                    var currentSequence = maxSequence + 1
+
+                    for (relativeImagePath, imageId, width, height) in pathsToInsert {
+                        let imageModel = FsImageModel(
+                            id: imageId,
+                            path: relativeImagePath,
+                            width: width,
+                            height: height,
+                            mangaId: nil,
+                            chapterId: chapterIdInt,
+                            sequence: currentSequence
+                        )
+                        try imageModel.insert(db)
+                        currentSequence += 1
                     }
                 }
             }
@@ -398,8 +466,8 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func removeImages(mangaId _: String, chapterId: String, ids: [String]) async throws {
-        Logger.fsPlugin.debug("Removing \(ids.count) images from chapter: \(chapterId)")
+    func removeImages(ids: [String]) async throws {
+        Logger.fsPlugin.debug("Removing \(ids.count) images")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for removeImages")
             throw NSError(
@@ -411,23 +479,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         let fileManager = FileManager.default
 
         let imageModels = try await db.read { db in
-            let imageIds = ids.compactMap { Int($0) }
-            return try FsImageModel.filter(keys: imageIds).fetchAll(db)
-        }
-
-        try await db.write { db in
-            let imageIds = ids.compactMap { Int($0) }
-            try FsImageModel.filter(keys: imageIds).deleteAll(db)
-
-            if let chapterIdInt = Int(chapterId) {
-                if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
-                    let currentIds = chapterModel.order.components(separatedBy: "|")
-                        .filter { !ids.contains($0) && !$0.isEmpty }
-
-                    chapterModel.order = currentIds.joined(separator: "|")
-                    try chapterModel.update(db)
-                }
-            }
+            try FsImageModel.filter(keys: ids).fetchAll(db)
         }
 
         for imageModel in imageModels {
@@ -437,13 +489,17 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             }
         }
 
+        _ = try await db.write { db in
+            try FsImageModel.filter(keys: ids).deleteAll(db)
+        }
+
         await MainActor.run {
             objectWillChange.send()
         }
     }
 
-    func arrangeImageOrder(mangaId _: String, chapterId: String, ids: [String]) async throws {
-        Logger.fsPlugin.debug("Arranging image order for chapter: \(chapterId)")
+    func arrangeImageOrder(ids: [String]) async throws {
+        Logger.fsPlugin.debug("Arranging image order for chapter")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for arrangeImageOrder")
             throw NSError(
@@ -453,10 +509,11 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         try await db.write { db in
-            if let chapterIdInt = Int(chapterId) {
-                if var chapterModel = try FsChapterModel.fetchOne(db, key: chapterIdInt) {
-                    chapterModel.order = ids.joined(separator: "|")
-                    try chapterModel.update(db)
+            // Update sequence for each image based on its position in the ids array
+            for (index, id) in ids.enumerated() {
+                if var imageModel = try FsImageModel.fetchOne(db, key: id) {
+                    imageModel.sequence = index
+                    try imageModel.update(db)
                 }
             }
         }

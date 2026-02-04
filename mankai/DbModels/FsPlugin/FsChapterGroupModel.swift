@@ -11,7 +11,6 @@ struct FsChapterGroupModel {
     var id: Int?
     var mangaId: String
     var title: String
-    var order: String
 
     static func createTable(_ db: Database) throws {
         try db.create(table: FsChapterGroupModel.databaseTableName, ifNotExists: true) {
@@ -19,7 +18,6 @@ struct FsChapterGroupModel {
 
             $0.column("mangaId", .text).notNull()
             $0.column("title", .text).notNull()
-            $0.column("order", .text).notNull()
 
             $0.foreignKey(["mangaId"], references: FsMangaModel.databaseTableName, onDelete: .cascade)
         }

@@ -65,15 +65,13 @@ struct UpdateChapterModal: View {
     }
 
     private func moveImage(from source: IndexSet, to destination: Int) {
-        guard let chapterId = chapter.id, let urls = urls else { return }
+        guard let urls = urls else { return }
         var ids = urls.map { URL(fileURLWithPath: $0).deletingPathExtension().lastPathComponent }
         ids.move(fromOffsets: source, toOffset: destination)
 
         Task {
             do {
-                try await plugin.arrangeImageOrder(
-                    mangaId: manga.id, chapterId: chapterId, ids: ids
-                )
+                try await plugin.arrangeImageOrder(ids: ids)
                 loadUrls()
             } catch {
                 showError(
@@ -85,7 +83,7 @@ struct UpdateChapterModal: View {
     }
 
     private func deleteImage(at offsets: IndexSet) {
-        guard let chapterId = chapter.id, let urls = urls else { return }
+        guard let urls = urls else { return }
         let idsToRemove: [String] = offsets.map { idx in
             URL(fileURLWithPath: urls[idx]).deletingPathExtension().lastPathComponent
         }
@@ -93,7 +91,7 @@ struct UpdateChapterModal: View {
         Task {
             do {
                 try await plugin.removeImages(
-                    mangaId: manga.id, chapterId: chapterId, ids: idsToRemove
+                    ids: idsToRemove
                 )
                 loadUrls()
             } catch {

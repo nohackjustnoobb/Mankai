@@ -123,6 +123,62 @@ struct UpdateMangaContent: View {
         }
     }
 
+    private func createChapterGroup() async {
+        let trimmedKey = newChapterGroup.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedKey.isEmpty else { return }
+
+        isProcessing = true
+
+        do {
+            guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
+                errorTitle = String(localized: "selectedPluginNotFound")
+                showingErrorAlert = true
+                isProcessing = false
+                return
+            }
+
+            try await selectedPlugin.upsertChapterGroup(mangaId: manga.id, title: trimmedKey)
+            manga.chapters[trimmedKey] = []
+            newChapterGroup = ""
+            showingAddChapterGroupAlert = false
+            isProcessing = false
+        } catch {
+            errorTitle = String(localized: "failedToAddChapterGroup")
+            errorMessage = error.localizedDescription
+            showingErrorAlert = true
+            isProcessing = false
+        }
+    }
+
+    private func deleteChapterGroup() async {
+        guard !chapterKeyToRemove.isEmpty else { return }
+
+        isProcessing = true
+
+        do {
+            guard let selectedPlugin = plugins.first(where: { $0.id == plugin }) else {
+                errorTitle = String(localized: "selectedPluginNotFound")
+                showingErrorAlert = true
+                isProcessing = false
+                return
+            }
+
+            if let id = try await selectedPlugin.getChapterGroupId(mangaId: manga.id, title: chapterKeyToRemove) {
+                try await selectedPlugin.deleteChapterGroup(id: id)
+            }
+
+            manga.chapters.removeValue(forKey: chapterKeyToRemove)
+            chapterKeyToRemove = ""
+            showingRemoveChapterGroupAlert = false
+            isProcessing = false
+        } catch {
+            errorTitle = String(localized: "failedToRemoveChapterGroup")
+            errorMessage = error.localizedDescription
+            showingErrorAlert = true
+            isProcessing = false
+        }
+    }
+
     private func updateManga() async {
         isProcessing = true
 
@@ -324,37 +380,39 @@ struct UpdateMangaContent: View {
                 .disabled(manga.genres.count >= Genre.allCases.count - 1)
             }
 
-            Section("chapters") {
-                if !manga.chapters.isEmpty {
-                    ForEach(Array(manga.chapters.keys), id: \.self) { chapterKey in
-                        HStack {
-                            Text(LocalizedStringKey(chapterKey))
-                            Spacer()
+            if !isCreatingManga {
+                Section("chapterGroups") {
+                    if !manga.chapters.isEmpty {
+                        ForEach(Array(manga.chapters.keys), id: \.self) { chapterKey in
+                            HStack {
+                                Text(LocalizedStringKey(chapterKey))
+                                Spacer()
 
-                            Button(action: {
-                                chapterKeyToRemove = chapterKey
-                                showingRemoveChapterGroupAlert = true
-                            }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .foregroundColor(.red)
+                                Button(action: {
+                                    chapterKeyToRemove = chapterKey
+                                    showingRemoveChapterGroupAlert = true
+                                }) {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundColor(.red)
+                                }
                             }
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button("remove") {
-                                chapterKeyToRemove = chapterKey
-                                showingRemoveChapterGroupAlert = true
+                            .swipeActions(edge: .trailing) {
+                                Button("remove") {
+                                    chapterKeyToRemove = chapterKey
+                                    showingRemoveChapterGroupAlert = true
+                                }
+                                .tint(.red)
                             }
-                            .tint(.red)
                         }
                     }
-                }
 
-                Button(action: {
-                    showingAddChapterGroupAlert = true
-                }) {
-                    HStack {
-                        Text("add")
-                        Spacer()
+                    Button(action: {
+                        showingAddChapterGroupAlert = true
+                    }) {
+                        HStack {
+                            Text("add")
+                            Spacer()
+                        }
                     }
                 }
             }
@@ -411,11 +469,9 @@ struct UpdateMangaContent: View {
             TextField("chapterGroup", text: $newChapterGroup)
 
             Button("add") {
-                let trimmedKey = newChapterGroup.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmedKey.isEmpty && !manga.chapters.keys.contains(trimmedKey) {
-                    manga.chapters[trimmedKey] = []
+                Task {
+                    await createChapterGroup()
                 }
-                newChapterGroup = ""
             }
 
             Button("cancel", role: .cancel) {
@@ -430,8 +486,9 @@ struct UpdateMangaContent: View {
             titleVisibility: .visible
         ) {
             Button("remove", role: .destructive) {
-                manga.chapters.removeValue(forKey: chapterKeyToRemove)
-                chapterKeyToRemove = ""
+                Task {
+                    await deleteChapterGroup()
+                }
             }
 
             Button("cancel", role: .cancel) {

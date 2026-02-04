@@ -342,9 +342,40 @@ struct SupabaseEngineConfigView: View {
             if supabaseEngine.isConfigured {
                 Section("credentials") {
                     if let user = supabaseEngine.currentUser {
-                        LabeledContent("email") {
-                            Text(user.email ?? "unknown")
-                                .foregroundColor(.secondary)
+                        HStack(spacing: 8) {
+                            if let avatarUrlString = user.userMetadata["avatar_url"]?.stringValue,
+                               let avatarUrl = URL(string: avatarUrlString)
+                            {
+                                AsyncImage(url: avatarUrl) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Image(systemName: "person.circle.fill")
+                                        .resizable()
+                                        .foregroundColor(.gray)
+                                }
+                                .frame(width: 32, height: 32)
+                                .clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                                    .foregroundColor(.gray)
+                                    .frame(width: 32, height: 32)
+                            }
+
+                            if let userName = user.userMetadata["preferred_username"]?.stringValue ?? user.userMetadata["user_name"]?.stringValue {
+                                VStack(alignment: .leading) {
+                                    Text(userName)
+                                    if let email = user.email {
+                                        Text(email)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            } else {
+                                Text(user.email ?? "unknown")
+                            }
                         }
 
                         Button(role: .destructive) {

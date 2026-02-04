@@ -566,6 +566,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
     // MARK: - Group Images
 
+    // TODO: advanced grouping
     private func groupImages() {
         groups = []
 

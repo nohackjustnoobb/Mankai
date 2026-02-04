@@ -13,11 +13,13 @@ struct UpdateChaptersModal: View {
     let chaptersKey: String
     var isRootOfSheet: Bool
 
-    @State private var chapters: [Chapter]
+    @State private var chapters: [FsChapterModel] = []
     @State private var showingAddAlert = false
     @State private var newChapterName = ""
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
+
+    @State private var chapterGroupId: Int? = nil
 
     @Environment(\.dismiss) private var dismiss
 
@@ -28,48 +30,73 @@ struct UpdateChaptersModal: View {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
-        chapters = manga.chapters[chaptersKey] ?? []
         self.isRootOfSheet = isRootOfSheet
+    }
+
+    private func fetchChapters() {
+        guard let groupId = chapterGroupId else { return }
+        Task {
+            do {
+                let fetchedChapters = try await plugin.getChapters(groupId: groupId)
+                chapters = fetchedChapters
+            } catch {
+                errorMessage = error.localizedDescription
+                showingErrorAlert = true
+            }
+        }
     }
 
     private func moveChapter(from source: IndexSet, to destination: Int) {
         chapters.move(fromOffsets: source, toOffset: destination)
-        update()
+
+        let currentChapters = chapters
+        Task {
+            do {
+                let ids = currentChapters.compactMap { $0.id }
+                try await plugin.arrangeChapterOrder(ids: ids)
+
+                fetchChapters()
+            } catch {
+                errorMessage = error.localizedDescription
+                showingErrorAlert = true
+            }
+        }
     }
 
     private func deleteChapter(at offsets: IndexSet) {
+        let chaptersToDelete = offsets.map { chapters[$0] }
         chapters.remove(atOffsets: offsets)
-        update()
-    }
-
-    private func renameChapter(for chapterId: String, to newTitle: String) {
-        chapters = chapters.map { chapter in
-            if chapter.id == chapterId {
-                return Chapter(id: chapterId, title: newTitle)
-            }
-
-            return chapter
-        }
-
-        update()
-    }
-
-    private func update(refetchChapters: Bool = false) {
-        guard var manga = Copy(of: manga) else {
-            return
-        }
-
-        manga.chapters[chaptersKey] = chapters
-        manga.latestChapter = chapters.last
-        manga.updatedAt = Date()
 
         Task {
             do {
-                try await plugin.updateManga(manga)
-
-                if refetchChapters {
-                    chapters = try await plugin.getDetailedManga(manga.id).chapters[chaptersKey] ?? []
+                for chapter in chaptersToDelete {
+                    if let id = chapter.id {
+                        try await plugin.deleteChapter(id: id, mangaId: manga.id)
+                    }
                 }
+
+                fetchChapters()
+            } catch {
+                errorMessage = error.localizedDescription
+                showingErrorAlert = true
+            }
+        }
+    }
+
+    private func renameChapter(for chapterId: Int, to newTitle: String) {
+        guard let index = chapters.firstIndex(where: { $0.id == chapterId }) else { return }
+
+        let sequence = chapters[index].sequence
+
+        Task {
+            do {
+                guard let groupId = chapterGroupId else {
+                    throw NSError(domain: "UpdateChaptersModal", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")])
+                }
+
+                try await plugin.upsertChapter(id: chapterId, title: newTitle, sequence: sequence, chapterGroupId: groupId)
+
+                fetchChapters()
             } catch {
                 errorMessage = error.localizedDescription
                 showingErrorAlert = true
@@ -91,11 +118,15 @@ struct UpdateChaptersModal: View {
                             UpdateChapterModal(
                                 plugin: plugin,
                                 manga: manga,
-                                chapter: chapter,
-                                onRename: renameChapter
+                                chapter: Chapter(id: String(chapter.id!), title: chapter.title),
+                                onRename: { id, title in
+                                    if let intId = Int(id) {
+                                        renameChapter(for: intId, to: title)
+                                    }
+                                }
                             )
                         }) {
-                            Text(chapter.title ?? chapter.id ?? "nil")
+                            Text(chapter.title)
                                 .foregroundColor(.primary)
                         }
                         .padding(.horizontal, 20)
@@ -144,9 +175,24 @@ struct UpdateChaptersModal: View {
             Button("add") {
                 let trimmedName = newChapterName.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmedName.isEmpty {
-                    let newChapter = Chapter(title: trimmedName)
-                    chapters.append(newChapter)
-                    update(refetchChapters: true)
+                    Task {
+                        do {
+                            guard let groupId = chapterGroupId else {
+                                throw NSError(domain: "UpdateChaptersModal", code: 1, userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"])
+                            }
+
+                            // Determine sequence based on max sequence
+                            let maxSequence = chapters.map(\.sequence).max() ?? -1
+                            let newSequence = maxSequence + 1
+
+                            try await plugin.upsertChapter(title: trimmedName, sequence: newSequence, chapterGroupId: groupId)
+
+                            fetchChapters()
+                        } catch {
+                            errorMessage = error.localizedDescription
+                            showingErrorAlert = true
+                        }
+                    }
                 }
                 newChapterName = ""
             }
@@ -172,6 +218,19 @@ struct UpdateChaptersModal: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+        }
+        .task {
+            do {
+                if let groupId = try await plugin.getChapterGroupId(mangaId: manga.id, title: chaptersKey) {
+                    self.chapterGroupId = groupId
+                    fetchChapters()
+                } else {
+                    dismiss()
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+                showingErrorAlert = true
             }
         }
     }
