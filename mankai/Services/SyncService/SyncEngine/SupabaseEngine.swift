@@ -155,6 +155,47 @@ class SupabaseEngine: SyncEngine {
         defaults.removeObject(forKey: "SupabaseEngine.lastSyncTime.saveds")
     }
 
+    // MARK: - Sync Payloads
+
+    private struct SyncPayload: Encodable {
+        let saveds: [SyncSaved]
+        let records: [SyncRecord]
+    }
+
+    private struct SyncSaved: Encodable {
+        let mangaId: String
+        let pluginId: String
+        let datetime: String
+        let updates: Bool
+        let latestChapter: String
+
+        init(from saved: SavedModel) {
+            mangaId = saved.mangaId
+            pluginId = saved.pluginId
+            datetime = ISO8601DateFormatter().string(from: saved.datetime)
+            updates = saved.updates
+            latestChapter = saved.latestChapter
+        }
+    }
+
+    private struct SyncRecord: Encodable {
+        let mangaId: String
+        let pluginId: String
+        let datetime: String
+        let chapterId: String?
+        let chapterTitle: String?
+        let page: Int
+
+        init(from record: RecordModel) {
+            mangaId = record.mangaId
+            pluginId = record.pluginId
+            datetime = ISO8601DateFormatter().string(from: record.datetime)
+            chapterId = record.chapterId
+            chapterTitle = record.chapterTitle
+            page = record.page
+        }
+    }
+
     override func sync() async throws {
         guard let supabase = supabase else {
             throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
@@ -191,47 +232,6 @@ class SupabaseEngine: SyncEngine {
         defaults.set(now, forKey: "SupabaseEngine.lastSyncTime.records")
 
         Logger.supabaseEngine.debug("Sync completed")
-    }
-
-    // MARK: - Sync Payloads
-
-    private struct SyncPayload: Encodable {
-        let saveds: [SyncSaved]
-        let records: [SyncRecord]
-    }
-
-    private struct SyncSaved: Encodable {
-        let mangaId: String
-        let pluginId: String
-        let datetime: Date
-        let updates: Bool
-        let latestChapter: String
-
-        init(from saved: SavedModel) {
-            mangaId = saved.mangaId
-            pluginId = saved.pluginId
-            datetime = saved.datetime
-            updates = saved.updates
-            latestChapter = saved.latestChapter
-        }
-    }
-
-    private struct SyncRecord: Encodable {
-        let mangaId: String
-        let pluginId: String
-        let datetime: Date
-        let chapterId: String?
-        let chapterTitle: String?
-        let page: Int
-
-        init(from record: RecordModel) {
-            mangaId = record.mangaId
-            pluginId = record.pluginId
-            datetime = record.datetime
-            chapterId = record.chapterId
-            chapterTitle = record.chapterTitle
-            page = record.page
-        }
     }
 
     override func addSaveds(_ saveds: [SavedModel]) async throws {
