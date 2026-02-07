@@ -9,13 +9,29 @@ import Foundation
 
 enum SettingsKey: String {
     case inMemoryCacheExpiryDuration
-    case imageLayout
-    case readingDirection
-    case tapNavigation
-    case snapToPage
-    case softSnap
     case hideBuiltInPlugins
     case showDebugScreen
+
+    case readerType
+
+    // Continuous Reader
+    case CR_imageLayout
+    case CR_readingDirection
+    case CR_tapNavigation
+    case CR_snapToPage
+    case CR_softSnap
+
+    // Paged Reader
+    case PR_imageLayout
+    case PR_navigationOrientation
+    case PR_readingDirection
+    case PR_tapNavigation
+    case PR_tapNavigationBehavior
+}
+
+enum ReaderType: Int {
+    case continuous = 1
+    case paged = 2
 }
 
 enum ImageLayout: Int {
@@ -27,6 +43,16 @@ enum ImageLayout: Int {
 enum ReadingDirection: Int {
     case leftToRight = 1
     case rightToLeft = 2
+}
+
+enum TapBehavior: Int {
+    case previousNext = 1 // Left = previous, Right = next
+    case followReadingDirection = 2 // Follow reading direction
+}
+
+enum NavigationOrientation: Int {
+    case horizontal = 1
+    case vertical = 2
 }
 
 enum CacheDuration: Double {

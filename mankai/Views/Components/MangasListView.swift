@@ -51,7 +51,9 @@ struct MangasListView: View {
     var body: some View {
         LazyVGrid(
             columns: [
-                GridItem(.adaptive(minimum: UIDevice.current.userInterfaceIdiom == .pad ? 140 : 110), spacing: 12),
+                GridItem(
+                    .adaptive(minimum: UIDevice.current.userInterfaceIdiom == .pad ? 140 : 110), spacing: 12
+                ),
             ], spacing: 12
         ) {
             if let mangas = mangas, let plugin = plugin {

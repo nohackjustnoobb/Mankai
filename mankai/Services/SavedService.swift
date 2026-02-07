@@ -210,14 +210,16 @@ class SavedService: ObservableObject {
         do {
             let result = try DbService.shared.appDb?.read { db in
                 if let date = date {
-                    return try SavedModel
-                        .filter(Column("datetime") > date)
-                        .order(Column("datetime").asc)
-                        .fetchAll(db)
+                    return
+                        try SavedModel
+                            .filter(Column("datetime") > date)
+                            .order(Column("datetime").asc)
+                            .fetchAll(db)
                 } else {
-                    return try SavedModel
-                        .order(Column("datetime").asc)
-                        .fetchAll(db)
+                    return
+                        try SavedModel
+                            .order(Column("datetime").asc)
+                            .fetchAll(db)
                 }
             }
             return result ?? []
@@ -252,14 +254,16 @@ class SavedService: ObservableObject {
         do {
             let result = try DbService.shared.appDb?.read { db in
                 // Fetch all saved items, sorted by mangaId and pluginId
-                let saveds = try SavedModel
-                    .order(Column("mangaId").asc, Column("pluginId").asc)
-                    .fetchAll(db)
+                let saveds =
+                    try SavedModel
+                        .order(Column("mangaId").asc, Column("pluginId").asc)
+                        .fetchAll(db)
 
                 // Concatenate primary keys
-                let keyString = saveds
-                    .map { "\($0.mangaId)|\($0.pluginId)" }
-                    .joined()
+                let keyString =
+                    saveds
+                        .map { "\($0.mangaId)|\($0.pluginId)" }
+                        .joined()
 
                 // Generate SHA256 hash
                 let data = Data(keyString.utf8)

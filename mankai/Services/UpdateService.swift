@@ -61,7 +61,10 @@ class UpdateService: ObservableObject {
                         try await SyncService.shared.sync(wait: true, showError: false)
                     } catch {
                         Logger.updateService.error("Sync failed before update", error: error)
-                        throw NSError(domain: "UpdateService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")])
+                        throw NSError(
+                            domain: "UpdateService", code: 0,
+                            userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")]
+                        )
                     }
                 }
             } else {
@@ -71,7 +74,10 @@ class UpdateService: ObservableObject {
                     try await SyncService.shared.sync(wait: true, showError: false)
                 } catch {
                     Logger.updateService.error("Initial sync failed", error: error)
-                    throw NSError(domain: "UpdateService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")])
+                    throw NSError(
+                        domain: "UpdateService", code: 0,
+                        userInfo: [NSLocalizedDescriptionKey: String(localized: "syncFailed")]
+                    )
                 }
             }
         }
@@ -94,7 +100,8 @@ class UpdateService: ObservableObject {
         var updatedMangaModels: [MangaModel] = []
 
         for (pluginId, pluginSaveds) in savedsByPlugin {
-            Logger.updateService.debug("Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
+            Logger.updateService.debug(
+                "Checking updates for plugin: \(pluginId) (\(pluginSaveds.count) mangas)")
             // Get the plugin
             guard let plugin = PluginService.shared.getPlugin(pluginId) else {
                 Logger.updateService.warning("Plugin not found: \(pluginId)")
@@ -107,7 +114,8 @@ class UpdateService: ObservableObject {
             // Fetch updated manga data from the plugin
             do {
                 let updatedMangas = try await plugin.getMangas(mangaIds)
-                Logger.updateService.debug("Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
+                Logger.updateService.debug(
+                    "Fetched \(updatedMangas.count) updated mangas from plugin \(pluginId)")
 
                 // Create a dictionary for quick lookup
                 var mangaDict: [String: Manga] = [:]
@@ -138,7 +146,8 @@ class UpdateService: ObservableObject {
                         }
 
                         if hasUpdate {
-                            Logger.updateService.info("Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
+                            Logger.updateService.info(
+                                "Found update for manga: \(saved.mangaId) (Plugin: \(pluginId))")
                             // Create updated saved model
                             var updatedSaved = saved
                             updatedSaved.latestChapter = newChapter.encode()

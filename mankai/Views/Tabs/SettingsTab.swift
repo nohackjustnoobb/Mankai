@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct SettingsTab: View {
-    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool = SettingsDefaults.showDebugScreen
+    @AppStorage(SettingsKey.showDebugScreen.rawValue) private var showDebugScreen: Bool =
+        SettingsDefaults.showDebugScreen
 
     var body: some View {
         NavigationStack {

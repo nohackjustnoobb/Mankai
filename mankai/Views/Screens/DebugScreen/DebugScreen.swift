@@ -176,9 +176,10 @@ struct DebugScreen: View {
                             )
 
                             // Test Fetch
-                            let result = try! await JsRuntime.shared.execute(
-                                "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
-                            ) as Any
+                            let result =
+                                try! await JsRuntime.shared.execute(
+                                    "return (await fetch('https://httpbin.org/get',{headers:{\"test-header\":\"is this working?\"}})).json()"
+                                ) as Any
                             Logger.jsRuntime.debug("\(result)")
 
                             // Test t2s/s2t
@@ -193,7 +194,8 @@ struct DebugScreen: View {
                             Logger.jsRuntime.debug("s2t: \(s2t ?? "nil")")
 
                             // Test setValue/getValue/removeValue
-                            let jsPlugin = PluginService.shared.plugins.first(where: { $0 is JsPlugin }) as! JsPlugin
+                            let jsPlugin =
+                                PluginService.shared.plugins.first(where: { $0 is JsPlugin }) as! JsPlugin
                             let setValue = try! await JsRuntime.shared.execute(
                                 "return await setValue('test', 'test')", from: "DEBUG", plugin: jsPlugin
                             )

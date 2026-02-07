@@ -108,7 +108,8 @@ class SyncService: ObservableObject {
             try? await UpdateService.shared.update()
         }
 
-        syncTimer = Timer.scheduledTimer(withTimeInterval: syncInterval, repeats: true) { [weak self] _ in
+        syncTimer = Timer.scheduledTimer(withTimeInterval: syncInterval, repeats: true) {
+            [weak self] _ in
             Task {
                 try? await self?.sync()
             }
@@ -179,7 +180,10 @@ class SyncService: ObservableObject {
         Logger.syncService.debug("Starting sync")
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
+            throw NSError(
+                domain: "SyncService", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
+            )
         }
 
         if UserDefaults.standard.bool(forKey: "SyncService.initialSync") {
@@ -201,7 +205,10 @@ class SyncService: ObservableObject {
     func addSaveds(_ saveds: [SavedModel]) async throws {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
+            throw NSError(
+                domain: "SyncService", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
+            )
         }
 
         try await engine.addSaveds(saveds)
@@ -214,7 +221,10 @@ class SyncService: ObservableObject {
     func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         guard let engine = engine else {
             Logger.syncService.error("No sync engine available")
-            throw NSError(domain: "SyncService", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")])
+            throw NSError(
+                domain: "SyncService", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "noSyncEngine")]
+            )
         }
 
         try await engine.removeSaveds(saveds)

@@ -184,7 +184,12 @@ struct AddPluginModal: View {
                             Text("add")
                         }
                     }
-                    .disabled(isProcessing || (selectedPluginType == .jsPlugin && (useJson ? jsonInput.isEmpty : urlInput.isEmpty)) || (selectedPluginType == .fsPlugin && selectedFolder == nil) || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
+                    .disabled(
+                        isProcessing
+                            || (selectedPluginType == .jsPlugin
+                                && (useJson ? jsonInput.isEmpty : urlInput.isEmpty))
+                            || (selectedPluginType == .fsPlugin && selectedFolder == nil)
+                            || (selectedPluginType == .httpPlugin && urlInput.isEmpty))
                 }
             }
             .fileImporter(

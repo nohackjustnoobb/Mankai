@@ -19,7 +19,8 @@ class AppDirPlugin: ReadWriteFsPlugin {
             try! fileManager.createDirectory(at: mangaDir, withIntermediateDirectories: true)
         }
 
-        Logger.appDirPlugin.info("AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
+        Logger.appDirPlugin.info(
+            "AppDirPlugin initialized with PATH: \(mangaDir.path(percentEncoded: false))")
 
         super.init(url: mangaDir, id: "mankai")
     }

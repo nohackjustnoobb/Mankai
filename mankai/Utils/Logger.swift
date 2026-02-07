@@ -66,7 +66,9 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func debug(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+    func debug(
+        _ message: String, file _: String = #file, function: String = #function, line: Int = #line
+    ) {
         osLogger.debug("[\(function):\(line)] \(message)")
     }
 
@@ -76,7 +78,9 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func info(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+    func info(
+        _ message: String, file _: String = #file, function: String = #function, line: Int = #line
+    ) {
         osLogger.info("[\(function):\(line)] \(message)")
     }
 
@@ -86,7 +90,9 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func notice(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+    func notice(
+        _ message: String, file _: String = #file, function: String = #function, line: Int = #line
+    ) {
         osLogger.notice("[\(function):\(line)] \(message)")
     }
 
@@ -96,7 +102,9 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func warning(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+    func warning(
+        _ message: String, file _: String = #file, function: String = #function, line: Int = #line
+    ) {
         osLogger.warning("[\(function):\(line)] \(message)")
     }
 
@@ -107,7 +115,10 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func error(_ message: String, error: Error? = nil, file _: String = #file, function: String = #function, line: Int = #line) {
+    func error(
+        _ message: String, error: Error? = nil, file _: String = #file, function: String = #function,
+        line: Int = #line
+    ) {
         if let error = error {
             osLogger.error("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
         } else {
@@ -122,7 +133,10 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func critical(_ message: String, error: Error? = nil, file _: String = #file, function: String = #function, line: Int = #line) {
+    func critical(
+        _ message: String, error: Error? = nil, file _: String = #file, function: String = #function,
+        line: Int = #line
+    ) {
         if let error = error {
             osLogger.critical("[\(function):\(line)] \(message) - Error: \(error.localizedDescription)")
         } else {
@@ -136,7 +150,9 @@ class Logger {
     ///   - file: The file where the log is called (automatically populated)
     ///   - function: The function where the log is called (automatically populated)
     ///   - line: The line number where the log is called (automatically populated)
-    func trace(_ message: String, file _: String = #file, function: String = #function, line: Int = #line) {
+    func trace(
+        _ message: String, file _: String = #file, function: String = #function, line: Int = #line
+    ) {
         osLogger.trace("[\(function):\(line)] \(message)")
     }
 }

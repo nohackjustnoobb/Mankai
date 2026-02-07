@@ -224,7 +224,9 @@ struct HomeTab: View {
             }
 
             if let mangaModel = try? DbService.shared.appDb?.read({ db in
-                try MangaModel.filter(Column("mangaId") == saved.mangaId && Column("pluginId") == saved.pluginId).fetchOne(db)
+                try MangaModel.filter(
+                    Column("mangaId") == saved.mangaId && Column("pluginId") == saved.pluginId
+                ).fetchOne(db)
             }) {
                 if let mangaData = mangaModel.info.data(using: .utf8),
                    let mangaDict = try? JSONSerialization.jsonObject(with: mangaData) as? [String: Any],

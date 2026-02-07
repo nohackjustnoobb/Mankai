@@ -33,7 +33,9 @@ class DbService {
         do {
             var config = Configuration()
             config.busyMode = .timeout(5.0)
-            let dbPool = try DatabasePool(path: fullUrl.path(percentEncoded: false), configuration: config)
+            let dbPool = try DatabasePool(
+                path: fullUrl.path(percentEncoded: false), configuration: config
+            )
 
             try dbPool.write { db in
                 try MangaModel.createTable(db)

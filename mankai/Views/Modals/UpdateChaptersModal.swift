@@ -91,10 +91,15 @@ struct UpdateChaptersModal: View {
         Task {
             do {
                 guard let groupId = chapterGroupId else {
-                    throw NSError(domain: "UpdateChaptersModal", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")])
+                    throw NSError(
+                        domain: "UpdateChaptersModal", code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: String(localized: "chapterGroupNotFound")]
+                    )
                 }
 
-                try await plugin.upsertChapter(id: chapterId, title: newTitle, sequence: sequence, chapterGroupId: groupId)
+                try await plugin.upsertChapter(
+                    id: chapterId, title: newTitle, sequence: sequence, chapterGroupId: groupId
+                )
 
                 fetchChapters()
             } catch {
@@ -178,14 +183,19 @@ struct UpdateChaptersModal: View {
                     Task {
                         do {
                             guard let groupId = chapterGroupId else {
-                                throw NSError(domain: "UpdateChaptersModal", code: 1, userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"])
+                                throw NSError(
+                                    domain: "UpdateChaptersModal", code: 1,
+                                    userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"]
+                                )
                             }
 
                             // Determine sequence based on max sequence
                             let maxSequence = chapters.map(\.sequence).max() ?? -1
                             let newSequence = maxSequence + 1
 
-                            try await plugin.upsertChapter(title: trimmedName, sequence: newSequence, chapterGroupId: groupId)
+                            try await plugin.upsertChapter(
+                                title: trimmedName, sequence: newSequence, chapterGroupId: groupId
+                            )
 
                             fetchChapters()
                         } catch {

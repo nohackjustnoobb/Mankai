@@ -73,7 +73,10 @@ class SupabaseEngine: SyncEngine {
         resetClient()
 
         guard let validUrl = URL(string: url) else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
+            )
         }
 
         _url = url
@@ -112,11 +115,16 @@ class SupabaseEngine: SyncEngine {
 
     func login(provider: Provider) async throws {
         guard let supabase = supabase else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")]
+            )
         }
 
         Logger.supabaseEngine.info("Logging in with provider: \(provider)")
-        try await supabase.auth.signInWithOAuth(provider: provider, redirectTo: URL(string: "mankai://login-callback")!)
+        try await supabase.auth.signInWithOAuth(
+            provider: provider, redirectTo: URL(string: "mankai://login-callback")!
+        )
 
         try? await SyncService.shared.onEngineChange()
 
@@ -127,7 +135,10 @@ class SupabaseEngine: SyncEngine {
 
     func logout() async throws {
         guard let supabase = supabase else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotConfigured")]
+            )
         }
 
         Logger.supabaseEngine.info("Logging out")
@@ -198,7 +209,10 @@ class SupabaseEngine: SyncEngine {
 
     override func sync() async throws {
         guard let supabase = supabase else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
+            )
         }
 
         Logger.supabaseEngine.debug("Syncing")
@@ -220,7 +234,8 @@ class SupabaseEngine: SyncEngine {
             records: localRecords.map { SyncRecord(from: $0) }
         )
 
-        Logger.supabaseEngine.debug("Uploading \(localSaveds.count) saveds and \(localRecords.count) records")
+        Logger.supabaseEngine.debug(
+            "Uploading \(localSaveds.count) saveds and \(localRecords.count) records")
         try await supabase.functions.invoke("sync", options: .init(body: syncPayload))
 
         // Pull data from remote
@@ -236,7 +251,10 @@ class SupabaseEngine: SyncEngine {
 
     override func addSaveds(_ saveds: [SavedModel]) async throws {
         guard let supabase = supabase else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
+            )
         }
 
         guard !saveds.isEmpty else { return }
@@ -255,7 +273,10 @@ class SupabaseEngine: SyncEngine {
 
     override func removeSaveds(_ saveds: [(mangaId: String, pluginId: String)]) async throws {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
+            )
         }
 
         guard !saveds.isEmpty else { return }
@@ -366,7 +387,10 @@ class SupabaseEngine: SyncEngine {
 
     private func getSaveds(_ since: Date? = nil) async throws -> [SupabaseSaved] {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
+            )
         }
 
         Logger.supabaseEngine.debug("SupabaseEngine getting saveds since: \(String(describing: since))")
@@ -385,9 +409,10 @@ class SupabaseEngine: SyncEngine {
         let limit = 1000
 
         while true {
-            let chunkQuery = query
-                .order("datetime", ascending: false)
-                .range(from: offset, to: offset + limit - 1)
+            let chunkQuery =
+                query
+                    .order("datetime", ascending: false)
+                    .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseSaved] = try await chunkQuery.execute().value
 
@@ -426,10 +451,14 @@ class SupabaseEngine: SyncEngine {
 
     private func getRecords(_ since: Date? = nil) async throws -> [RecordModel] {
         guard let supabase = supabase, let userId = currentUser?.id else {
-            throw NSError(domain: "SupabaseEngine", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")])
+            throw NSError(
+                domain: "SupabaseEngine", code: 0,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "supabaseNotReady")]
+            )
         }
 
-        Logger.supabaseEngine.debug("SupabaseEngine getting records since: \(String(describing: since))")
+        Logger.supabaseEngine.debug(
+            "SupabaseEngine getting records since: \(String(describing: since))")
 
         // Supabase/PostgREST uses ISO8601 strings for date comparison
         var query = supabase.from("Record")
@@ -448,9 +477,10 @@ class SupabaseEngine: SyncEngine {
 
         while true {
             // Apply order and range to the filtered query
-            let chunkQuery = query
-                .order("datetime", ascending: false)
-                .range(from: offset, to: offset + limit - 1)
+            let chunkQuery =
+                query
+                    .order("datetime", ascending: false)
+                    .range(from: offset, to: offset + limit - 1)
 
             let chunk: [SupabaseRecord] = try await chunkQuery.execute().value
 

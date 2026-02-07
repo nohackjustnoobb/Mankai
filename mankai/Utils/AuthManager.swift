@@ -44,7 +44,10 @@ class AuthManager {
         return _username != nil && _password != nil && _refreshToken != nil && _accessToken != nil
     }
 
-    init(id: String, postSave: (() -> Void)? = nil, postLogin: (() -> Void)? = nil, postLogout: (() -> Void)? = nil) {
+    init(
+        id: String, postSave: (() -> Void)? = nil, postLogin: (() -> Void)? = nil,
+        postLogout: (() -> Void)? = nil
+    ) {
         _id = id
         self.postSave = postSave
         self.postLogin = postLogin
@@ -115,7 +118,8 @@ class AuthManager {
         guard let url = URL(string: serverUrl + "/auth/login") else {
             Logger.authManager.error("AuthManager invalid server URL: \(serverUrl)")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
             )
         }
 
@@ -132,10 +136,13 @@ class AuthManager {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            Logger.authManager.error("AuthManager login failed with status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+            Logger.authManager.error(
+                "AuthManager login failed with status code: \((response as? HTTPURLResponse)?.statusCode ?? -1)"
+            )
             logout()
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
             )
         }
 
@@ -143,7 +150,8 @@ class AuthManager {
         else {
             Logger.authManager.error("AuthManager invalid JSON response during login")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
             )
         }
 
@@ -173,7 +181,8 @@ class AuthManager {
         guard let url = URL(string: serverUrl + "/auth/refresh") else {
             Logger.authManager.error("AuthManager invalid server URL: \(serverUrl)")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidServerUrl")]
             )
         }
 
@@ -191,7 +200,8 @@ class AuthManager {
         guard let httpResponse = response as? HTTPURLResponse else {
             Logger.authManager.error("AuthManager invalid response during token refresh")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
             )
         }
 
@@ -203,9 +213,11 @@ class AuthManager {
         }
 
         guard httpResponse.statusCode == 200 else {
-            Logger.authManager.error("AuthManager refresh failed with status code: \(httpResponse.statusCode)")
+            Logger.authManager.error(
+                "AuthManager refresh failed with status code: \(httpResponse.statusCode)")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "refreshFailed")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "refreshFailed")]
             )
         }
 
@@ -213,7 +225,8 @@ class AuthManager {
         else {
             Logger.authManager.error("AuthManager invalid JSON response during token refresh")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidJsonResponse")]
             )
         }
 
@@ -236,15 +249,21 @@ class AuthManager {
         return try await request(method: "GET", path: path, query: query, body: nil)
     }
 
-    func post(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
+    func post(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
+        Data, HTTPURLResponse
+    ) {
         return try await request(method: "POST", path: path, query: query, body: body)
     }
 
-    func patch(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
+    func patch(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
+        Data, HTTPURLResponse
+    ) {
         return try await request(method: "PATCH", path: path, query: query, body: body)
     }
 
-    func put(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (Data, HTTPURLResponse) {
+    func put(path: String, query: [String: String]? = nil, body: Data? = nil) async throws -> (
+        Data, HTTPURLResponse
+    ) {
         return try await request(method: "PUT", path: path, query: query, body: body)
     }
 
@@ -260,7 +279,8 @@ class AuthManager {
         guard let serverUrl = _serverUrl else {
             Logger.authManager.error("AuthManager missing server URL")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "missingServerUrl")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "missingServerUrl")]
             )
         }
 
@@ -276,7 +296,8 @@ class AuthManager {
         guard let url = URL(string: urlString) else {
             Logger.authManager.error("AuthManager invalid URL: \(urlString)")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
             )
         }
 
@@ -317,7 +338,8 @@ class AuthManager {
         } else {
             Logger.authManager.error("AuthManager invalid response type")
             throw NSError(
-                domain: "AuthManager", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
+                domain: "AuthManager", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidResponse")]
             )
         }
     }

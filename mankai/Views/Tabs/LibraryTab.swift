@@ -9,7 +9,8 @@ import SwiftUI
 
 struct LibraryTab: View {
     let pluginService = PluginService.shared
-    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool = SettingsDefaults.hideBuiltInPlugins
+    @AppStorage(SettingsKey.hideBuiltInPlugins.rawValue) private var hideBuiltInPlugins: Bool =
+        SettingsDefaults.hideBuiltInPlugins
     @State var plugins: [Plugin] = []
 
     @State var query: String = ""
@@ -125,7 +126,9 @@ struct LibraryTab: View {
                     allSuggestions.formUnion(suggestions)
                 } catch {
                     // Continue with other plugins if one fails
-                    Logger.pluginService.error("Failed to get suggestions from plugin \(plugin.id)", error: error)
+                    Logger.pluginService.error(
+                        "Failed to get suggestions from plugin \(plugin.id)", error: error
+                    )
                 }
             }
 

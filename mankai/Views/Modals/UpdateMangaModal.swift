@@ -163,7 +163,9 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            if let id = try await selectedPlugin.getChapterGroupId(mangaId: manga.id, title: chapterKeyToRemove) {
+            if let id = try await selectedPlugin.getChapterGroupId(
+                mangaId: manga.id, title: chapterKeyToRemove
+            ) {
                 try await selectedPlugin.deleteChapterGroup(id: id)
             }
 

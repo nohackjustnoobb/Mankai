@@ -12,10 +12,20 @@ enum SettingsDefaults {
     static let hideBuiltInPlugins: Bool = false
     static let showDebugScreen: Bool = false
 
-    // Reader Defaults
-    static let imageLayout: ImageLayout = .auto
-    static let readingDirection: ReadingDirection = .rightToLeft
-    static let tapNavigation: Bool = true
-    static let snapToPage: Bool = false
-    static let softSnap: Bool = false
+    // Default Reader
+    static let readerType: ReaderType = .continuous
+
+    // Continuous Reader Defaults
+    static let CR_imageLayout: ImageLayout = .auto
+    static let CR_readingDirection: ReadingDirection = .rightToLeft
+    static let CR_tapNavigation: Bool = true
+    static let CR_snapToPage: Bool = false
+    static let CR_softSnap: Bool = false
+
+    // Paged Reader Defaults
+    static let PR_imageLayout: ImageLayout = .auto
+    static let PR_navigationOrientation: NavigationOrientation = .horizontal
+    static let PR_readingDirection: ReadingDirection = .rightToLeft
+    static let PR_tapNavigation: Bool = true
+    static let PR_tapNavigationBehavior: TapBehavior = .followReadingDirection
 }

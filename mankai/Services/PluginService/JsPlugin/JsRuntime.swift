@@ -28,8 +28,10 @@ class JsRuntime: NSObject {
     private lazy var jsOpenCC: String = loadScript("opencc")
     private lazy var jsStorage: String = loadScript("storage")
 
-    private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .traditionalize)
-    private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(options: .simplify)
+    private lazy var s2tConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
+        options: .traditionalize)
+    private lazy var t2sConverter: OpenCC.ChineseConverter? = try? OpenCC.ChineseConverter(
+        options: .simplify)
 
     private func loadScript(_ name: String) -> String {
         if let url = Bundle.main.url(forResource: name, withExtension: "js") {
@@ -143,7 +145,8 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
         guard let requestURL = URL(string: url) else {
             throw NSError(
-                domain: "JsRuntime", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
+                domain: "JsRuntime", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
             )
         }
 
@@ -199,7 +202,8 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
 
         let start = Date()
         defer {
-            Logger.jsRuntime.debug("\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms")
+            Logger.jsRuntime.debug(
+                "\(methodStr) process time: \(Date().timeIntervalSince(start) * 1000)ms")
         }
 
         let method = Method(rawValue: body["method"] as! String)
@@ -272,7 +276,9 @@ extension JsRuntime: WKScriptMessageHandlerWithReply {
             }
 
             do {
-                let kvPair = try await dbPool.read { db in try JsRuntimeKvPairModel.fetchOne(db, key: ["pluginId": pluginId, "key": key]) }
+                let kvPair = try await dbPool.read { db in
+                    try JsRuntimeKvPairModel.fetchOne(db, key: ["pluginId": pluginId, "key": key])
+                }
                 return (kvPair?.value, nil)
             } catch {
                 Logger.jsRuntime.error("Failed to fetch value", error: error)

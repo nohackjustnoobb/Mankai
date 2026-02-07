@@ -65,9 +65,13 @@ class HistoryService: ObservableObject {
         do {
             try await DbService.shared.appDb?.write { db in
                 // Set updates to false in the corresponding saved if it exists
-                if var saved = try SavedModel
-                    .filter(Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId && Column("updates") == true)
-                    .fetchOne(db)
+                if var saved =
+                    try SavedModel
+                        .filter(
+                            Column("mangaId") == record.mangaId && Column("pluginId") == record.pluginId
+                                && Column("updates") == true
+                        )
+                        .fetchOne(db)
                 {
                     saved.updates = false
                     saved.datetime = Date()
@@ -158,7 +162,8 @@ class HistoryService: ObservableObject {
     ///   - offset: The offset to start retrieving records from.
     /// - Returns: A list of `RecordModel` objects.
     func getAll(limit: Int? = nil, offset: Int = 0) -> [RecordModel] {
-        Logger.historyService.debug("Getting all history records, limit: \(String(describing: limit)), offset: \(offset)")
+        Logger.historyService.debug(
+            "Getting all history records, limit: \(String(describing: limit)), offset: \(offset)")
         do {
             let result = try DbService.shared.appDb?.read { db in
                 var request = RecordModel.order(Column("datetime").desc)
@@ -184,13 +189,15 @@ class HistoryService: ObservableObject {
         do {
             let result = try DbService.shared.appDb?.read { db in
                 if let date = date {
-                    let request = RecordModel
-                        .filter(Column("datetime") > date)
-                        .order(Column("datetime").desc)
+                    let request =
+                        RecordModel
+                            .filter(Column("datetime") > date)
+                            .order(Column("datetime").desc)
                     return try request.fetchAll(db)
                 } else {
-                    let request = RecordModel
-                        .order(Column("datetime").desc)
+                    let request =
+                        RecordModel
+                            .order(Column("datetime").desc)
                     return try request.fetchAll(db)
                 }
             }

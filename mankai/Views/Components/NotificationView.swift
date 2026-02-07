@@ -104,7 +104,9 @@ struct NotificationContainerView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             .padding(.bottom, bottomPadding(for: geometry))
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: notificationService.notifications)
+        .animation(
+            .spring(response: 0.3, dampingFraction: 0.8), value: notificationService.notifications
+        )
         .allowsHitTesting(true)
     }
 

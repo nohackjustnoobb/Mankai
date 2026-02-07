@@ -494,7 +494,8 @@ class JsPlugin: Plugin {
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
-        Logger.jsPlugin.debug("Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
+        Logger.jsPlugin.debug(
+            "Getting list, page: \(page), genre: \(genre), status: \(status) (plugin: \(id))")
         // Check cache first
         let cacheKey = getCacheKey(
             for: .getList, with: [String(page), genre.rawValue, String(status.rawValue)]
@@ -734,7 +735,8 @@ class JsPlugin: Plugin {
         }
 
         if newPlugin.version != version {
-            Logger.jsPlugin.info("Updating plugin: \(id) from version \(version ?? "nil") to \(newPlugin.version ?? "nil")")
+            Logger.jsPlugin.info(
+                "Updating plugin: \(id) from version \(version ?? "nil") to \(newPlugin.version ?? "nil")")
 
             do {
                 _name = newPlugin._name

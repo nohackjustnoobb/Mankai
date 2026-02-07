@@ -364,7 +364,9 @@ struct SupabaseEngineConfigView: View {
                                     .frame(width: 32, height: 32)
                             }
 
-                            if let userName = user.userMetadata["preferred_username"]?.stringValue ?? user.userMetadata["user_name"]?.stringValue {
+                            if let userName = user.userMetadata["preferred_username"]?.stringValue
+                                ?? user.userMetadata["user_name"]?.stringValue
+                            {
                                 VStack(alignment: .leading) {
                                     Text(userName)
                                     if let email = user.email {
@@ -397,7 +399,7 @@ struct SupabaseEngineConfigView: View {
                         }
                     } else {
                         Picker("provider", selection: $selectedProvider) {
-                            ForEach(Provider.allCases, id: \ .self) { provider in
+                            ForEach(Provider.allCases, id: \.self) { provider in
                                 Text(provider.rawValue.capitalized)
                                     .tag(provider)
                             }

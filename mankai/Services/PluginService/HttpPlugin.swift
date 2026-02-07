@@ -25,7 +25,10 @@ class HttpPlugin: Plugin {
     override var repository: String? { _repository }
     override var availableGenres: [Genre] { _availableGenres }
     override var configs: [Config] {
-        [Config(key: "username", name: "username", type: .text, defaultValue: ""), Config(key: "password", name: "password", type: .text, defaultValue: "")]
+        [
+            Config(key: "username", name: "username", type: .text, defaultValue: ""),
+            Config(key: "password", name: "password", type: .text, defaultValue: ""),
+        ]
     }
 
     private var _authenticationEnabled: Bool
@@ -41,7 +44,8 @@ class HttpPlugin: Plugin {
     // MARK: - Init
 
     init(
-        id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil, version: String? = nil, description: String? = nil,
+        id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
+        version: String? = nil, description: String? = nil,
         authors: [String] = [],
         repository: String? = nil,
         availableGenres: [Genre] = []
@@ -79,7 +83,8 @@ class HttpPlugin: Plugin {
             (json["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
 
         return HttpPlugin(
-            id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name, version: version, description: description, authors: authors,
+            id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name,
+            version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres
         )
     }
@@ -186,7 +191,12 @@ class HttpPlugin: Plugin {
         // update meta
         if !isMetaUpdated {
             let metaUrl = URL(string: baseUrl)
-            guard let metaUrl = metaUrl else { throw NSError(domain: "HttpPlugin", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]) }
+            guard let metaUrl = metaUrl else {
+                throw NSError(
+                    domain: "HttpPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidUrl")]
+                )
+            }
             let (metaData, _) = try await URLSession.shared.data(from: metaUrl)
             let metaJson = try JSONSerialization.jsonObject(with: metaData) as? [String: Any]
             guard let metaJson = metaJson else { return }
@@ -196,7 +206,8 @@ class HttpPlugin: Plugin {
             _description = metaJson["description"] as? String
             _authors = metaJson["authors"] as? [String] ?? []
             _repository = metaJson["repository"] as? String
-            _availableGenres = (metaJson["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
+            _availableGenres =
+                (metaJson["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
             _authenticationEnabled = metaJson["authenticationEnabled"] as? Bool ?? false
 
             try savePlugin()
@@ -210,7 +221,10 @@ class HttpPlugin: Plugin {
 
         guard let username = username, let password = password else {
             Logger.httpPlugin.error("Username or password not set")
-            throw NSError(domain: "HttpPlugin", code: 1, userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")])
+            throw NSError(
+                domain: "HttpPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidCredentials")]
+            )
         }
 
         if authManager.serverUrl != baseUrl {
@@ -327,17 +341,22 @@ class HttpPlugin: Plugin {
 
     override func search(_ query: String, page: UInt) async throws -> [Manga] {
         try await setup()
-        let (data, _) = try await authManager.get(path: "/search", query: ["query": query, "page": String(page)])
+        let (data, _) = try await authManager.get(
+            path: "/search", query: ["query": query, "page": String(page)]
+        )
         return try JSONDecoder().decode([Manga].self, from: data)
     }
 
     override func getList(page: UInt, genre: Genre, status: Status) async throws -> [Manga] {
         try await setup()
-        let (data, _) = try await authManager.get(path: "/manga", query: [
-            "page": String(page),
-            "genre": genre.rawValue,
-            "status": String(status.rawValue),
-        ])
+        let (data, _) = try await authManager.get(
+            path: "/manga",
+            query: [
+                "page": String(page),
+                "genre": genre.rawValue,
+                "status": String(status.rawValue),
+            ]
+        )
         return try JSONDecoder().decode([Manga].self, from: data)
     }
 
@@ -357,7 +376,10 @@ class HttpPlugin: Plugin {
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         try await setup()
         guard let chapterId = chapter.id else {
-            throw NSError(domain: "HttpPlugin", code: 1, userInfo: [NSLocalizedDescriptionKey: "Chapter ID is missing"])
+            throw NSError(
+                domain: "HttpPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Chapter ID is missing"]
+            )
         }
         let (data, _) = try await authManager.get(path: "/manga/\(manga.id)/chapter/\(chapterId)")
         return try JSONDecoder().decode([String].self, from: data)

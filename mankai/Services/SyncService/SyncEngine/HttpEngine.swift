@@ -172,7 +172,10 @@ class HttpEngine: SyncEngine {
                           let latestChapter = dict["latestChapter"] as? String,
                           let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
                     else { return nil }
-                    return SavedModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates, latestChapter: latestChapter)
+                    return SavedModel(
+                        mangaId: mangaId, pluginId: pluginId, datetime: datetime, updates: updates,
+                        latestChapter: latestChapter
+                    )
                 }
 
                 if !receivedSaveds.isEmpty {
@@ -191,7 +194,10 @@ class HttpEngine: SyncEngine {
                     else { return nil }
                     let chapterId = dict["chapterId"] as? String
                     let chapterTitle = dict["chapterTitle"] as? String
-                    return RecordModel(mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId, chapterTitle: chapterTitle, page: page)
+                    return RecordModel(
+                        mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId,
+                        chapterTitle: chapterTitle, page: page
+                    )
                 }
 
                 if !receivedRecords.isEmpty {
