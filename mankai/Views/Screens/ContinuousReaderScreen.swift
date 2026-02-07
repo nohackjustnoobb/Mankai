@@ -25,7 +25,7 @@ let BOTTOM_OVERSCROLL_TEXT_TAG = 14
 
 let OVERSCROLL_THRESHOLD: CGFloat = 100
 
-private struct Group: Identifiable, Hashable {
+private struct ContinuousGroup: Identifiable, Hashable {
     let id = UUID()
     var urls: [String]
     var y: CGFloat = 0
@@ -37,9 +37,9 @@ private struct Group: Identifiable, Hashable {
     }
 }
 
-// MARK: - ReaderViewController
+// MARK: - ContinuousReaderViewController
 
-private class ReaderViewController: UIViewController, UIScrollViewDelegate {
+private class ContinuousReaderViewController: UIViewController, UIScrollViewDelegate {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
@@ -53,11 +53,11 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     // Image management variables
     private var urls: [String] = []
     private var images: [String: UIImageView?] = [:]
-    private var groups: [Group] = []
+    private var groups: [ContinuousGroup] = []
 
     // Reading state variables
     private var currentPage: Int = 0
-    private var currentGroup: Group?
+    private var currentGroup: ContinuousGroup?
     private var startY: CGFloat = 0.0
     private var defaultGroupSize: Int = 1
 
@@ -411,7 +411,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         // Find which group is currently in the center of the viewport
         let viewportCenter = scrollY + (view.bounds.height / 2)
 
-        var closestGroup: Group?
+        var closestGroup: ContinuousGroup?
         var closestDistance = CGFloat.greatestFiniteMagnitude
 
         for group in groups {
@@ -618,7 +618,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
 
             if isWideImage {
                 // Wide images get their own group regardless of orientation
-                groups.append(Group(urls: [url]))
+                groups.append(ContinuousGroup(urls: [url]))
                 i += 1
             } else {
                 // Build a group of non-wide images up to defaultGroupSize
@@ -637,7 +637,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
                     j += 1
                 }
 
-                groups.append(Group(urls: groupUrls))
+                groups.append(ContinuousGroup(urls: groupUrls))
                 i = j
             }
         }
@@ -1231,7 +1231,7 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         var frames: [String: CGRect] = [:]
         var currentY: CGFloat = 0.0
 
-        let window = view.window!
+        guard let window = view.window else { return ([:], 0) }
         let safeFrame = window.safeAreaLayoutGuide.layoutFrame
         let width = safeFrame.width
 
@@ -1319,12 +1319,15 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
         view.layoutIfNeeded()
 
         if let initialPage = initialPage,
-           let jumpToPage = jumpToPage,
-           images[jumpToPage] != nil
+           // Check if all images up to initialPage are loaded
+           (0 ... initialPage).allSatisfy({ index in
+               let url = urls[index]
+               return images[url] != nil && images[url]! != nil
+           })
         {
             navigateToPage(initialPage)
             self.initialPage = nil
-            self.jumpToPage = nil
+            jumpToPage = nil
         }
     }
 
@@ -1670,17 +1673,17 @@ private class ReaderViewController: UIViewController, UIScrollViewDelegate {
     }
 }
 
-// MARK: - ReaderViewControllerWrapper
+// MARK: - ContinuousReaderViewControllerWrapper
 
-private struct ReaderViewControllerWrapper: UIViewControllerRepresentable {
+private struct ContinuousReaderViewControllerWrapper: UIViewControllerRepresentable {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
     let chapter: Chapter
     let initialPage: Int?
 
-    func makeUIViewController(context _: Context) -> ReaderViewController {
-        return ReaderViewController(
+    func makeUIViewController(context _: Context) -> ContinuousReaderViewController {
+        return ContinuousReaderViewController(
             plugin: plugin,
             manga: manga,
             chaptersKey: chaptersKey,
@@ -1689,7 +1692,7 @@ private struct ReaderViewControllerWrapper: UIViewControllerRepresentable {
         )
     }
 
-    func updateUIViewController(_: ReaderViewController, context _: Context) {
+    func updateUIViewController(_: ContinuousReaderViewController, context _: Context) {
         // Handle any updates if needed
     }
 }
@@ -1705,7 +1708,7 @@ struct ContinuousReaderScreen: View {
 
     var body: some View {
         NavigationStack {
-            ReaderViewControllerWrapper(
+            ContinuousReaderViewControllerWrapper(
                 plugin: plugin,
                 manga: manga,
                 chaptersKey: chaptersKey,

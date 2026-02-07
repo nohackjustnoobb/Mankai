@@ -30,7 +30,7 @@ class SyncService: ObservableObject {
     private var engineCancellable: AnyCancellable?
     private var syncTimer: Timer?
     private var syncTask: Task<Void, Error>?
-    private let syncInterval: TimeInterval = 60 // 1 minute
+    private let syncInterval: TimeInterval = 60 * 3 // 3 minutes
 
     /// A flag indicating if a synchronization process is currently in progress.
     @Published var isSyncing = false

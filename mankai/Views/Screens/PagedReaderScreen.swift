@@ -32,6 +32,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private var chapters: [Chapter]
     private var currentChapterIndex: Int
     private var initialPage: Int?
+    private var jumpToPage: String?
 
     // Image management variables
     private var urls: [String] = []
@@ -269,7 +270,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             datetime: Date(),
             chapterId: currentChapter.id,
             chapterTitle: currentChapter.title,
-            page: currentGroup
+            page: currentPage
         )
 
         Task {
@@ -301,6 +302,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         urls = []
         images = [:]
         currentGroup = 0
+        jumpToPage = nil
 
         let chapter = chapters[currentChapterIndex]
         // Set title
@@ -326,7 +328,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                     }
 
                     if initialPage >= 0 && initialPage < urls.count {
-                        self.currentGroup = initialPage
+                        self.jumpToPage = urls[initialPage]
                     }
                 }
 
@@ -411,6 +413,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         updatePageViewController()
+        updateBottomBar()
     }
 
     private func isImageWide(url: String) -> Bool {
@@ -425,6 +428,25 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         removeLoadingAndErrorViews()
 
         guard !groups.isEmpty else { return }
+
+        if let jumpAttempt = jumpToPage {
+            if let index = urls.firstIndex(of: jumpAttempt) {
+                // Check if all images up to this index are loaded
+                let allLoaded = (0 ... index).allSatisfy { i in
+                    let url = urls[i]
+                    return images[url] != nil && images[url]! != nil
+                }
+
+                if allLoaded,
+                   let groupIndex = groups.firstIndex(where: { $0.contains(jumpAttempt) })
+                {
+                    currentGroup = groupIndex
+                    jumpToPage = nil
+                }
+            } else {
+                jumpToPage = nil
+            }
+        }
 
         // Ensure currentGroup is valid for current groups
         let safeCurrentGroup = min(currentGroup, groups.count - 1)
@@ -1128,7 +1150,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
     @objc private func nextChapterButtonTapped() {
         currentChapterIndex += 1
-        initialPage = 0 // Navigate to first page of the chapter
+        initialPage = 0
         loadChapter()
     }
 
