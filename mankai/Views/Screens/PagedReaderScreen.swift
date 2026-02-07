@@ -40,20 +40,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private var groups: [PageGroup] = []
 
     // Reading state variables
+    private var currentPage: Int = 0
     private var currentGroup: Int = 0
     private var defaultGroupSize: Int = 1
-
-    // Computed property for current page number (based on last URL in current group)
-    private var currentPage: Int {
-        guard currentGroup >= 0, currentGroup < groups.count else { return 0 }
-        let group = groups[currentGroup]
-        if let lastUrl = group.urls.last,
-           let pageIndex = urls.lastIndex(of: lastUrl)
-        {
-            return pageIndex
-        }
-        return 0
-    }
 
     // State variables for tab bar visibility
     var isTabBarHidden = false
@@ -205,7 +194,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     @objc private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
             self?.groupImages()
-            self?.navigateToGroup(self?.currentGroup ?? 0, animated: false)
+            self?.navigateToPage(self?.currentPage ?? 0, animated: false)
         }
     }
 
@@ -352,15 +341,23 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                     images[url] = nil
                 }
 
-                // Update grouping and page view when images are loaded
-                DispatchQueue.main.async { [weak self] in
-                    self?.groupImages()
-                }
+                updateGrouping()
             }
         }
 
-        // Initial setup of page view controller
-        groupImages()
+        // Retry failed images after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            guard let self = self else { return }
+
+            // Check if any images are still nil
+            let hasFailedImages = self.urls.contains { url in
+                self.images[url] == nil || self.images[url] as? NSObject == nil
+            }
+
+            if hasFailedImages {
+                self.loadImages()
+            }
+        }
     }
 
     // MARK: - Group Images
@@ -843,6 +840,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         currentGroup = group
+        syncCurrentPage()
+
         let pageVC = createPageContentViewController(for: group)
         pageViewController.setViewControllers(
             [pageVC],
@@ -859,6 +858,17 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         let targetUrl = urls[page]
         if let groupIndex = groups.firstIndex(where: { $0.contains(targetUrl) }) {
             navigateToGroup(groupIndex, animated: animated)
+        }
+    }
+
+    private func syncCurrentPage() {
+        let group = groups[currentGroup]
+        if let lastUrl = group.urls.last,
+           let pageIndex = urls.lastIndex(of: lastUrl), currentPage != pageIndex
+        {
+            currentPage = pageIndex
+            updateBottomBar()
+            saveRecord()
         }
     }
 
@@ -944,8 +954,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         else { return }
 
         currentGroup = currentVC.pageIndex
-        updateBottomBar()
-        saveRecord()
+        syncCurrentPage()
     }
 
     // MARK: - Bottom Bar

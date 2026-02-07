@@ -31,7 +31,6 @@ private struct ContinuousGroup: Identifiable, Hashable {
     var y: CGFloat = 0
     var height: CGFloat = 0
 
-    // Helper to check if a url is in this group
     func contains(_ url: String) -> Bool {
         return urls.contains(url)
     }
@@ -233,7 +232,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     @objc private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
             self?.groupImages()
-            self?.syncPage()
+            self?.navigateToPage(self?.currentPage ?? 0, animated: false)
         }
     }
 
@@ -428,13 +427,11 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         // Update current page to the last page in the closest group
         if let closestGroup = closestGroup, let lastUrl = closestGroup.urls.last,
-           let pageIndex = urls.lastIndex(of: lastUrl)
+           let pageIndex = urls.lastIndex(of: lastUrl), pageIndex != currentPage
         {
-            if pageIndex != currentPage {
-                currentPage = pageIndex
-                updateBottomBar()
-                saveRecord()
-            }
+            currentPage = pageIndex
+            updateBottomBar()
+            saveRecord()
         }
     }
 
@@ -571,12 +568,12 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
                     images[url] = nil
                 }
 
-                groupImages()
+                updateGrouping()
             }
         }
 
         // Retry failed images after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
             guard let self = self else { return }
 
             // Check if any images are still nil
@@ -593,6 +590,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     // MARK: - Group Images
 
     // TODO: smart grouping
+    // TODO: class to handle grouping & image loading
     private func groupImages() {
         groups = []
 
@@ -683,10 +681,6 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             CGPoint(x: 0, y: clampedScrollY),
             animated: animated
         )
-    }
-
-    private func syncPage() {
-        navigateToPage(currentPage)
     }
 
     // MARK: - Tab Bar
