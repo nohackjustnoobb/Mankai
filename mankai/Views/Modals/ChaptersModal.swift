@@ -11,17 +11,20 @@ struct ChaptersModal: View {
     let plugin: Plugin
     let manga: DetailedManga
     let chaptersKey: String
+    let record: RecordModel?
     let onNavigateToChapter: (Chapter, Int?, String?) -> Void
 
     private let chapters: [Chapter]
 
     init(
         plugin: Plugin, manga: DetailedManga, chaptersKey: String,
+        record: RecordModel? = nil,
         onNavigateToChapter: @escaping (Chapter, Int?, String?) -> Void
     ) {
         self.plugin = plugin
         self.manga = manga
         self.chaptersKey = chaptersKey
+        self.record = record
         self.onNavigateToChapter = onNavigateToChapter
         chapters = manga.chapters[chaptersKey] ?? []
     }
@@ -44,6 +47,12 @@ struct ChaptersModal: View {
                                 HStack {
                                     Text(chapter.title ?? chapter.id)
                                         .foregroundColor(.primary)
+
+                                    if let record = record, record.chapterId == chapter.id {
+                                        Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                            .foregroundColor(.accentColor)
+                                    }
+
                                     Spacer()
                                     Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
                                         .foregroundColor(.secondary)

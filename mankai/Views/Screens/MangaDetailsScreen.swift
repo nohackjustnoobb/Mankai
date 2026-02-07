@@ -357,6 +357,12 @@ struct MangaDetailsScreen: View {
                                             HStack {
                                                 Text(chapter.title ?? chapter.id)
                                                     .foregroundColor(.primary)
+
+                                                if let record = record, record.chapterId == chapter.id {
+                                                    Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                                        .foregroundColor(.accentColor)
+                                                }
+
                                                 Spacer()
                                                 Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
                                                     .foregroundColor(.secondary)
@@ -425,6 +431,7 @@ struct MangaDetailsScreen: View {
                     plugin: plugin,
                     manga: detailedManga,
                     chaptersKey: selectedChapterKey,
+                    record: record,
                     onNavigateToChapter: navigateToChapter
                 )
             }
