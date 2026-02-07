@@ -167,7 +167,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         hideTabBar()
 
-        parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+        parent?.title = chapter.title ?? chapter.id
     }
 
     // MARK: - Observer
@@ -295,7 +295,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         let chapter = chapters[currentChapterIndex]
         // Set title
-        parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+        parent?.title = chapter.title ?? chapter.id
 
         if chapter.locked == true {
             showErrorView()

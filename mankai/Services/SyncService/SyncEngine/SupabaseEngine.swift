@@ -432,7 +432,7 @@ class SupabaseEngine: SyncEngine {
         let pluginId: String
         let userId: UUID
         let datetime: Date
-        let chapterId: String?
+        let chapterId: String
         let chapterTitle: String?
         let page: Int
         let updatedAt: Date?

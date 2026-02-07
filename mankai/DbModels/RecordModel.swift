@@ -12,7 +12,7 @@ struct RecordModel {
     var mangaId: String
     var pluginId: String
     var datetime: Date
-    var chapterId: String?
+    var chapterId: String
     var chapterTitle: String?
     var page: Int
 
@@ -24,7 +24,7 @@ struct RecordModel {
             $0.column("pluginId", .text).notNull()
             $0.column("datetime", .datetime).notNull()
             $0.column("page", .integer).notNull()
-            $0.column("chapterId", .text)
+            $0.column("chapterId", .text).notNull()
             $0.column("chapterTitle", .text)
         }
     }

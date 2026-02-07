@@ -37,7 +37,7 @@ enum Status: UInt, Codable {
 }
 
 struct Chapter: Codable {
-    var id: String?
+    var id: String
     var title: String?
     var locked: Bool?
 }
@@ -76,9 +76,11 @@ struct Manga: Identifiable, Codable {
             status = nil
         }
 
-        if let chapterDict = dict["latestChapter"] as? [String: Any] {
+        if let chapterDict = dict["latestChapter"] as? [String: Any],
+           let id = chapterDict["id"] as? String
+        {
             latestChapter = Chapter(
-                id: chapterDict["id"] as? String,
+                id: id,
                 title: chapterDict["title"] as? String
             )
         } else {

@@ -122,8 +122,8 @@ struct HistoryItemView: View {
                                 if let chapterTitle = record.chapterTitle {
                                     Text(chapterTitle)
 
-                                } else if let chapterId = record.chapterId {
-                                    Text("chapter \(chapterId)")
+                                } else {
+                                    Text("chapter \(record.chapterId)")
                                 }
 
                                 Text("•")

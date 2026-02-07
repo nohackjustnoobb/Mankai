@@ -463,7 +463,7 @@ class ReadFsPlugin: Plugin {
     }
 
     override func getChapter(manga _: DetailedManga, chapter: Chapter) async throws -> [String] {
-        Logger.fsPlugin.debug("Getting chapter: \(chapter.id ?? "nil")")
+        Logger.fsPlugin.debug("Getting chapter: \(chapter.id)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for getChapter")
             throw NSError(
@@ -472,8 +472,8 @@ class ReadFsPlugin: Plugin {
             )
         }
 
-        guard let chapterId = chapter.id, let chapterIdInt = Int(chapterId) else {
-            Logger.fsPlugin.error("Invalid chapter ID: \(String(describing: chapter.id))")
+        guard let chapterIdInt = Int(chapter.id) else {
+            Logger.fsPlugin.error("Invalid chapter ID: \(chapter.id)")
             throw NSError(
                 domain: "ReadFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "invalidMangaOrChapterFormat")]

@@ -104,7 +104,7 @@ struct UpdateChapterModal: View {
     }
 
     private func addSelectedImages() {
-        guard let chapterId = chapter.id, !selectedItems.isEmpty else { return }
+        guard !selectedItems.isEmpty else { return }
 
         Task {
             var newImages: [Data] = []
@@ -124,7 +124,7 @@ struct UpdateChapterModal: View {
 
             do {
                 try await plugin.addImages(
-                    mangaId: manga.id, chapterId: chapterId, images: newImages
+                    mangaId: manga.id, chapterId: chapter.id, images: newImages
                 )
 
                 loadUrls()
@@ -186,12 +186,12 @@ struct UpdateChapterModal: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(chapter.title ?? chapter.id ?? "nil")
+        .navigationTitle(chapter.title ?? chapter.id)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Button(action: {
-                    newTitle = chapter.title ?? chapter.id ?? ""
+                    newTitle = chapter.title ?? chapter.id
                     showingTitleAlert = true
                 }) {
                     VStack {
@@ -200,7 +200,7 @@ struct UpdateChapterModal: View {
                             .foregroundColor(.primary)
 
                         HStack(spacing: 4) {
-                            Text(chapter.title ?? chapter.id ?? "nil")
+                            Text(chapter.title ?? chapter.id)
                                 .font(.caption)
                             Image(systemName: "pencil")
                                 .font(.caption2)
@@ -216,8 +216,8 @@ struct UpdateChapterModal: View {
             Button("cancel", role: .cancel) {}
             Button("save") {
                 let trimmedTitle = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmedTitle.isEmpty && trimmedTitle != chapter.title && chapter.id != nil {
-                    onRename?(chapter.id!, trimmedTitle)
+                if !trimmedTitle.isEmpty && trimmedTitle != chapter.title {
+                    onRename?(chapter.id, trimmedTitle)
                 }
             }
         } message: {

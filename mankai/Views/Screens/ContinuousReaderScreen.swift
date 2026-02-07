@@ -199,7 +199,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         hideTabBar()
 
-        parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+        parent?.title = chapter.title ?? chapter.id
     }
 
     override func viewDidLayoutSubviews() {
@@ -521,7 +521,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         let chapter = chapters[currentChapterIndex]
         // Set title
-        parent?.title = chapter.title ?? chapter.id ?? String(localized: "nil")
+        parent?.title = chapter.title ?? chapter.id
 
         if chapter.locked == true {
             showErrorView()

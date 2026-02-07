@@ -375,13 +375,7 @@ class HttpPlugin: Plugin {
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
         try await setup()
-        guard let chapterId = chapter.id else {
-            throw NSError(
-                domain: "HttpPlugin", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Chapter ID is missing"]
-            )
-        }
-        let (data, _) = try await authManager.get(path: "/manga/\(manga.id)/chapter/\(chapterId)")
+        let (data, _) = try await authManager.get(path: "/manga/\(manga.id)/chapter/\(chapter.id)")
         return try JSONDecoder().decode([String].self, from: data)
     }
 

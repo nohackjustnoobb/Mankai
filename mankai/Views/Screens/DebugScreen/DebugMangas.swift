@@ -10,14 +10,10 @@ import SwiftUI
 extension DebugMangas {
     private func chapterText(_ chapter: Chapter?) -> String {
         guard let chapter = chapter else { return String(localized: "nil") }
-        if let title = chapter.title, let id = chapter.id {
-            return "\(title) (\(String(localized: "id")): \(id))"
-        } else if let title = chapter.title {
-            return title
-        } else if let id = chapter.id {
-            return "\(String(localized: "id")): \(id)"
+        if let title = chapter.title {
+            return "\(title) (\(String(localized: "id")): \(chapter.id))"
         } else {
-            return String(localized: "noDetails")
+            return "\(String(localized: "id")): \(chapter.id)"
         }
     }
 }

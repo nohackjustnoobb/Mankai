@@ -144,8 +144,8 @@ class HttpEngine: SyncEngine {
                         "pluginId": record.pluginId,
                         "datetime": Int(record.datetime.timeIntervalSince1970 * 1000),
                         "page": record.page,
+                        "chapterId": record.chapterId,
                     ]
-                    if let chapterId = record.chapterId { dict["chapterId"] = chapterId }
                     if let chapterTitle = record.chapterTitle { dict["chapterTitle"] = chapterTitle }
                     return dict
                 }
@@ -190,9 +190,9 @@ class HttpEngine: SyncEngine {
                           let pluginId = dict["pluginId"] as? String,
                           let datetimeStr = dict["datetime"] as? String,
                           let page = dict["page"] as? Int,
+                          let chapterId = dict["chapterId"] as? String,
                           let datetime = HttpEngine.iso8601Formatter.date(from: datetimeStr)
                     else { return nil }
-                    let chapterId = dict["chapterId"] as? String
                     let chapterTitle = dict["chapterTitle"] as? String
                     return RecordModel(
                         mangaId: mangaId, pluginId: pluginId, datetime: datetime, chapterId: chapterId,

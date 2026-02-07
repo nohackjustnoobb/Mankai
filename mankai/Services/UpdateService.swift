@@ -133,17 +133,8 @@ class UpdateService: ObservableObject {
                     var hasUpdate = false
 
                     if let newChapter = updatedManga.latestChapter {
-                        let oldChapter = Chapter.decode(saved.latestChapter)
-
-                        // Compare by id first, then by title
-                        if let newId = newChapter.id, let oldId = oldChapter.id {
-                            hasUpdate = newId != oldId
-                        } else if let newTitle = newChapter.title, let oldTitle = oldChapter.title {
-                            hasUpdate = newTitle != oldTitle
-                        } else {
-                            // If no id or title, consider it an update
-                            hasUpdate = true
-                        }
+                        let oldChapter = try Chapter.decode(saved.latestChapter)
+                        hasUpdate = newChapter.id != oldChapter.id
 
                         if hasUpdate {
                             Logger.updateService.info(

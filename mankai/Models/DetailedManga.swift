@@ -50,9 +50,9 @@ struct DetailedManga: Identifiable, Codable {
             status = nil
         }
 
-        if let chapterDict = dict["latestChapter"] as? [String: Any] {
+        if let chapterDict = dict["latestChapter"] as? [String: Any], let id = chapterDict["id"] as? String {
             latestChapter = Chapter(
-                id: chapterDict["id"] as? String,
+                id: id,
                 title: chapterDict["title"] as? String
             )
         } else {
@@ -89,9 +89,9 @@ struct DetailedManga: Identifiable, Codable {
                 chapters[key] = []
 
                 for value in value as? [Any] ?? [] {
-                    if let chapterDict = value as? [String: Any] {
+                    if let chapterDict = value as? [String: Any], let id = chapterDict["id"] as? String {
                         let chapter = Chapter(
-                            id: chapterDict["id"] as? String,
+                            id: id,
                             title: chapterDict["title"] as? String
                         )
                         chapters[key]!.append(chapter)

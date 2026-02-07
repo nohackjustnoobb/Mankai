@@ -60,11 +60,11 @@ struct MangaDetailsScreen: View {
     }
 
     private func handleReadContinueAction() {
-        if let record = record, let chapterId = record.chapterId {
+        if let record = record {
             if let detailedManga = detailedManga {
                 for (chaptersKey, chapters) in detailedManga.chapters {
                     if let chapter = chapters.first(where: {
-                        $0.id == chapterId
+                        $0.id == record.chapterId
                     }) {
                         navigateToChapter(
                             chapter, page: record.page, chaptersKey: chaptersKey
@@ -229,9 +229,9 @@ struct MangaDetailsScreen: View {
                                 Text("•")
                                 Text(chapterTitle)
                                     .lineLimit(1)
-                            } else if let chapterId = record.chapterId {
+                            } else {
                                 Text("•")
-                                Text("chapter \(chapterId)")
+                                Text("chapter \(record.chapterId)")
                                     .lineLimit(1)
                             }
 
@@ -308,7 +308,7 @@ struct MangaDetailsScreen: View {
                                                 .font(.caption)
                                                 .foregroundColor(.primary)
 
-                                            Text(latestChapter.title ?? latestChapter.id ?? "nil")
+                                            Text(latestChapter.title ?? latestChapter.id)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                                 .foregroundColor(.secondary)
@@ -355,7 +355,7 @@ struct MangaDetailsScreen: View {
                                             navigateToChapter(chapter)
                                         }) {
                                             HStack {
-                                                Text(chapter.title ?? chapter.id ?? "nil")
+                                                Text(chapter.title ?? chapter.id)
                                                     .foregroundColor(.primary)
                                                 Spacer()
                                                 Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")

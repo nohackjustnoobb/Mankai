@@ -594,17 +594,16 @@ class JsPlugin: Plugin {
     }
 
     override func getChapter(manga: DetailedManga, chapter: Chapter) async throws -> [String] {
-        Logger.jsPlugin.debug("Getting chapter: \(chapter.id ?? "nil") (plugin: \(id))")
+        Logger.jsPlugin.debug("Getting chapter: \(chapter.id) (plugin: \(id))")
         // Check cache first
         var cacheKey: String?
 
-        if let chapterId = chapter.id {
-            let mangaId = manga.id
+        let chapterId = chapter.id
+        let mangaId = manga.id
 
-            cacheKey = getCacheKey(for: .getChapter, with: [mangaId, chapterId])
-            if let cachedImages = getCachedData(for: cacheKey!, as: [String].self) {
-                return cachedImages
-            }
+        cacheKey = getCacheKey(for: .getChapter, with: [mangaId, chapterId])
+        if let cachedImages = getCachedData(for: cacheKey!, as: [String].self) {
+            return cachedImages
         }
 
         if _scripts[.getChapter] == nil {

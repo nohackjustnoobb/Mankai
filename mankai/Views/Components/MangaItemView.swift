@@ -43,8 +43,8 @@ struct MangaItemView: View {
                     if let record = record {
                         if let title = record.chapterTitle {
                             Text(title)
-                        } else if let id = record.chapterId {
-                            Text("chapter \(id)")
+                        } else {
+                            Text("chapter \(record.chapterId)")
                         }
 
                         Text("/")
@@ -56,8 +56,8 @@ struct MangaItemView: View {
                         if let title = latestChapter.title {
                             Text(title)
 
-                        } else if let id = latestChapter.id {
-                            Text("chapter \(id)")
+                        } else {
+                            Text("chapter \(latestChapter.id)")
                         }
                     }
                 }

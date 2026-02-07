@@ -42,7 +42,7 @@ struct ChaptersModal: View {
                                 onNavigateToChapter(chapter, nil, chaptersKey)
                             }) {
                                 HStack {
-                                    Text(chapter.title ?? chapter.id ?? "nil")
+                                    Text(chapter.title ?? chapter.id)
                                         .foregroundColor(.primary)
                                     Spacer()
                                     Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")

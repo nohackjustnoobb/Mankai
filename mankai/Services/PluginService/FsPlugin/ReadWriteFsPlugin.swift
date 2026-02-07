@@ -74,8 +74,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         try await db.write { db in
             let latestChapterId: Int? = {
                 if let latestChapter = manga.latestChapter,
-                   let latestId = latestChapter.id,
-                   let latestIdInt = Int(latestId)
+                   let latestIdInt = Int(latestChapter.id)
                 {
                     return latestIdInt
                 }
