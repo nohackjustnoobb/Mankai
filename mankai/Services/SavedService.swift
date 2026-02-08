@@ -41,16 +41,17 @@ class SavedService: ObservableObject {
     /// - Parameters:
     ///   - saved: The `SavedModel` to add.
     ///   - manga: The optional `MangaModel` associated with the saved item.
-    /// - Returns: `true` if successful, `nil` if an error occurred.
-    func add(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
+    /// - Returns: `true` if successful, throws an error if an error occurred.
+    func add(saved: SavedModel, manga: MangaModel? = nil) async throws -> Bool {
         Logger.savedService.debug("Adding saved manga: \(saved.mangaId)")
-        let result = await update(saved: saved, manga: manga)
+        let result = try await update(saved: saved, manga: manga)
 
-        if let result = result, result, SyncService.shared.engine != nil {
+        if result, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.addSaved(saved)
             } catch {
                 Logger.savedService.error("Failed to push saveds after adding", error: error)
+                throw error
             }
         }
 
@@ -61,16 +62,17 @@ class SavedService: ObservableObject {
     /// - Parameters:
     ///   - mangaId: The ID of the manga to remove.
     ///   - pluginId: The ID of the plugin providing the manga.
-    /// - Returns: `true` if successful, `nil` if an error occurred.
-    func remove(mangaId: String, pluginId: String) async -> Bool? {
+    /// - Returns: `true` if successful, throws an error if an error occurred.
+    func remove(mangaId: String, pluginId: String) async throws -> Bool {
         Logger.savedService.debug("Removing saved manga: \(mangaId)")
-        let result = await delete(mangaId: mangaId, pluginId: pluginId)
+        let result = try await delete(mangaId: mangaId, pluginId: pluginId)
 
-        if let result = result, result, SyncService.shared.engine != nil {
+        if result, SyncService.shared.engine != nil {
             do {
                 try await SyncService.shared.removeSaved(mangaId: mangaId, pluginId: pluginId)
             } catch {
                 Logger.savedService.error("Failed to push saveds after removing", error: error)
+                throw error
             }
         }
 
@@ -81,8 +83,8 @@ class SavedService: ObservableObject {
     /// - Parameters:
     ///   - saved: The `SavedModel` to update.
     ///   - manga: The optional `MangaModel` to update.
-    /// - Returns: `true` if successful, `nil` if an error occurred.
-    func update(saved: SavedModel, manga: MangaModel? = nil) async -> Bool? {
+    /// - Returns: `true` if successful, throws an error if an error occurred.
+    func update(saved: SavedModel, manga: MangaModel? = nil) async throws -> Bool {
         Logger.savedService.debug("Updating saved manga: \(saved.mangaId)")
         var result: Bool?
         do {
@@ -96,11 +98,12 @@ class SavedService: ObservableObject {
             }
         } catch {
             Logger.savedService.error("Failed to update saved manga", error: error)
-            result = nil
+            throw error
         }
 
-        if result == nil {
+        guard let result = result else {
             Logger.savedService.error("Failed to update saved manga")
+            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateSavedManga")])
         }
 
         await MainActor.run {
@@ -114,8 +117,8 @@ class SavedService: ObservableObject {
     /// - Parameters:
     ///   - saveds: The list of `SavedModel` objects to update.
     ///   - mangas: The optional list of `MangaModel` objects to update.
-    /// - Returns: `true` if successful, `nil` if an error occurred.
-    func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) async -> Bool? {
+    /// - Returns: `true` if successful, throws an error if an error occurred.
+    func batchUpdate(saveds: [SavedModel], mangas: [MangaModel]? = nil) async throws -> Bool {
         Logger.savedService.debug("Batch updating \(saveds.count) saved mangas")
         var result: Bool?
         do {
@@ -134,11 +137,12 @@ class SavedService: ObservableObject {
             }
         } catch {
             Logger.savedService.error("Failed to batch update saved mangas", error: error)
-            result = nil
+            throw error
         }
 
-        if result == nil {
+        guard let result = result else {
             Logger.savedService.error("Failed to batch update saved mangas")
+            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToUpdateSavedManga")])
         }
 
         await MainActor.run {
@@ -152,8 +156,8 @@ class SavedService: ObservableObject {
     /// - Parameters:
     ///   - mangaId: The ID of the manga to delete.
     ///   - pluginId: The ID of the plugin providing the manga.
-    /// - Returns: `true` if successful, `nil` if an error occurred.
-    func delete(mangaId: String, pluginId: String) async -> Bool? {
+    /// - Returns: `true` if successful, throws an error if an error occurred.
+    func delete(mangaId: String, pluginId: String) async throws -> Bool {
         Logger.savedService.debug("Deleting saved manga: \(mangaId)")
         var result: Bool?
         do {
@@ -171,11 +175,12 @@ class SavedService: ObservableObject {
             }
         } catch {
             Logger.savedService.error("Failed to delete saved manga", error: error)
-            result = nil
+            throw error
         }
 
-        if result == nil {
+        guard let result = result else {
             Logger.savedService.error("Failed to delete saved manga")
+            throw NSError(domain: "SavedService", code: 0, userInfo: [NSLocalizedDescriptionKey: String(localized: "failedToDeleteSavedManga")])
         }
 
         await MainActor.run {
@@ -187,11 +192,15 @@ class SavedService: ObservableObject {
 
     /// Retrieves all saved manga records.
     /// - Returns: A list of `SavedModel` objects.
-    func getAll() -> [SavedModel] {
+    func getAll(shouldSync: Bool? = nil) -> [SavedModel] {
         Logger.savedService.debug("Getting all saved mangas")
         do {
             let result = try DbService.shared.appDb?.read { db in
-                let request = SavedModel.order(Column("datetime").desc)
+                var request = SavedModel.order(Column("datetime").desc)
+
+                if let shouldSync = shouldSync {
+                    request = request.filter(Column("shouldSync") == shouldSync)
+                }
 
                 return try request.fetchAll(db)
             }
@@ -205,45 +214,26 @@ class SavedService: ObservableObject {
     /// Retrieves all saved manga records updated since a specific date.
     /// - Parameter date: The date to filter records by.
     /// - Returns: A list of `SavedModel` objects.
-    func getAllSince(date: Date?) -> [SavedModel] {
+    func getAllSince(date: Date?, shouldSync: Bool? = nil) -> [SavedModel] {
         Logger.savedService.debug("Getting saved mangas since: \(String(describing: date))")
         do {
             let result = try DbService.shared.appDb?.read { db in
-                if let date = date {
-                    return
-                        try SavedModel
-                            .filter(Column("datetime") > date)
-                            .order(Column("datetime").asc)
-                            .fetchAll(db)
-                } else {
-                    return
-                        try SavedModel
-                            .order(Column("datetime").asc)
-                            .fetchAll(db)
+                var request = SavedModel.order(Column("datetime").asc)
+
+                if let shouldSync = shouldSync {
+                    request = request.filter(Column("shouldSync") == shouldSync)
                 }
+
+                if let date = date {
+                    request = request.filter(Column("datetime") > date)
+                }
+
+                return try request.fetchAll(db)
             }
             return result ?? []
         } catch {
             Logger.savedService.error("Failed to get saved mangas since date", error: error)
             return []
-        }
-    }
-
-    /// Retrieves the most recently updated saved manga record.
-    /// - Returns: The latest `SavedModel` if found, otherwise `nil`.
-    func getLatest() -> SavedModel? {
-        Logger.savedService.debug("Getting latest saved manga")
-        do {
-            let result = try DbService.shared.appDb?.read { db in
-                try SavedModel
-                    .order(Column("datetime").desc)
-                    .limit(1)
-                    .fetchOne(db)
-            }
-            return result
-        } catch {
-            Logger.savedService.error("Failed to get latest saved manga", error: error)
-            return nil
         }
     }
 
@@ -256,6 +246,7 @@ class SavedService: ObservableObject {
                 // Fetch all saved items, sorted by mangaId and pluginId
                 let saveds =
                     try SavedModel
+                        .filter(Column("shouldSync") == true)
                         .order(Column("mangaId").asc, Column("pluginId").asc)
                         .fetchAll(db)
 

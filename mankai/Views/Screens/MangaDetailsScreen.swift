@@ -90,36 +90,35 @@ struct MangaDetailsScreen: View {
 
     private func handleBookmarkAction() {
         Task {
-            let result: Bool?
-
-            if saved != nil {
-                result = await SavedService.shared.remove(mangaId: manga.id, pluginId: plugin.id)
-            } else {
-                let newSaved = SavedModel(
-                    mangaId: manga.id,
-                    pluginId: plugin.id,
-                    datetime: Date(),
-                    updates: false,
-                    latestChapter: manga.latestChapter?.encode() ?? ""
-                )
-
-                let mangaInfo: String
-                if let mangaData = try? JSONEncoder().encode(manga) {
-                    mangaInfo = String(data: mangaData, encoding: .utf8) ?? "{}"
+            do {
+                if saved != nil {
+                    let _ = try await SavedService.shared.remove(mangaId: manga.id, pluginId: plugin.id)
                 } else {
-                    mangaInfo = "{}"
+                    let newSaved = SavedModel(
+                        mangaId: manga.id,
+                        pluginId: plugin.id,
+                        datetime: Date(),
+                        updates: false,
+                        latestChapter: manga.latestChapter?.encode() ?? "",
+                        shouldSync: plugin.shouldSync
+                    )
+
+                    let mangaInfo: String
+                    if let mangaData = try? JSONEncoder().encode(manga) {
+                        mangaInfo = String(data: mangaData, encoding: .utf8) ?? "{}"
+                    } else {
+                        mangaInfo = "{}"
+                    }
+
+                    let mangaModel = MangaModel(
+                        mangaId: manga.id,
+                        pluginId: plugin.id,
+                        info: mangaInfo
+                    )
+
+                    let _ = try await SavedService.shared.add(saved: newSaved, manga: mangaModel)
                 }
-
-                let mangaModel = MangaModel(
-                    mangaId: manga.id,
-                    pluginId: plugin.id,
-                    info: mangaInfo
-                )
-
-                result = await SavedService.shared.add(saved: newSaved, manga: mangaModel)
-            }
-
-            if result == nil || !result! {
+            } catch {
                 Logger.ui.error("Failed to delete or create SavedData")
             }
         }

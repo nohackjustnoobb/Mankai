@@ -225,8 +225,8 @@ class SupabaseEngine: SyncEngine {
         let lastRecordsSync = defaults.object(forKey: "SupabaseEngine.lastSyncTime.records") as? Date
 
         // Get local data that needs to be synced
-        let localSaveds = SavedService.shared.getAllSince(date: lastSavedsSync)
-        let localRecords = HistoryService.shared.getAllSince(date: lastRecordsSync)
+        let localSaveds = SavedService.shared.getAllSince(date: lastSavedsSync, shouldSync: true)
+        let localRecords = HistoryService.shared.getAllSince(date: lastRecordsSync, shouldSync: true)
 
         // Upload local data via edge function
         let syncPayload = SyncPayload(
@@ -308,7 +308,7 @@ class SupabaseEngine: SyncEngine {
     override func initialSync() async throws {
         Logger.supabaseEngine.info("Initial sync")
 
-        let localSaveds = SavedService.shared.getAll()
+        let localSaveds = SavedService.shared.getAll(shouldSync: true)
 
         try await addSaveds(localSaveds)
     }
@@ -328,7 +328,7 @@ class SupabaseEngine: SyncEngine {
         // Delete local saveds that are marked as deleted in remote
         for saved in deletedSaveds {
             Logger.supabaseEngine.info("Deleting local saved marked as deleted: \(saved.mangaId)")
-            _ = await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
+            _ = try await SavedService.shared.delete(mangaId: saved.mangaId, pluginId: saved.pluginId)
         }
 
         // Apply non-deleted saveds
@@ -343,7 +343,7 @@ class SupabaseEngine: SyncEngine {
                 )
             }
             Logger.supabaseEngine.info("Applying \(models.count) remote saveds")
-            _ = await SavedService.shared.batchUpdate(saveds: models)
+            _ = try await SavedService.shared.batchUpdate(saveds: models)
         }
     }
 
@@ -357,7 +357,7 @@ class SupabaseEngine: SyncEngine {
         let remoteRecords = try await getRecords(lastSyncTime)
         if !remoteRecords.isEmpty {
             Logger.supabaseEngine.info("Applying \(remoteRecords.count) remote records")
-            _ = await HistoryService.shared.batchUpdate(records: remoteRecords)
+            _ = try await HistoryService.shared.batchUpdate(records: remoteRecords)
         }
     }
 

@@ -16,6 +16,8 @@ struct RecordModel {
     var chapterTitle: String?
     var page: Int
 
+    var shouldSync: Bool = true
+
     static func createTable(_ db: Database) throws {
         try db.create(table: RecordModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "pluginId"])
@@ -26,6 +28,8 @@ struct RecordModel {
             $0.column("page", .integer).notNull()
             $0.column("chapterId", .text).notNull()
             $0.column("chapterTitle", .text)
+
+            $0.column("shouldSync", .boolean).notNull().defaults(to: true)
         }
     }
 }

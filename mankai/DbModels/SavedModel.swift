@@ -15,6 +15,8 @@ struct SavedModel {
     var updates: Bool
     var latestChapter: String
 
+    var shouldSync: Bool = true
+
     static func createTable(_ db: Database) throws {
         try db.create(table: SavedModel.databaseTableName, ifNotExists: true) {
             $0.primaryKey(["mangaId", "pluginId"])
@@ -24,6 +26,8 @@ struct SavedModel {
             $0.column("datetime", .datetime).notNull()
             $0.column("updates", .boolean).notNull()
             $0.column("latestChapter", .text).notNull()
+
+            $0.column("shouldSync", .boolean).notNull().defaults(to: true)
         }
     }
 }

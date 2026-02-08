@@ -102,10 +102,10 @@ class HttpEngine: SyncEngine {
         let now = Date()
 
         // Fetch new local saveds since last sync
-        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime)
+        let newLocalSaveds = SavedService.shared.getAllSince(date: lastSyncTime, shouldSync: true)
 
         // Fetch new local records since last sync
-        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime)
+        let newLocalRecords = HistoryService.shared.getAllSince(date: lastSyncTime, shouldSync: true)
 
         var offset = 0
         let limit = 50
@@ -179,7 +179,7 @@ class HttpEngine: SyncEngine {
                 }
 
                 if !receivedSaveds.isEmpty {
-                    _ = await SavedService.shared.batchUpdate(saveds: receivedSaveds)
+                    _ = try await SavedService.shared.batchUpdate(saveds: receivedSaveds)
                 }
             }
 
@@ -201,7 +201,7 @@ class HttpEngine: SyncEngine {
                 }
 
                 if !receivedRecords.isEmpty {
-                    _ = await HistoryService.shared.batchUpdate(records: receivedRecords)
+                    _ = try await HistoryService.shared.batchUpdate(records: receivedRecords)
                 }
             }
 
@@ -215,7 +215,7 @@ class HttpEngine: SyncEngine {
                     {
                         if let localSaved = SavedService.shared.get(mangaId: mangaId, pluginId: pluginId) {
                             if datetime > localSaved.datetime {
-                                _ = await SavedService.shared.delete(mangaId: mangaId, pluginId: pluginId)
+                                _ = try await SavedService.shared.delete(mangaId: mangaId, pluginId: pluginId)
                             }
                         }
                     }
@@ -281,7 +281,7 @@ class HttpEngine: SyncEngine {
             Logger.httpEngine.info("Hashes mismatch, syncing saveds")
 
             // Fetch local saveds
-            let localSaveds = SavedService.shared.getAll()
+            let localSaveds = SavedService.shared.getAll(shouldSync: true)
 
             // Push all local saveds to remote
             try await addSaveds(localSaveds)

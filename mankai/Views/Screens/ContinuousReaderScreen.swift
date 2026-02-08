@@ -477,15 +477,15 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             datetime: Date(),
             chapterId: currentChapter.id,
             chapterTitle: currentChapter.title,
-            page: currentPage
+            page: currentPage,
+            shouldSync: plugin.shouldSync
         )
 
         Task {
-            if let result = await HistoryService.shared.add(record: recordModel, manga: mangaModel),
-               result
-            {
+            do {
+                let _ = try await HistoryService.shared.add(record: recordModel, manga: mangaModel)
                 lastSavedPage = currentPage
-            } else {
+            } catch {
                 Logger.ui.error("Failed to save record")
             }
         }

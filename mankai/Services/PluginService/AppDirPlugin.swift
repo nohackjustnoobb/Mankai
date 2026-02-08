@@ -37,6 +37,10 @@ class AppDirPlugin: ReadWriteFsPlugin {
         String(localized: "appName")
     }
 
+    override var shouldSync: Bool {
+        false
+    }
+
     // Built-in plugin, do nothing
     override func savePlugin() throws {}
 

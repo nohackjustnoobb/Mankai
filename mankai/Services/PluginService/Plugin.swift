@@ -69,6 +69,10 @@ class Plugin: Identifiable, ObservableObject {
         []
     }
 
+    var shouldSync: Bool {
+        true
+    }
+
     // MARK: - Config Values
 
     lazy var _configValues: [String: ConfigValue] = {

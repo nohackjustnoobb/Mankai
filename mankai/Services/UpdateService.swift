@@ -170,7 +170,7 @@ class UpdateService: ObservableObject {
         }
 
         // Batch update all changed saveds and mangas
-        _ = await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
+        _ = try await SavedService.shared.batchUpdate(saveds: updatedSaveds, mangas: updatedMangaModels)
         if !updatedSaveds.isEmpty {
             Logger.updateService.info("Batch updating \(updatedSaveds.count) saveds")
             do {
