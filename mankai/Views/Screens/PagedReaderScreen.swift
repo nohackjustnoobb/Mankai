@@ -426,23 +426,16 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         guard !groups.isEmpty else { return }
 
-        if let jumpAttempt = jumpToPage {
-            if let index = urls.firstIndex(of: jumpAttempt) {
-                // Check if all images up to this index are loaded
-                let allLoaded = (0 ... index).allSatisfy { i in
-                    let url = urls[i]
-                    return images[url] != nil && images[url]! != nil
-                }
-
-                if allLoaded,
-                   let groupIndex = groups.firstIndex(where: { $0.contains(jumpAttempt) })
-                {
-                    currentGroup = groupIndex
-                    jumpToPage = nil
-                }
-            } else {
-                jumpToPage = nil
-            }
+        if let initialPage = initialPage,
+           // Check if all images up to initialPage are loaded
+           (0 ... initialPage).allSatisfy({ index in
+               let url = urls[index]
+               return images[url] != nil && images[url]! != nil
+           })
+        {
+            navigateToPage(initialPage)
+            self.initialPage = nil
+            jumpToPage = nil
         }
 
         // Ensure currentGroup is valid for current groups
