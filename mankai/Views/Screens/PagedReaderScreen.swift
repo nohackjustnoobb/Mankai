@@ -19,6 +19,197 @@ private struct PageGroup: Identifiable, Hashable {
     }
 }
 
+// MARK: - OverscrollViewController
+
+private enum OverscrollType {
+    case previous
+    case next
+}
+
+private class OverscrollViewController: UIViewController {
+    let type: OverscrollType
+    let orientation: NavigationOrientation
+    let readingDirection: ReadingDirection
+    let isLocked: Bool
+    let hasChapter: Bool
+
+    init(
+        type: OverscrollType,
+        orientation: NavigationOrientation,
+        readingDirection: ReadingDirection,
+        isLocked: Bool,
+        hasChapter: Bool
+    ) {
+        self.type = type
+        self.orientation = orientation
+        self.readingDirection = readingDirection
+        self.isLocked = isLocked
+        self.hasChapter = hasChapter
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+
+    private func setupUI() {
+        view.backgroundColor = .systemBackground
+
+        let containerView = UIView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(containerView)
+
+        let arrowImageView = UIImageView()
+        arrowImageView.translatesAutoresizingMaskIntoConstraints = false
+        arrowImageView.tintColor = .secondaryLabel
+        arrowImageView.contentMode = .scaleAspectFit
+
+        let textLabel = UILabel()
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        textLabel.textColor = .secondaryLabel
+        textLabel.textAlignment = .center
+        textLabel.numberOfLines = 0
+
+        containerView.addSubview(arrowImageView)
+        containerView.addSubview(textLabel)
+
+        // Position container near the edge based on navigation orientation
+        var constraints: [NSLayoutConstraint] = []
+
+        if !hasChapter || isLocked {
+            // Center the container when there's no chapter or chapter is locked
+            constraints.append(contentsOf: [
+                containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                containerView.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20
+                ),
+                containerView.trailingAnchor.constraint(
+                    lessThanOrEqualTo: view.trailingAnchor, constant: -20
+                ),
+            ])
+        } else if orientation == .vertical {
+            // Position near top or bottom edge for vertical scrolling
+            constraints.append(contentsOf: [
+                containerView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                containerView.leadingAnchor.constraint(
+                    greaterThanOrEqualTo: view.leadingAnchor, constant: 20
+                ),
+                containerView.trailingAnchor.constraint(
+                    lessThanOrEqualTo: view.trailingAnchor, constant: -20
+                ),
+            ])
+
+            if type == .previous {
+                constraints.append(
+                    containerView.bottomAnchor.constraint(
+                        equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40
+                    ))
+            } else {
+                constraints.append(
+                    containerView.topAnchor.constraint(
+                        equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 40
+                    ))
+            }
+        } else {
+            // Position near left or right edge for horizontal scrolling
+            constraints.append(contentsOf: [
+                containerView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+                containerView.widthAnchor.constraint(lessThanOrEqualToConstant: 200),
+            ])
+
+            if readingDirection == .rightToLeft {
+                // RTL: Previous is on right, Next is on left
+                if type == .previous {
+                    constraints.append(
+                        containerView.leadingAnchor.constraint(
+                            equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 40
+                        ))
+                } else {
+                    constraints.append(
+                        containerView.trailingAnchor.constraint(
+                            equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -40
+                        ))
+                }
+            } else {
+                // LTR: Previous is on left, Next is on right
+                if type == .previous {
+                    constraints.append(
+                        containerView.trailingAnchor.constraint(
+                            equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -40
+                        ))
+                } else {
+                    constraints.append(
+                        containerView.leadingAnchor.constraint(
+                            equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 40
+                        ))
+                }
+            }
+        }
+
+        constraints.append(contentsOf: [
+            arrowImageView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            arrowImageView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 48),
+            arrowImageView.widthAnchor.constraint(equalToConstant: 48),
+
+            textLabel.topAnchor.constraint(equalTo: arrowImageView.bottomAnchor, constant: 16),
+            textLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            textLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            textLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+        ])
+
+        NSLayoutConstraint.activate(constraints)
+
+        configureContent(arrowImageView: arrowImageView, textLabel: textLabel)
+    }
+
+    private func configureContent(arrowImageView: UIImageView, textLabel: UILabel) {
+        if !hasChapter {
+            arrowImageView.image = UIImage(systemName: "xmark")
+            textLabel.text =
+                type == .previous
+                    ? String(localized: "noPreviousChapter")
+                    : String(localized: "noNextChapter")
+            return
+        }
+
+        if isLocked {
+            arrowImageView.image = UIImage(systemName: "lock.fill")
+            textLabel.text =
+                type == .previous
+                    ? String(localized: "previousChapterIsLocked")
+                    : String(localized: "nextChapterIsLocked")
+            return
+        }
+
+        // Configure arrow direction and text
+        let arrowImageName: String
+
+        if orientation == .vertical {
+            arrowImageName = type == .previous ? "chevron.up" : "chevron.down"
+        } else {
+            if readingDirection == .rightToLeft {
+                arrowImageName = type == .previous ? "chevron.right" : "chevron.left"
+            } else {
+                arrowImageName = type == .previous ? "chevron.left" : "chevron.right"
+            }
+        }
+
+        arrowImageView.image = UIImage(systemName: arrowImageName)
+        textLabel.text =
+            type == .previous
+                ? String(localized: "pullToLoadPreviousChapter")
+                : String(localized: "pullToLoadNextChapter")
+    }
+}
+
 // MARK: - PagedReaderViewController
 
 private class PagedReaderViewController: UIViewController, UIPageViewControllerDataSource,
@@ -55,7 +246,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     // Cached settings
     private var cachedImageLayout: ImageLayout = SettingsDefaults.PR_imageLayout
     private var cachedReadingDirection: ReadingDirection = SettingsDefaults.PR_readingDirection
-    private var cachedNavigationOrientation: NavigationOrientation = SettingsDefaults.PR_navigationOrientation
+    private var cachedNavigationOrientation: NavigationOrientation = SettingsDefaults
+        .PR_navigationOrientation
     private var cachedTapNavigation: Bool = SettingsDefaults.PR_tapNavigation
     private var cachedTapNavigationBehavior: TapBehavior = SettingsDefaults.PR_tapNavigationBehavior
 
@@ -143,10 +335,18 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     deinit {
         NotificationCenter.default.removeObserver(self)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_imageLayout.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_readingDirection.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_tapNavigation.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_tapNavigationBehavior.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_navigationOrientation.rawValue)
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.PR_readingDirection.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.PR_tapNavigation.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.PR_tapNavigationBehavior.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.PR_navigationOrientation.rawValue
+        )
         saveTimer?.invalidate()
     }
 
@@ -204,17 +404,20 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.PR_imageLayout.rawValue))
                 ?? SettingsDefaults.PR_imageLayout
         cachedReadingDirection =
-            ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.PR_readingDirection.rawValue))
-                ?? SettingsDefaults.PR_readingDirection
+            ReadingDirection(
+                rawValue: defaults.integer(forKey: SettingsKey.PR_readingDirection.rawValue))
+            ?? SettingsDefaults.PR_readingDirection
         cachedNavigationOrientation =
-            NavigationOrientation(rawValue: defaults.integer(forKey: SettingsKey.PR_navigationOrientation.rawValue))
-                ?? SettingsDefaults.PR_navigationOrientation
+            NavigationOrientation(
+                rawValue: defaults.integer(forKey: SettingsKey.PR_navigationOrientation.rawValue))
+            ?? SettingsDefaults.PR_navigationOrientation
         cachedTapNavigation =
             defaults.object(forKey: SettingsKey.PR_tapNavigation.rawValue) as? Bool
                 ?? SettingsDefaults.PR_tapNavigation
         cachedTapNavigationBehavior =
-            TapBehavior(rawValue: defaults.integer(forKey: SettingsKey.PR_tapNavigationBehavior.rawValue))
-                ?? SettingsDefaults.PR_tapNavigationBehavior
+            TapBehavior(
+                rawValue: defaults.integer(forKey: SettingsKey.PR_tapNavigationBehavior.rawValue))
+            ?? SettingsDefaults.PR_tapNavigationBehavior
     }
 
     // MARK: - Record
@@ -426,16 +629,19 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         guard !groups.isEmpty else { return }
 
-        if let initialPage = initialPage,
-           // Check if all images up to initialPage are loaded
-           (0 ... initialPage).allSatisfy({ index in
-               let url = urls[index]
-               return images[url] != nil && images[url]! != nil
-           })
-        {
+        if let initialPage = initialPage {
+            // Check if all images up to initialPage are loaded
+            let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
+                let url = urls[index]
+                return images[url] != nil && images[url]! != nil
+            }
+
             navigateToPage(initialPage)
-            self.initialPage = nil
-            jumpToPage = nil
+
+            if allImagesLoaded {
+                self.initialPage = nil
+                jumpToPage = nil
+            }
         }
 
         // Ensure currentGroup is valid for current groups
@@ -570,7 +776,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     // MARK: - Gestures
 
     private func setupGestures() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleScreenTap(_:)))
+        let tapGesture = UITapGestureRecognizer(
+            target: self, action: #selector(handleScreenTap(_:))
+        )
         view.addGestureRecognizer(tapGesture)
     }
 
@@ -888,12 +1096,47 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         )
     }
 
+    private func createOverscrollViewController(type: OverscrollType) -> UIViewController {
+        let isLocked: Bool
+        let hasChapter: Bool
+
+        if type == .previous {
+            if currentChapterIndex > 0 {
+                hasChapter = true
+                isLocked = chapters[currentChapterIndex - 1].locked == true
+            } else {
+                hasChapter = false
+                isLocked = false
+            }
+        } else {
+            if currentChapterIndex < chapters.count - 1 {
+                hasChapter = true
+                isLocked = chapters[currentChapterIndex + 1].locked == true
+            } else {
+                hasChapter = false
+                isLocked = false
+            }
+        }
+
+        return OverscrollViewController(
+            type: type,
+            orientation: cachedNavigationOrientation,
+            readingDirection: cachedReadingDirection,
+            isLocked: isLocked,
+            hasChapter: hasChapter
+        )
+    }
+
     // MARK: - UIPageViewControllerDataSource
 
     func pageViewController(
         _: UIPageViewController,
         viewControllerBefore viewController: UIViewController
     ) -> UIViewController? {
+        if viewController is OverscrollViewController {
+            return nil
+        }
+
         guard let contentVC = viewController as? PageContentViewController else { return nil }
 
         let newIndex: Int
@@ -907,15 +1150,35 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             newIndex = contentVC.pageIndex - 1
         }
 
-        guard newIndex >= 0, newIndex < groups.count else { return nil }
-
-        return createPageContentViewController(for: newIndex)
+        // Check if we are at the edge
+        if cachedReadingDirection == .rightToLeft, cachedNavigationOrientation == .horizontal {
+            // RTL Logic
+            // Before -> Next Chapter (End of Chapter)
+            if newIndex >= groups.count {
+                return createOverscrollViewController(type: .next)
+            }
+            // Valid Page
+            return createPageContentViewController(for: newIndex)
+        } else {
+            // Vertical or LTR Logic
+            // Before -> Previous Chapter (Start of Chapter)
+            if newIndex < 0 {
+                return createOverscrollViewController(type: .previous)
+            }
+            // Valid Page
+            return createPageContentViewController(for: newIndex)
+        }
     }
 
     func pageViewController(
         _: UIPageViewController,
         viewControllerAfter viewController: UIViewController
     ) -> UIViewController? {
+        // If current VC is OverscrollVC, we don't go further forward
+        if viewController is OverscrollViewController {
+            return nil
+        }
+
         guard let contentVC = viewController as? PageContentViewController else { return nil }
 
         let newIndex: Int
@@ -929,21 +1192,62 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             newIndex = contentVC.pageIndex + 1
         }
 
-        guard newIndex >= 0, newIndex < groups.count else { return nil }
-
-        return createPageContentViewController(for: newIndex)
+        if cachedReadingDirection == .rightToLeft, cachedNavigationOrientation == .horizontal {
+            // RTL Logic
+            // After -> Previous Chapter (Start of Chapter)
+            if newIndex < 0 {
+                return createOverscrollViewController(type: .previous)
+            }
+            // Valid Page
+            return createPageContentViewController(for: newIndex)
+        } else {
+            // Vertical or LTR Logic
+            // After -> Next Chapter (End of Chapter)
+            if newIndex >= groups.count {
+                return createOverscrollViewController(type: .next)
+            }
+            // Valid Page
+            return createPageContentViewController(for: newIndex)
+        }
     }
 
     // MARK: - UIPageViewControllerDelegate
 
     func pageViewController(
-        _ pageViewController: UIPageViewController,
+        _: UIPageViewController,
         didFinishAnimating _: Bool,
         previousViewControllers _: [UIViewController],
         transitionCompleted completed: Bool
     ) {
-        guard completed,
-              let currentVC = pageViewController.viewControllers?.first as? PageContentViewController
+        guard completed else { return }
+
+        // Check if we landed on an OverscrollViewController
+        if let overscrollVC = pageViewController.viewControllers?.first as? OverscrollViewController {
+            // Trigger chapter change
+            if overscrollVC.type == .previous {
+                if currentChapterIndex > 0 {
+                    let previousChapter = chapters[currentChapterIndex - 1]
+                    if previousChapter.locked != true {
+                        currentChapterIndex -= 1
+                        initialPage = -1
+                        loadChapter()
+                    }
+                }
+            } else {
+                if currentChapterIndex < chapters.count - 1 {
+                    let nextChapter = chapters[currentChapterIndex + 1]
+                    if nextChapter.locked != true {
+                        currentChapterIndex += 1
+                        initialPage = 0
+                        loadChapter()
+                    }
+                }
+            }
+            return
+        }
+
+        guard
+            let currentVC = pageViewController.viewControllers?.first as? PageContentViewController
         else { return }
 
         currentGroup = currentVC.pageIndex
@@ -1079,7 +1383,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
     private func updateBottomBar() {
         guard let pageInfoButton = bottomBar.viewWithTag(pageInfoButtonTag) as? UIButton,
-              let previousChapterButton = bottomBar.viewWithTag(previousChapterButtonTag) as? UIButton,
+              let previousChapterButton = bottomBar.viewWithTag(previousChapterButtonTag)
+              as? UIButton,
               let previousButton = bottomBar.viewWithTag(previousButtonTag) as? UIButton,
               let nextButton = bottomBar.viewWithTag(nextButtonTag) as? UIButton,
               let nextChapterButton = bottomBar.viewWithTag(nextChapterButtonTag) as? UIButton,
@@ -1282,7 +1587,8 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
             // Default to equal share of available width
             let screenWidth = UIScreen.main.bounds.width
             let defaultWidth = screenWidth / CGFloat(urls.count)
-            let widthConstraint = containerView.widthAnchor.constraint(equalToConstant: defaultWidth)
+            let widthConstraint = containerView.widthAnchor.constraint(
+                equalToConstant: defaultWidth)
             widthConstraint.isActive = true
             imageWidthConstraints[url] = widthConstraint
 

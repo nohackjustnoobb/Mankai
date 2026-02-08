@@ -175,8 +175,12 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     deinit {
         NotificationCenter.default.removeObserver(self)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_imageLayout.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_readingDirection.rawValue)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_tapNavigation.rawValue)
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.CR_readingDirection.rawValue
+        )
+        UserDefaults.standard.removeObserver(
+            self, forKeyPath: SettingsKey.CR_tapNavigation.rawValue
+        )
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_snapToPage.rawValue)
         UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_softSnap.rawValue)
         saveTimer?.invalidate()
@@ -248,8 +252,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.CR_imageLayout.rawValue))
                 ?? SettingsDefaults.CR_imageLayout
         cachedReadingDirection =
-            ReadingDirection(rawValue: defaults.integer(forKey: SettingsKey.CR_readingDirection.rawValue))
-                ?? SettingsDefaults.CR_readingDirection
+            ReadingDirection(
+                rawValue: defaults.integer(forKey: SettingsKey.CR_readingDirection.rawValue))
+            ?? SettingsDefaults.CR_readingDirection
         cachedSoftSnap =
             defaults.object(forKey: SettingsKey.CR_softSnap.rawValue) as? Bool
                 ?? SettingsDefaults.CR_softSnap
@@ -800,7 +805,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     // MARK: - Gestures
 
     private func setupGestures() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleScreenTap(_:)))
+        let tapGesture = UITapGestureRecognizer(
+            target: self, action: #selector(handleScreenTap(_:))
+        )
         scrollView.addGestureRecognizer(tapGesture)
     }
 
@@ -948,7 +955,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
             // Bottom overscroll view constraints
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 10),
+            bottomOverscrollView.topAnchor.constraint(
+                equalTo: scrollView.bottomAnchor, constant: 10
+            ),
 
             // Bottom bar constraints
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -1235,7 +1244,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
             // Check if this is a single portrait image
             let isSinglePortraitImage =
-                defaultGroupSize != 1 && groupUrls.count == 1 && ratios[groupUrls[0], default: mode] < 1
+                defaultGroupSize != 1 && groupUrls.count == 1
+                    && ratios[groupUrls[0], default: mode] < 1
             let effectiveWidth = isSinglePortraitImage ? width / CGFloat(defaultGroupSize) : width
 
             let ratiosSum: CGFloat = groupUrls.reduce(0) { result, url in
@@ -1312,16 +1322,19 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         view.layoutIfNeeded()
 
-        if let initialPage = initialPage,
-           // Check if all images up to initialPage are loaded
-           (0 ... initialPage).allSatisfy({ index in
-               let url = urls[index]
-               return images[url] != nil && images[url]! != nil
-           })
-        {
+        if let initialPage = initialPage {
+            // Check if all images up to initialPage are loaded
+            let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
+                let url = urls[index]
+                return images[url] != nil && images[url]! != nil
+            }
+
             navigateToPage(initialPage)
-            self.initialPage = nil
-            jumpToPage = nil
+
+            if allImagesLoaded {
+                self.initialPage = nil
+                jumpToPage = nil
+            }
         }
     }
 
@@ -1469,7 +1482,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     private func updateBottomBar() {
         guard let pageInfoButton = bottomBar.viewWithTag(PAGE_INFO_BUTTON_ID) as? UIButton,
-              let previousChapterButton = bottomBar.viewWithTag(PREVIOUS_CHAPTER_BUTTON_ID) as? UIButton,
+              let previousChapterButton = bottomBar.viewWithTag(PREVIOUS_CHAPTER_BUTTON_ID)
+              as? UIButton,
               let previousButton = bottomBar.viewWithTag(PREVIOUS_BUTTON_ID) as? UIButton,
               let nextButton = bottomBar.viewWithTag(NEXT_BUTTON_ID) as? UIButton,
               let nextChapterButton = bottomBar.viewWithTag(NEXT_CHAPTER_BUTTON_ID) as? UIButton,
@@ -1584,7 +1598,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
             textLabel.topAnchor.constraint(equalTo: arrowImageView.bottomAnchor, constant: 8),
             textLabel.leadingAnchor.constraint(equalTo: overscrollView.leadingAnchor, constant: 8),
-            textLabel.trailingAnchor.constraint(equalTo: overscrollView.trailingAnchor, constant: -8),
+            textLabel.trailingAnchor.constraint(
+                equalTo: overscrollView.trailingAnchor, constant: -8
+            ),
             textLabel.bottomAnchor.constraint(equalTo: overscrollView.bottomAnchor, constant: -8),
         ])
     }
@@ -1612,11 +1628,15 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         // Set up constraints
         NSLayoutConstraint.activate([
             textLabel.topAnchor.constraint(equalTo: bottomOverscrollView.topAnchor, constant: 20),
-            textLabel.leadingAnchor.constraint(equalTo: bottomOverscrollView.leadingAnchor, constant: 8),
+            textLabel.leadingAnchor.constraint(
+                equalTo: bottomOverscrollView.leadingAnchor, constant: 8
+            ),
             textLabel.trailingAnchor.constraint(
                 equalTo: bottomOverscrollView.trailingAnchor, constant: -8
             ),
-            textLabel.bottomAnchor.constraint(equalTo: bottomOverscrollView.bottomAnchor, constant: -8),
+            textLabel.bottomAnchor.constraint(
+                equalTo: bottomOverscrollView.bottomAnchor, constant: -8
+            ),
 
             arrowImageView.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 8),
             arrowImageView.centerXAnchor.constraint(equalTo: bottomOverscrollView.centerXAnchor),
@@ -1627,8 +1647,9 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     private func updateOverscrollViewsVisibility() {
         // Update top overscroll view
-        if let arrowImageView = overscrollView.viewWithTag(TOP_OVERSCROLL_ARROW_TAG) as? UIImageView,
-           let textLabel = overscrollView.viewWithTag(TOP_OVERSCROLL_TEXT_TAG) as? UILabel
+        if let arrowImageView = overscrollView.viewWithTag(TOP_OVERSCROLL_ARROW_TAG)
+            as? UIImageView,
+            let textLabel = overscrollView.viewWithTag(TOP_OVERSCROLL_TEXT_TAG) as? UILabel
         {
             if currentChapterIndex > 0 {
                 let previousChapter = chapters[currentChapterIndex - 1]

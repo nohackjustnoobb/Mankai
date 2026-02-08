@@ -13,7 +13,7 @@ enum SettingsDefaults {
     static let showDebugScreen: Bool = false
 
     // Default Reader
-    static let readerType: ReaderType = .continuous
+    static let readerType: ReaderType = .paged
 
     // Continuous Reader Defaults
     static let CR_imageLayout: ImageLayout = .auto
@@ -24,7 +24,7 @@ enum SettingsDefaults {
 
     // Paged Reader Defaults
     static let PR_imageLayout: ImageLayout = .auto
-    static let PR_navigationOrientation: NavigationOrientation = .horizontal
+    static let PR_navigationOrientation: NavigationOrientation = .vertical
     static let PR_readingDirection: ReadingDirection = .rightToLeft
     static let PR_tapNavigation: Bool = true
     static let PR_tapNavigationBehavior: TapBehavior = .followReadingDirection
