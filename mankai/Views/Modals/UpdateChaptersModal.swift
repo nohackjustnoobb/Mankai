@@ -8,23 +8,23 @@
 import SwiftUI
 
 struct UpdateChaptersModal: View {
-    let plugin: ReadWriteFsPlugin
+    let plugin: any Editable
     let manga: DetailedManga
     let chaptersKey: String
     var isRootOfSheet: Bool
 
-    @State private var chapters: [FsChapterModel] = []
+    @State private var chapters: [Chapter] = []
     @State private var showingAddAlert = false
     @State private var newChapterName = ""
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
 
-    @State private var chapterGroupId: Int? = nil
+    @State private var chapterGroupId: String? = nil
 
     @Environment(\.dismiss) private var dismiss
 
     init(
-        plugin: ReadWriteFsPlugin, manga: DetailedManga, chaptersKey: String,
+        plugin: any Editable, manga: DetailedManga, chaptersKey: String,
         isRootOfSheet: Bool = false
     ) {
         self.plugin = plugin
@@ -52,7 +52,7 @@ struct UpdateChaptersModal: View {
         let currentChapters = chapters
         Task {
             do {
-                let ids = currentChapters.compactMap { $0.id }
+                let ids = currentChapters.map { $0.id }
                 try await plugin.arrangeChapterOrder(ids: ids)
 
                 fetchChapters()
@@ -70,9 +70,7 @@ struct UpdateChaptersModal: View {
         Task {
             do {
                 for chapter in chaptersToDelete {
-                    if let id = chapter.id {
-                        try await plugin.deleteChapter(id: id, mangaId: manga.id)
-                    }
+                    try await plugin.deleteChapter(id: chapter.id)
                 }
 
                 fetchChapters()
@@ -83,11 +81,7 @@ struct UpdateChaptersModal: View {
         }
     }
 
-    private func renameChapter(for chapterId: Int, to newTitle: String) {
-        guard let index = chapters.firstIndex(where: { $0.id == chapterId }) else { return }
-
-        let sequence = chapters[index].sequence
-
+    private func renameChapter(for chapterId: String, to newTitle: String) {
         Task {
             do {
                 guard let groupId = chapterGroupId else {
@@ -98,7 +92,7 @@ struct UpdateChaptersModal: View {
                 }
 
                 try await plugin.upsertChapter(
-                    id: chapterId, title: newTitle, sequence: sequence, chapterGroupId: groupId
+                    id: chapterId, title: newTitle, chapterGroupId: groupId
                 )
 
                 fetchChapters()
@@ -123,15 +117,13 @@ struct UpdateChaptersModal: View {
                             UpdateChapterModal(
                                 plugin: plugin,
                                 manga: manga,
-                                chapter: Chapter(id: String(chapter.id!), title: chapter.title),
+                                chapter: chapter,
                                 onRename: { id, title in
-                                    if let intId = Int(id) {
-                                        renameChapter(for: intId, to: title)
-                                    }
+                                    renameChapter(for: id, to: title)
                                 }
                             )
                         }) {
-                            Text(chapter.title)
+                            Text(chapter.title ?? chapter.id)
                                 .foregroundColor(.primary)
                         }
                         .padding(.horizontal, 20)
@@ -189,12 +181,8 @@ struct UpdateChaptersModal: View {
                                 )
                             }
 
-                            // Determine sequence based on max sequence
-                            let maxSequence = chapters.map(\.sequence).max() ?? -1
-                            let newSequence = maxSequence + 1
-
                             try await plugin.upsertChapter(
-                                title: trimmedName, sequence: newSequence, chapterGroupId: groupId
+                                id: nil, title: trimmedName, chapterGroupId: groupId
                             )
 
                             fetchChapters()

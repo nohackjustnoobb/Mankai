@@ -1,6 +1,9 @@
 > [!WARNING]
 > This project is currently under active development. Many details are still being finalized.
 
+> [!IMPORTANT]
+> Mankai does not provide, host, or distribute any media content. Users are responsible for obtaining media through legal means and complying with their local laws. Any plugins used with the app are unaffiliated with Mankai, and we have no control over them.
+
 <div align="center">
 
 <img src="assets/icon.png" width="128" />
@@ -44,7 +47,7 @@ Mankai is designed to be extensible. It supports three types of plugins, each se
 
 This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
 
-- **Official Plugins**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins) (includes source code and compiled plugins).
+- **Plugins Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins).
 
 ### File System Plugin (FsPlugin)
 

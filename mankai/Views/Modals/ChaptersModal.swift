@@ -79,10 +79,10 @@ struct ChaptersModal: View {
                                     : "arrow.down")
                         }
 
-                        if plugin is ReadWriteFsPlugin {
+                        if plugin is Editable {
                             NavigationLink(destination: {
                                 UpdateChaptersModal(
-                                    plugin: plugin as! ReadWriteFsPlugin, manga: manga, chaptersKey: chaptersKey
+                                    plugin: plugin as! any Editable, manga: manga, chaptersKey: chaptersKey
                                 )
                             }) {
                                 Image(systemName: "pencil")

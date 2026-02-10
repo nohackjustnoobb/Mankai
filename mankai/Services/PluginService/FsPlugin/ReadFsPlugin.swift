@@ -192,7 +192,7 @@ class ReadFsPlugin: Plugin {
             options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil
         )
 
-        let isWriteable = self is ReadWriteFsPlugin
+        let isWriteable = self is Editable
 
         let pluginModel = FsPluginModel(
             id: id,

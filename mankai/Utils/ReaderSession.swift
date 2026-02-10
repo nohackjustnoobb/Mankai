@@ -74,7 +74,6 @@ class ReaderSession: ObservableObject {
         // Initial grouping
         groupImages()
 
-        // Load images
         loadImages(urls: urls)
     }
 
@@ -148,7 +147,6 @@ class ReaderSession: ObservableObject {
         while i < urls.count {
             let url = urls[i]
 
-            // Check if image is loaded and if it's a wide image
             let isWide = isImageWide(url: url)
 
             if isWide {

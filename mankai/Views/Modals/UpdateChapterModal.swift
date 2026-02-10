@@ -9,7 +9,7 @@ import PhotosUI
 import SwiftUI
 
 struct UpdateChapterModal: View {
-    let plugin: ReadWriteFsPlugin
+    let plugin: any Editable
     let manga: DetailedManga
     let chapter: Chapter
     let onRename: ((String, String) -> Void)?
@@ -90,7 +90,7 @@ struct UpdateChapterModal: View {
 
         Task {
             do {
-                try await plugin.removeImages(
+                try await plugin.deleteImages(
                     ids: idsToRemove
                 )
                 loadUrls()
@@ -124,7 +124,7 @@ struct UpdateChapterModal: View {
 
             do {
                 try await plugin.addImages(
-                    mangaId: manga.id, chapterId: chapter.id, images: newImages
+                    chapterId: chapter.id, images: newImages
                 )
 
                 loadUrls()

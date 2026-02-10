@@ -395,7 +395,7 @@ struct MangaDetailsScreen: View {
                                         }
                                         .buttonStyle(.plain)
 
-                                        if plugin is ReadWriteFsPlugin {
+                                        if plugin is Editable {
                                             Button(action: {
                                                 isUpdateChaptersModalPresented = true
                                             }) {
@@ -437,19 +437,19 @@ struct MangaDetailsScreen: View {
         }
         .sheet(isPresented: $isUpdateMangaModalPresented) { [detailedManga] in
             if let detailedManga = detailedManga,
-               let readWritePlugin = plugin as? ReadWriteFsPlugin
+               let editablePlugin = plugin as? any Editable
             {
-                UpdateMangaModal(plugin: readWritePlugin, manga: detailedManga)
+                UpdateMangaModal(plugin: editablePlugin, manga: detailedManga)
             }
         }
         .sheet(isPresented: $isUpdateChaptersModalPresented) {
             [detailedManga, selectedChapterKey] in
             if let detailedManga = detailedManga,
                let selectedChapterKey = selectedChapterKey,
-               let readWritePlugin = plugin as? ReadWriteFsPlugin
+               let editablePlugin = plugin as? any Editable
             {
                 UpdateChaptersModal(
-                    plugin: readWritePlugin, manga: detailedManga, chaptersKey: selectedChapterKey,
+                    plugin: editablePlugin, manga: detailedManga, chaptersKey: selectedChapterKey,
                     isRootOfSheet: true
                 )
             }
@@ -489,7 +489,7 @@ struct MangaDetailsScreen: View {
                 }
             }
 
-            if plugin is ReadWriteFsPlugin {
+            if plugin is Editable {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: { isUpdateMangaModalPresented = true }) {
                         Image(systemName: "pencil.circle")
@@ -528,7 +528,7 @@ struct MangaDetailsScreen: View {
                     Array(detailedManga!.chapters).sorted { $0.value.count > $1.value.count }
                         .first?.key
             } catch {
-                if !(plugin is ReadWriteFsPlugin) {
+                if !(plugin is Editable) {
                     Logger.ui.error("Failed to load detailed manga", error: error)
                 }
 

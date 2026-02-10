@@ -11,15 +11,14 @@ import SwiftUI
 struct UpdateMangaModal: View {
     @Environment(\.dismiss) var dismiss
 
-    var plugin: ReadWriteFsPlugin? = nil
+    var plugin: (any Editable)? = nil
     var manga: DetailedManga? = nil
 
     var body: some View {
         NavigationView {
             UpdateMangaContent(
                 plugin: plugin, manga: manga,
-                plugins: PluginService.shared.plugins.filter { $0 is ReadWriteFsPlugin }
-                    as! [ReadWriteFsPlugin]
+                plugins: PluginService.shared.plugins.compactMap { $0 as? any Editable }
             )
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -35,7 +34,7 @@ struct UpdateMangaModal: View {
 }
 
 struct UpdateMangaContent: View {
-    let plugins: [ReadWriteFsPlugin]
+    let plugins: [any Editable]
     let isCreatingManga: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -61,7 +60,7 @@ struct UpdateMangaContent: View {
     @State private var showingDeleteConfirmation = false
 
     init(
-        plugin: ReadWriteFsPlugin? = nil, manga: DetailedManga? = nil, plugins: [ReadWriteFsPlugin]
+        plugin: (any Editable)? = nil, manga: DetailedManga? = nil, plugins: [any Editable]
     ) {
         self.plugins = plugins
         isCreatingManga = manga == nil
@@ -137,7 +136,7 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            try await selectedPlugin.upsertChapterGroup(mangaId: manga.id, title: trimmedKey)
+            try await selectedPlugin.upsertChapterGroup(id: nil, mangaId: manga.id, title: trimmedKey)
             manga.chapters[trimmedKey] = []
             newChapterGroup = ""
             showingAddChapterGroupAlert = false
@@ -192,10 +191,10 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            try await selectedPlugin.updateManga(manga)
+            try await selectedPlugin.upsertManga(manga)
 
             if isCoverChanged, let coverData = coverImageData {
-                try await selectedPlugin.updateCover(mangaId: manga.id, image: coverData)
+                try await selectedPlugin.upsertCover(mangaId: manga.id, image: coverData)
             }
 
             isProcessing = false
@@ -237,7 +236,7 @@ struct UpdateMangaContent: View {
             if isCreatingManga {
                 Section {
                     Picker("plugin", selection: $plugin) {
-                        ForEach(plugins) { plugin in
+                        ForEach(plugins, id: \.id) { plugin in
                             Text(plugin.name ?? plugin.id)
                                 .tag(plugin.id)
                         }

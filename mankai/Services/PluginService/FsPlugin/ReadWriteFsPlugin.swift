@@ -10,7 +10,7 @@ import Foundation
 import GRDB
 import UIKit
 
-class ReadWriteFsPlugin: ReadFsPlugin {
+class ReadWriteFsPlugin: ReadFsPlugin, Editable {
     private lazy var _db: DatabasePool? = DbService.shared.openFsDb(_dbPath, readOnly: false)
     override var db: DatabasePool? {
         return _db
@@ -61,10 +61,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     // MARK: - Methods
 
-    func updateManga(_ manga: DetailedManga) async throws {
-        Logger.fsPlugin.debug("Updating manga: \(manga.id)")
+    func upsertManga(_ manga: DetailedManga) async throws {
+        Logger.fsPlugin.debug("Upserting manga: \(manga.id)")
         guard let db = db else {
-            Logger.fsPlugin.error("Database not available for updateManga")
+            Logger.fsPlugin.error("Database not available for upsertManga")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
@@ -128,10 +128,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func updateCover(mangaId: String, image: Data) async throws {
-        Logger.fsPlugin.debug("Updating cover for manga: \(mangaId)")
+    func upsertCover(mangaId: String, image: Data) async throws {
+        Logger.fsPlugin.debug("Upserting cover for manga: \(mangaId)")
         guard let db = db else {
-            Logger.fsPlugin.error("Database not available for updateCover")
+            Logger.fsPlugin.error("Database not available for upsertCover")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
@@ -195,7 +195,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
     // MARK: - Chapter Group Methods
 
-    func upsertChapterGroup(id: Int? = nil, mangaId: String, title: String) async throws {
+    func upsertChapterGroup(id: String?, mangaId: String, title: String) async throws {
         Logger.fsPlugin.debug("Upserting chapter group: \(title) for manga: \(mangaId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertChapterGroup")
@@ -207,7 +207,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
         try await db.write { db in
             let newGroup = FsChapterGroupModel(
-                id: id,
+                id: id.flatMap { Int($0) },
                 mangaId: mangaId,
                 title: title
             )
@@ -219,9 +219,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func deleteChapterGroup(id: Int) async throws {
+    func deleteChapterGroup(id: String) async throws {
         Logger.fsPlugin.debug("Deleting chapter group: \(id)")
-        guard let db = db else {
+        guard let db = db, let intId = Int(id) else {
             Logger.fsPlugin.error("Database not available for deleteChapterGroup")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
@@ -231,7 +231,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
         // Fetch the chapter group and its chapters before deletion
         let (mangaId, chapterIds) = try await db.read { db in
-            guard let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: id) else {
+            guard let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intId) else {
                 throw NSError(
                     domain: "ReadWriteFsPlugin", code: 1,
                     userInfo: [NSLocalizedDescriptionKey: "Chapter group not found"]
@@ -240,7 +240,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
 
             let chapters =
                 try FsChapterModel
-                    .filter(Column("chapterGroupId") == id)
+                    .filter(Column("chapterGroupId") == intId)
                     .fetchAll(db)
 
             return (chapterGroup.mangaId, chapters.compactMap { $0.id })
@@ -263,7 +263,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         // Delete the chapter group (cascade deletes chapters)
         _ = try await db.write { db in
             try FsChapterGroupModel
-                .filter(key: id)
+                .filter(key: intId)
                 .deleteAll(db)
         }
 
@@ -272,40 +272,47 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func getChapterGroupId(mangaId: String, title: String) async throws -> Int? {
+    func getChapterGroupId(mangaId: String, title: String) async throws -> String? {
         guard let db = db else {
             return nil
         }
 
         return try await db.read { db in
-            try FsChapterGroupModel
+            if let id = try FsChapterGroupModel
                 .filter(Column("mangaId") == mangaId && Column("title") == title)
                 .fetchOne(db)?.id
+            {
+                return String(id)
+            }
+            return nil
         }
     }
 
-    func getChapters(groupId: Int) async throws -> [FsChapterModel] {
-        guard let db = db else {
+    func getChapters(groupId: String) async throws -> [Chapter] {
+        guard let db = db, let intGroupId = Int(groupId) else {
             return []
         }
 
         return try await db.read { db in
             let chapters =
                 try FsChapterModel
-                    .filter(Column("chapterGroupId") == groupId)
+                    .filter(Column("chapterGroupId") == intGroupId)
                     .fetchAll(db)
 
             return chapters.sorted { $0.sequence < $1.sequence }
+                .map { Chapter(id: String($0.id ?? 0), title: $0.title, locked: nil) }
         }
     }
 
     // MARK: - Chapter Methods
 
-    func upsertChapter(id: Int? = nil, title: String, sequence: Int, chapterGroupId: Int) async throws {
+    func upsertChapter(id: String?, title: String, chapterGroupId: String) async throws {
+        let intId = id.flatMap { Int($0) }
+        let intChapterGroupId = Int(chapterGroupId)
         Logger.fsPlugin.debug(
-            "Upserting chapter: \(title) (id: \(id ?? -1), sequence: \(sequence), groupId: \(chapterGroupId))"
+            "Upserting chapter: \(title) (id: \(intId ?? -1), groupId: \(chapterGroupId))"
         )
-        guard let db = db else {
+        guard let db = db, let intChapterGroupId = intChapterGroupId else {
             Logger.fsPlugin.error("Database not available for upsertChapter")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
@@ -314,16 +321,32 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
 
         try await db.write { db in
+            let existingChapter = try FsChapterModel.fetchOne(db, key: intId)
+            let existingChapterId = existingChapter?.id
+            let sequence: Int
+            if intId == nil || existingChapter == nil {
+                let maxSequence =
+                    try
+                        (FsChapterModel
+                            .filter(Column("chapterGroupId") == intChapterGroupId)
+                            .select(max(Column("sequence")))
+                            .asRequest(of: Int?.self)
+                            .fetchOne(db) ?? nil) ?? -1
+                sequence = maxSequence + 1
+            } else {
+                sequence = existingChapter!.sequence
+            }
+
             let chapter =
                 try FsChapterModel(
-                    id: id,
+                    id: existingChapterId,
                     title: title,
                     sequence: sequence,
-                    chapterGroupId: chapterGroupId
+                    chapterGroupId: intChapterGroupId
                 ).upsertAndFetch(db)
 
-            if id == nil, let newChapterId = chapter.id {
-                if let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: chapterGroupId) {
+            if existingChapterId == nil, let newChapterId = chapter.id {
+                if let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intChapterGroupId) {
                     if var manga = try FsMangaModel.fetchOne(db, key: chapterGroup.mangaId) {
                         manga.latestChapterId = newChapterId
                         try manga.update(db)
@@ -337,9 +360,9 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func deleteChapter(id: Int, mangaId: String) async throws {
-        Logger.fsPlugin.debug("Deleting chapter: \(id) from manga: \(mangaId)")
-        guard let db = db else {
+    func deleteChapter(id: String) async throws {
+        Logger.fsPlugin.debug("Deleting chapter: \(id)")
+        guard let db = db, let intId = Int(id) else {
             Logger.fsPlugin.error("Database not available for deleteChapter")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
@@ -347,22 +370,33 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             )
         }
 
+        // Look up mangaId from chapter -> chapterGroup
+        let mangaId: String? = try await db.read { db in
+            guard let chapter = try FsChapterModel.fetchOne(db, key: intId) else {
+                return nil
+            }
+            let group = try FsChapterGroupModel.fetchOne(db, key: chapter.chapterGroupId)
+            return group?.mangaId
+        }
+
         _ = try await db.write { db in
             try FsChapterModel
-                .filter(key: id)
+                .filter(key: intId)
                 .deleteAll(db)
         }
 
         // Delete chapter directory if it exists
-        let fileManager = FileManager.default
-        let chapterDir =
-            url
-                .appendingPathComponent(mangaId)
-                .appendingPathComponent("chapters")
-                .appendingPathComponent(String(id))
+        if let mangaId = mangaId {
+            let fileManager = FileManager.default
+            let chapterDir =
+                url
+                    .appendingPathComponent(mangaId)
+                    .appendingPathComponent("chapters")
+                    .appendingPathComponent(id)
 
-        if fileManager.fileExists(atPath: chapterDir.path) {
-            try? fileManager.removeItem(at: chapterDir)
+            if fileManager.fileExists(atPath: chapterDir.path) {
+                try? fileManager.removeItem(at: chapterDir)
+            }
         }
 
         await MainActor.run {
@@ -370,7 +404,7 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func arrangeChapterOrder(ids: [Int]) async throws {
+    func arrangeChapterOrder(ids: [String]) async throws {
         Logger.fsPlugin.debug("Arranging chapter order for chapter group")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for arrangeChapterOrder")
@@ -380,9 +414,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
             )
         }
 
+        let intIds = ids.compactMap { Int($0) }
         try await db.write { db in
             // Update sequence for each chapter based on its position in the ids array
-            for (index, id) in ids.enumerated() {
+            for (index, id) in intIds.enumerated() {
                 if var chapterModel = try FsChapterModel.fetchOne(db, key: id) {
                     chapterModel.sequence = index
                     try chapterModel.update(db)
@@ -395,15 +430,29 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func addImages(mangaId: String, chapterId: String, images: [Data]) async throws {
+    func addImages(chapterId: String, images: [Data]) async throws {
         Logger.fsPlugin.debug(
-            "Adding \(images.count) images to chapter: \(chapterId) (manga: \(mangaId))")
+            "Adding \(images.count) images to chapter: \(chapterId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for addImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
             )
+        }
+
+        // Look up mangaId from chapter -> chapterGroup
+        let mangaId: String = try await db.read { db in
+            guard let chapterIdInt = Int(chapterId),
+                  let chapter = try FsChapterModel.fetchOne(db, key: chapterIdInt),
+                  let group = try FsChapterGroupModel.fetchOne(db, key: chapter.chapterGroupId)
+            else {
+                throw NSError(
+                    domain: "ReadWriteFsPlugin", code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Chapter not found"]
+                )
+            }
+            return group.mangaId
         }
 
         let fileManager = FileManager.default
@@ -475,10 +524,10 @@ class ReadWriteFsPlugin: ReadFsPlugin {
         }
     }
 
-    func removeImages(ids: [String]) async throws {
-        Logger.fsPlugin.debug("Removing \(ids.count) images")
+    func deleteImages(ids: [String]) async throws {
+        Logger.fsPlugin.debug("Deleting \(ids.count) images")
         guard let db = db else {
-            Logger.fsPlugin.error("Database not available for removeImages")
+            Logger.fsPlugin.error("Database not available for deleteImages")
             throw NSError(
                 domain: "ReadWriteFsPlugin", code: 1,
                 userInfo: [NSLocalizedDescriptionKey: String(localized: "databaseNotAvailable")]
