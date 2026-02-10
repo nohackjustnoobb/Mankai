@@ -5,6 +5,7 @@
 //  Created by Travis XU on 30/6/2025.
 //
 
+import Combine
 import SwiftUI
 import UIKit
 
@@ -49,16 +50,29 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private var initialPage: Int?
     private var jumpToPage: String?
 
-    // Image management variables
-    private var urls: [String] = []
-    private var images: [String: UIImageView?] = [:]
+    // Reader session
+    private let readerSession: ReaderSession
+    private var cancellables = Set<AnyCancellable>()
+
+    // Layout groups (derived from readerSession.groups with added layout info)
     private var groups: [ContinuousGroup] = []
+    private var urls: [String] { readerSession.urls }
 
     // Reading state variables
     private var currentPage: Int = 0
     private var currentGroup: ContinuousGroup?
     private var startY: CGFloat = 0.0
-    private var defaultGroupSize: Int = 1
+
+    private var defaultGroupSize: Int {
+        switch cachedImageLayout {
+        case .auto:
+            return UIScreen.main.bounds.width > UIScreen.main.bounds.height ? 2 : 1
+        case .onePerRow:
+            return 1
+        case .twoPerRow:
+            return 2
+        }
+    }
 
     // Haptic feedback state
     private var hasTriggeredTopHaptic = false
@@ -107,6 +121,12 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         chapters = manga.chapters[chaptersKey] ?? []
         currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
+
+        readerSession = ReaderSession(
+            plugin: plugin,
+            manga: manga,
+            imageLayout: SettingsDefaults.CR_imageLayout
+        )
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -170,6 +190,15 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         // Initialize cached settings
         updateCachedSettings()
+
+        // Subscribe to ReaderSession changes
+        readerSession.$images
+            .combineLatest(readerSession.$groups)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                self?.syncGroupsFromSession()
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
@@ -235,8 +264,10 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     @objc private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
-            self?.groupImages()
-            self?.navigateToPage(self?.currentPage ?? 0, animated: false)
+            guard let self = self else { return }
+            self.readerSession.imageLayout = self.cachedImageLayout
+            self.syncGroupsFromSession()
+            self.navigateToPage(self.currentPage, animated: false)
         }
     }
 
@@ -402,6 +433,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
                 let nextChapter = chapters[currentChapterIndex + 1]
                 if nextChapter.locked != true {
                     currentChapterIndex += 1
+                    initialPage = 0
                     loadChapter()
                 }
             }
@@ -518,11 +550,10 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         overscrollView.isHidden = true
 
         // Reset state
-        urls = []
-        images = [:]
         groups = []
         currentPage = 0
         startY = 0.0
+        jumpToPage = nil
 
         let chapter = chapters[currentChapterIndex]
         // Set title
@@ -537,9 +568,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         Task {
             do {
-                urls = try await plugin.getChapter(
-                    manga: manga, chapter: chapter
-                )
+                try await readerSession.getChapter(chapter: chapter)
 
                 if var initialPage = self.initialPage {
                     if initialPage == -1 {
@@ -552,8 +581,6 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
                     }
                 }
 
-                scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
-                loadImages()
                 updateBottomBar()
             } catch {
                 showErrorView()
@@ -561,99 +588,30 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         }
     }
 
-    // MARK: - Load Images
+    // MARK: - Sync Groups from ReaderSession
 
-    private func loadImages() {
-        for url in urls {
-            Task {
-                do {
-                    let imageData = try await plugin.getImage(url)
-                    images[url] = UIImageView(image: UIImage(data: imageData))
-                } catch {
-                    images[url] = nil
-                }
-
-                updateGrouping()
-            }
-        }
-
-        // Retry failed images after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            guard let self = self else { return }
-
-            // Check if any images are still nil
-            let hasFailedImages = self.urls.contains { url in
-                self.images[url] == nil || self.images[url] as? NSObject == nil
-            }
-
-            if hasFailedImages {
-                self.loadImages()
-            }
-        }
-    }
-
-    // MARK: - Group Images
-
-    // TODO: smart grouping
-    // TODO: class to handle grouping & image loading
-    private func groupImages() {
-        groups = []
-
-        switch cachedImageLayout {
-        case .auto:
-            // Determine screen orientation
-            let isLandscape = UIDevice.current.orientation.isLandscape
-
-            // Default grouping size based on orientation
-            defaultGroupSize = isLandscape ? 2 : 1
-        case .onePerRow:
-            defaultGroupSize = 1
-        case .twoPerRow:
-            defaultGroupSize = 2
-        }
-
-        var i = 0
-        while i < urls.count {
-            let url = urls[i]
-
-            // Check if image is loaded and if it's a wide image
-            let isWideImage = isImageWide(url: url)
-
-            if isWideImage {
-                // Wide images get their own group regardless of orientation
-                groups.append(ContinuousGroup(urls: [url]))
-                i += 1
-            } else {
-                // Build a group of non-wide images up to defaultGroupSize
-                var groupUrls: [String] = []
-                var j = i
-
-                while j < urls.count, groupUrls.count < defaultGroupSize {
-                    let currentUrl = urls[j]
-
-                    // If we encounter a wide image while building the group, stop here
-                    if isImageWide(url: currentUrl) {
-                        break
-                    }
-
-                    groupUrls.append(currentUrl)
-                    j += 1
-                }
-
-                groups.append(ContinuousGroup(urls: groupUrls))
-                i = j
-            }
-        }
-
+    private func syncGroupsFromSession() {
+        groups = readerSession.groups.map { ContinuousGroup(urls: $0.urls) }
         updateImageViews()
-    }
 
-    private func isImageWide(url: String) -> Bool {
-        guard let imageView = images[url], let image = imageView?.image else {
-            return false
+        if let initialPage = initialPage, initialPage >= 0, initialPage < urls.count {
+            let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
+                let url = urls[index]
+                if let readerImage = readerSession.images[url],
+                   case .success = readerImage.state
+                {
+                    return true
+                }
+                return false
+            }
+
+            navigateToPage(initialPage)
+
+            if allImagesLoaded {
+                self.initialPage = nil
+                jumpToPage = nil
+            }
         }
-
-        return image.size.width > image.size.height
     }
 
     // MARK: - Page Management
@@ -1104,22 +1062,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     // MARK: - Image View Management Helper Methods
 
-    private enum ImageViewState {
-        case loading
-        case loaded(UIImageView)
-        case failed
-    }
-
-    private func getImageViewState(for url: String) -> ImageViewState {
-        if let imageViewOptional = images[url] {
-            if let imageView = imageViewOptional {
-                return .loaded(imageView)
-            } else {
-                return .failed
-            }
-        } else {
-            return .loading
-        }
+    private func getImageState(for url: String) -> ReaderImageState {
+        return readerSession.images[url]?.state ?? .loading
     }
 
     private func updateViewFrame(_ view: UIView, url: String, frames: [String: CGRect]) {
@@ -1146,15 +1090,16 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private func handleExistingImageView(
         _ existingView: UIView, url: String, tag: Int, frames: [String: CGRect]
     ) {
-        let currentState = getImageViewState(for: url)
-
-        switch currentState {
-        case let .loaded(imageView):
-            if existingView != imageView {
-                replaceView(existingView, with: imageView, tag: tag, url: url, frames: frames)
-                imageView.contentMode = .scaleToFill
-            } else {
+        switch getImageState(for: url) {
+        case let .success(uiImage):
+            if let existingImageView = existingView as? UIImageView,
+               existingImageView.image === uiImage
+            {
                 updateViewFrame(existingView, url: url, frames: frames)
+            } else {
+                let imageView = UIImageView(image: uiImage)
+                imageView.contentMode = .scaleToFill
+                replaceView(existingView, with: imageView, tag: tag, url: url, frames: frames)
             }
 
         case .failed:
@@ -1182,12 +1127,11 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     }
 
     private func createNewImageView(url: String, tag: Int, frames: [String: CGRect]) {
-        let currentState = getImageViewState(for: url)
-
-        switch currentState {
-        case let .loaded(imageView):
-            addImageViewToContent(imageView, tag: tag, url: url, frames: frames)
+        switch getImageState(for: url) {
+        case let .success(uiImage):
+            let imageView = UIImageView(image: uiImage)
             imageView.contentMode = .scaleToFill
+            addImageViewToContent(imageView, tag: tag, url: url, frames: frames)
 
         case .failed:
             let errorImageView = createErrorImageView()
@@ -1205,10 +1149,13 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     }
 
     private func calculateImageRatios() -> [String: CGFloat] {
-        return images.compactMapValues { imageView in
-            guard let image = imageView?.image else { return nil }
-            return image.size.width / image.size.height
+        var ratios: [String: CGFloat] = [:]
+        for (url, readerImage) in readerSession.images {
+            if case let .success(image) = readerImage.state {
+                ratios[url] = image.size.width / image.size.height
+            }
         }
+        return ratios
     }
 
     private func calculateModeRatio(from ratios: [String: CGFloat]) -> CGFloat {
@@ -1321,25 +1268,10 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         }
 
         view.layoutIfNeeded()
-
-        if let initialPage = initialPage {
-            // Check if all images up to initialPage are loaded
-            let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
-                let url = urls[index]
-                return images[url] != nil && images[url]! != nil
-            }
-
-            navigateToPage(initialPage)
-
-            if allImagesLoaded {
-                self.initialPage = nil
-                jumpToPage = nil
-            }
-        }
     }
 
     private func updateImageViews() {
-        guard !images.isEmpty else { return }
+        guard !readerSession.images.isEmpty else { return }
 
         removeLoadingAndErrorViews()
 

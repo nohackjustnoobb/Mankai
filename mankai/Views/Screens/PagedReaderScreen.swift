@@ -5,19 +5,9 @@
 //  Created by Travis XU on 7/2/2026.
 //
 
+import Combine
 import SwiftUI
 import UIKit
-
-// MARK: - Group
-
-private struct PageGroup: Identifiable, Hashable {
-    let id = UUID()
-    var urls: [String]
-
-    func contains(_ url: String) -> Bool {
-        return urls.contains(url)
-    }
-}
 
 // MARK: - OverscrollViewController
 
@@ -225,15 +215,17 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private var initialPage: Int?
     private var jumpToPage: String?
 
-    // Image management variables
-    private var urls: [String] = []
-    private var images: [String: UIImage?] = [:]
-    private var groups: [PageGroup] = []
+    // Reader session
+    private let readerSession: ReaderSession
+    private var cancellables = Set<AnyCancellable>()
+
+    // Derived from readerSession
+    private var urls: [String] { readerSession.urls }
+    private var groups: [ReaderGroup] { readerSession.groups }
 
     // Reading state variables
     private var currentPage: Int = 0
     private var currentGroup: Int = 0
-    private var defaultGroupSize: Int = 1
 
     // State variables for tab bar visibility
     var isTabBarHidden = false
@@ -267,6 +259,12 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         chapters = manga.chapters[chaptersKey] ?? []
         currentChapterIndex = chapters.firstIndex(where: { $0.id == chapter.id }) ?? -1
+
+        readerSession = ReaderSession(
+            plugin: plugin,
+            manga: manga,
+            imageLayout: SettingsDefaults.PR_imageLayout
+        )
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -330,6 +328,15 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             options: [.new],
             context: nil
         )
+
+        // Subscribe to ReaderSession changes
+        readerSession.$images
+            .combineLatest(readerSession.$groups)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _, _ in
+                self?.syncGroupsFromSession()
+            }
+            .store(in: &cancellables)
     }
 
     deinit {
@@ -393,8 +400,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
     @objc private func updateGrouping() {
         DispatchQueue.main.async { [weak self] in
-            self?.groupImages()
-            self?.navigateToPage(self?.currentPage ?? 0, animated: false)
+            guard let self = self else { return }
+            self.readerSession.imageLayout = self.cachedImageLayout
+            self.navigateToPage(self.currentPage, animated: false)
         }
     }
 
@@ -491,8 +499,6 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         // Reset state
-        urls = []
-        images = [:]
         currentGroup = 0
         jumpToPage = nil
 
@@ -509,9 +515,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         Task {
             do {
-                urls = try await plugin.getChapter(
-                    manga: manga, chapter: chapter
-                )
+                try await readerSession.getChapter(chapter: chapter)
 
                 if var initialPage = self.initialPage {
                     if initialPage == -1 {
@@ -524,7 +528,6 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
                     }
                 }
 
-                loadImages()
                 updateBottomBar()
             } catch {
                 showErrorView()
@@ -532,96 +535,11 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
     }
 
-    // MARK: - Load Images
+    // MARK: - Sync Groups from ReaderSession
 
-    private func loadImages() {
-        for url in urls {
-            Task {
-                do {
-                    let imageData = try await plugin.getImage(url)
-                    images[url] = UIImage(data: imageData)
-                } catch {
-                    images[url] = nil
-                }
-
-                updateGrouping()
-            }
-        }
-
-        // Retry failed images after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-            guard let self = self else { return }
-
-            // Check if any images are still nil
-            let hasFailedImages = self.urls.contains { url in
-                self.images[url] == nil || self.images[url] as? NSObject == nil
-            }
-
-            if hasFailedImages {
-                self.loadImages()
-            }
-        }
-    }
-
-    // MARK: - Group Images
-
-    private func groupImages() {
-        groups = []
-
-        switch cachedImageLayout {
-        case .auto:
-            // Determine screen orientation
-            let isLandscape = UIDevice.current.orientation.isLandscape
-            defaultGroupSize = isLandscape ? 2 : 1
-        case .onePerRow:
-            defaultGroupSize = 1
-        case .twoPerRow:
-            defaultGroupSize = 2
-        }
-
-        var i = 0
-        while i < urls.count {
-            let url = urls[i]
-
-            // Check if image is loaded and if it's a wide image
-            let isWideImage = isImageWide(url: url)
-
-            if isWideImage {
-                // Wide images get their own group regardless of orientation
-                groups.append(PageGroup(urls: [url]))
-                i += 1
-            } else {
-                // Build a group of non-wide images up to defaultGroupSize
-                var groupUrls: [String] = []
-                var j = i
-
-                while j < urls.count, groupUrls.count < defaultGroupSize {
-                    let currentUrl = urls[j]
-
-                    // If we encounter a wide image while building the group, stop here
-                    if isImageWide(url: currentUrl) {
-                        break
-                    }
-
-                    groupUrls.append(currentUrl)
-                    j += 1
-                }
-
-                groups.append(PageGroup(urls: groupUrls))
-                i = j
-            }
-        }
-
+    private func syncGroupsFromSession() {
         updatePageViewController()
         updateBottomBar()
-    }
-
-    private func isImageWide(url: String) -> Bool {
-        guard let image = images[url], let actualImage = image else {
-            return false
-        }
-
-        return actualImage.size.width > actualImage.size.height
     }
 
     private func updatePageViewController() {
@@ -629,11 +547,15 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         guard !groups.isEmpty else { return }
 
-        if let initialPage = initialPage {
-            // Check if all images up to initialPage are loaded
+        if let initialPage = initialPage, initialPage >= 0, initialPage < urls.count {
             let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
                 let url = urls[index]
-                return images[url] != nil && images[url]! != nil
+                if let readerImage = readerSession.images[url],
+                   case .success = readerImage.state
+                {
+                    return true
+                }
+                return false
             }
 
             navigateToPage(initialPage)
@@ -1084,9 +1006,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         let group = groups[groupIndex]
-        var groupImages: [String: UIImage?] = [:]
+        var groupImages: [String: ReaderImageState] = [:]
         for url in group.urls {
-            groupImages[url] = images[url] ?? nil
+            groupImages[url] = readerSession.images[url]?.state ?? .loading
         }
         return PageContentViewController(
             pageIndex: groupIndex,
@@ -1473,7 +1395,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
     let pageIndex: Int
     let urls: [String]
     let readingDirection: ReadingDirection
-    var images: [String: UIImage?]
+    var images: [String: ReaderImageState]
 
     private let scrollView = UIScrollView()
     private let contentStackView = UIStackView()
@@ -1483,7 +1405,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
     private var errorIcons: [String: UIImageView] = [:]
 
     init(
-        pageIndex: Int, urls: [String], images: [String: UIImage?],
+        pageIndex: Int, urls: [String], images: [String: ReaderImageState],
         readingDirection: ReadingDirection
     ) {
         self.pageIndex = pageIndex
@@ -1609,7 +1531,7 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
         var totalAspectRatio: CGFloat = 0
 
         for url in urls {
-            if let image = images[url], let actualImage = image {
+            if case let .success(actualImage) = images[url] {
                 let aspectRatio = actualImage.size.width / actualImage.size.height
                 aspectRatios[url] = aspectRatio
                 totalAspectRatio += aspectRatio
@@ -1627,36 +1549,35 @@ private class PageContentViewController: UIViewController, UIScrollViewDelegate 
                   let widthConstraint = imageWidthConstraints[url]
             else { continue }
 
-            if let image = images[url] {
-                if let actualImage = image {
-                    imageView.image = actualImage
-                    imageView.isHidden = false
-                    loadingIndicator.stopAnimating()
-                    errorIcon.isHidden = true
+            switch images[url] ?? .loading {
+            case let .success(actualImage):
+                imageView.image = actualImage
+                imageView.isHidden = false
+                loadingIndicator.stopAnimating()
+                errorIcon.isHidden = true
 
-                    // Calculate width based on image's aspect ratio to fill height
-                    let aspectRatio = actualImage.size.width / actualImage.size.height
-                    var imageWidth = availableHeight * aspectRatio
+                // Calculate width based on image's aspect ratio to fill height
+                let aspectRatio = actualImage.size.width / actualImage.size.height
+                var imageWidth = availableHeight * aspectRatio
 
-                    // If total width of all images exceeds screen width, scale proportionally
-                    if totalAspectRatio > 0 {
-                        let totalImageWidth = availableHeight * totalAspectRatio
-                        if totalImageWidth > screenWidth {
-                            // Scale down proportionally
-                            imageWidth = (aspectRatio / totalAspectRatio) * screenWidth
-                        }
+                // If total width of all images exceeds screen width, scale proportionally
+                if totalAspectRatio > 0 {
+                    let totalImageWidth = availableHeight * totalAspectRatio
+                    if totalImageWidth > screenWidth {
+                        // Scale down proportionally
+                        imageWidth = (aspectRatio / totalAspectRatio) * screenWidth
                     }
-
-                    widthConstraint.constant = imageWidth
-                } else {
-                    // Error state (explicitly nil)
-                    imageView.isHidden = true
-                    loadingIndicator.stopAnimating()
-                    errorIcon.isHidden = false
-                    widthConstraint.constant = screenWidth / CGFloat(urls.count)
                 }
-            } else {
-                // Still loading
+
+                widthConstraint.constant = imageWidth
+
+            case .failed:
+                imageView.isHidden = true
+                loadingIndicator.stopAnimating()
+                errorIcon.isHidden = false
+                widthConstraint.constant = screenWidth / CGFloat(urls.count)
+
+            case .loading:
                 imageView.isHidden = true
                 loadingIndicator.startAnimating()
                 errorIcon.isHidden = true
