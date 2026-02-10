@@ -191,7 +191,8 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            try await selectedPlugin.upsertManga(manga)
+            let newId = try await selectedPlugin.upsertManga(manga)
+            manga.id = newId
 
             if isCoverChanged, let coverData = coverImageData {
                 try await selectedPlugin.upsertCover(mangaId: manga.id, image: coverData)
@@ -222,7 +223,6 @@ struct UpdateMangaContent: View {
             try await selectedPlugin.deleteManga(manga.id)
             isProcessing = false
             dismiss()
-
         } catch {
             errorTitle = String(localized: "failedToDeleteManga")
             errorMessage = error.localizedDescription

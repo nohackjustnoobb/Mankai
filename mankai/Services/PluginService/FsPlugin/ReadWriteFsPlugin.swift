@@ -43,8 +43,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Metadata
 
-    override var tag: String? {
-        String(localized: "rwfs")
+    override var tags: [String] {
+        [String(localized: "fs"), String(localized: "editable")]
     }
 
     // MARK: - Helper Methods
@@ -61,7 +61,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Methods
 
-    func upsertManga(_ manga: DetailedManga) async throws {
+    func upsertManga(_ manga: DetailedManga) async throws -> String {
         Logger.fsPlugin.debug("Upserting manga: \(manga.id)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertManga")
@@ -98,6 +98,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
         await MainActor.run {
             objectWillChange.send()
         }
+
+        return manga.id
     }
 
     func deleteManga(_ mangaId: String) async throws {

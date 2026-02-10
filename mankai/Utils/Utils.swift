@@ -33,37 +33,57 @@ extension View {
     func apply<V: View>(@ViewBuilder _ block: (Self) -> V) -> V { block(self) }
 }
 
-enum ImageHeaderData {
-    static var PNG: [UInt8] = [0x89]
-    static var JPEG: [UInt8] = [0xFF]
-    static var GIF: [UInt8] = [0x47]
-    static var TIFF_01: [UInt8] = [0x49]
-    static var TIFF_02: [UInt8] = [0x4D]
+enum ImageFormat: String {
+    case unknown
+    case png
+    case jpeg = "jpg"
+    case gif
+    case tiff
+    case webp
+
+    var mimeType: String {
+        switch self {
+        case .png: return "image/png"
+        case .jpeg: return "image/jpeg"
+        case .gif: return "image/gif"
+        case .tiff: return "image/tiff"
+        case .webp: return "image/webp"
+        case .unknown: return "application/octet-stream"
+        }
+    }
 }
 
-enum ImageFormat: String {
-    case Unknown = "unknown"
-    case PNG = "png"
-    case JPEG = "jpg"
-    case GIF = "gif"
-    case TIFF = "tiff"
+extension Data {
+    var imageFormat: ImageFormat {
+        guard count >= 4 else { return .unknown }
+
+        var header = [UInt8](repeating: 0, count: 4)
+        copyBytes(to: &header, count: 4)
+
+        switch header {
+        case let h where h[0] == 0x89 && h[1] == 0x50 && h[2] == 0x4E && h[3] == 0x47:
+            return .png
+        case let h where h[0] == 0xFF && h[1] == 0xD8:
+            return .jpeg
+        case let h where h[0] == 0x47 && h[1] == 0x49 && h[2] == 0x46:
+            return .gif
+        case let h where h[0] == 0x49 || h[0] == 0x4D:
+            return .tiff
+        case let h where h[0] == 0x52 && h[1] == 0x49 && h[2] == 0x46 && h[3] == 0x46:
+            return .webp
+        default:
+            return .unknown
+        }
+    }
+
+    func detectImageMimeType() -> String {
+        imageFormat.mimeType
+    }
 }
 
 extension NSData {
     var imageFormat: ImageFormat {
-        var buffer = [UInt8](repeating: 0, count: 1)
-        getBytes(&buffer, range: NSRange(location: 0, length: 1))
-        if buffer == ImageHeaderData.PNG {
-            return .PNG
-        } else if buffer == ImageHeaderData.JPEG {
-            return .JPEG
-        } else if buffer == ImageHeaderData.GIF {
-            return .GIF
-        } else if buffer == ImageHeaderData.TIFF_01 || buffer == ImageHeaderData.TIFF_02 {
-            return .TIFF
-        } else {
-            return .Unknown
-        }
+        (self as Data).imageFormat
     }
 }
 

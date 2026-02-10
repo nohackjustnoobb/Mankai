@@ -47,7 +47,7 @@ Mankai is designed to be extensible. It supports three types of plugins, each se
 
 This plugin scrapes content from third-party manga websites, allowing you to browse and read manga from various online aggregators directly within the app.
 
-- **Plugins Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins).
+- **Plugins Examples**: [mankai-plugins](https://github.com/nohackjustnoobb/mankai-plugins)
 
 ### File System Plugin (FsPlugin)
 
@@ -57,9 +57,9 @@ This plugin manages manga stored as local files stored on your device or a conne
 
 ### Http Plugin (HttpPlugin)
 
-This plugin is designed for external providers to use Mankai as a reader and manager. It connects to servers implementing the standard API and supports authentication.
+This plugin is designed for external providers to use Mankai as a reader and, optionally, an editor. It connects to servers implementing the standard API and supports authentication.
 
-- **Specification**: [Mankai API Specification](https://github.com/nohackjustnoobb/mankai-server/blob/master/api.md)
+- **Specification**: [Mankai API Specification](https://github.com/nohackjustnoobb/mankai-server/blob/master/doc/api.md)
 - **Reference Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server)
 
 ## Syncing

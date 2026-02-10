@@ -45,8 +45,8 @@ class Plugin: Identifiable, ObservableObject {
         nil
     }
 
-    var tag: String? {
-        nil
+    var tags: [String] {
+        []
     }
 
     var description: String? {
@@ -213,8 +213,9 @@ protocol Editable: Plugin {
 
     /// Inserts or updates a manga entry.
     /// - Parameter manga: The detailed manga object to upsert.
+    /// - Returns: The ID of the upserted manga.
     /// - Throws: An error if the operation fails.
-    func upsertManga(_ manga: DetailedManga) async throws
+    func upsertManga(_ manga: DetailedManga) async throws -> String
 
     /// Deletes a manga by its ID.
     /// - Parameter mangaId: The ID of the manga to delete.

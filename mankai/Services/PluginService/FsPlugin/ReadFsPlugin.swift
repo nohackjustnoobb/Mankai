@@ -165,8 +165,8 @@ class ReadFsPlugin: Plugin {
         _id
     }
 
-    override var tag: String? {
-        String(localized: "rfs")
+    override var tags: [String] {
+        [String(localized: "fs")]
     }
 
     override var name: String? {

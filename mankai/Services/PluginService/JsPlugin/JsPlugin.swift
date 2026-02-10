@@ -67,6 +67,10 @@ class JsPlugin: Plugin {
     private var _funcName: [ScriptType: String] = [:]
     private var _scriptsNoExport: [ScriptType: String] = [:]
 
+    override var tags: [String] {
+        [String(localized: "js")]
+    }
+
     // MARK: - Init
 
     init(

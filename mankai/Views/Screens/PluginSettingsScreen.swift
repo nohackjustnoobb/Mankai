@@ -44,7 +44,7 @@ struct PluginSettingsScreen: View {
                                     .smallTagStyle()
                             }
 
-                            if let tag = plugin.tag {
+                            ForEach(plugin.tags, id: \.self) { tag in
                                 Text(tag)
                                     .smallTagStyle()
                             }

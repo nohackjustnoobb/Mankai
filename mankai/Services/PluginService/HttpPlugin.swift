@@ -35,15 +35,19 @@ class HttpPlugin: Plugin {
     var authenticationEnabled: Bool { _authenticationEnabled }
 
     private var baseUrl: String
-    private lazy var authManager: AuthManager = .init(id: id)
+    lazy var authManager: AuthManager = .init(id: id)
     private var isMetaUpdated: Bool = false
 
     private var setupTask: Task<Void, Error>?
     private let setupLock = NSLock()
 
+    override var tags: [String] {
+        [String(localized: "http")]
+    }
+
     // MARK: - Init
 
-    init(
+    required init(
         id: String, baseUrl: String, authenticationEnabled: Bool, name: String? = nil,
         version: String? = nil, description: String? = nil,
         authors: [String] = [],
@@ -74,6 +78,7 @@ class HttpPlugin: Plugin {
     static func fromJson(baseUrl: String, _ json: [String: Any]) -> HttpPlugin? {
         guard let id = json["id"] as? String else { return nil }
         guard let authenticationEnabled = json["authenticationEnabled"] as? Bool else { return nil }
+        let editorEnabled = json["editorEnabled"] as? Bool ?? false
         let name = json["name"] as? String
         let version = json["version"] as? String
         let description = json["description"] as? String
@@ -82,7 +87,14 @@ class HttpPlugin: Plugin {
         let availableGenres =
             (json["availableGenres"] as? [String])?.compactMap { Genre(rawValue: $0) } ?? []
 
-        return HttpPlugin(
+        if !editorEnabled, self is EditableHttpPlugin.Type {
+            Logger.httpPlugin.warning(
+                "Plugin \(id) is not editable but EditableHttpPlugin is being used. This may cause issues."
+            )
+            return nil
+        }
+
+        return self.init(
             id: id, baseUrl: baseUrl, authenticationEnabled: authenticationEnabled, name: name,
             version: version, description: description, authors: authors,
             repository: repository, availableGenres: availableGenres
@@ -153,8 +165,14 @@ class HttpPlugin: Plugin {
                 let httpPluginModels = try HttpPluginModel.fetchAll(db)
 
                 for httpPluginModel in httpPluginModels {
-                    if let httpPlugin = HttpPlugin.fromDataModel(httpPluginModel) {
-                        results.append(httpPlugin)
+                    if httpPluginModel.editable {
+                        if let httpPlugin = EditableHttpPlugin.fromDataModel(httpPluginModel) {
+                            results.append(httpPlugin)
+                        }
+                    } else {
+                        if let httpPlugin = HttpPlugin.fromDataModel(httpPluginModel) {
+                            results.append(httpPlugin)
+                        }
                     }
                 }
             }
@@ -167,7 +185,7 @@ class HttpPlugin: Plugin {
 
     // MARK: - Private Methods
 
-    private func setup() async throws {
+    func setup() async throws {
         try await getOrCreateSetupTask().value
     }
 
@@ -257,6 +275,7 @@ class HttpPlugin: Plugin {
             "repository": repository as Any,
             "availableGenres": availableGenres.map { $0.rawValue },
             "authenticationEnabled": authenticationEnabled as Any,
+            "editorEnabled": self is EditableHttpPlugin,
             "configs": configs.map { config in
                 [
                     "key": config.key,
@@ -300,6 +319,7 @@ class HttpPlugin: Plugin {
                 id: id,
                 baseUrl: baseUrl,
                 meta: metaString,
+                editable: self is EditableHttpPlugin,
                 configValues: configValuesString
             )
             try httpPluginModel.save(db)

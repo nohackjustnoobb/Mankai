@@ -273,7 +273,7 @@ class AuthManager {
 
     func request(
         method: String, path: String, query: [String: String]? = nil, body: Data? = nil,
-        retry: Bool = true
+        contentType: String = "application/json", retry: Bool = true
     ) async throws -> (Data, HTTPURLResponse) {
         Logger.authManager.debug("AuthManager request: \(method) \(path)")
         guard let serverUrl = _serverUrl else {
@@ -305,7 +305,7 @@ class AuthManager {
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
 
         if let accessToken = _accessToken {
             urlRequest.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
