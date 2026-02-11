@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 enum SettingsDefaults {
     static let inMemoryCacheExpiryDuration: Double = CacheDuration.auto.rawValue
@@ -13,7 +14,9 @@ enum SettingsDefaults {
     static let showDebugScreen: Bool = false
 
     // Default Reader
-    static let readerType: ReaderType = .paged
+    static var readerType: ReaderType {
+        UIDevice.isIPad ? .paged : .continuous
+    }
 
     // Continuous Reader Defaults
     static let CR_imageLayout: ImageLayout = .auto

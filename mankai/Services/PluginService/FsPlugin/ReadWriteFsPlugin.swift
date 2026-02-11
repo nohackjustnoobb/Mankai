@@ -61,8 +61,8 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Methods
 
-    func upsertManga(_ manga: DetailedManga) async throws -> String {
-        Logger.fsPlugin.debug("Upserting manga: \(manga.id)")
+    func upsertManga(_ manga: EditableManga) async throws -> String {
+        Logger.fsPlugin.debug("Upserting manga: \(manga.id ?? "new")")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertManga")
             throw NSError(
@@ -71,35 +71,45 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
             )
         }
 
+        let id = manga.id ?? UUID().uuidString
+
         try await db.write { db in
-            let latestChapterId: Int? = {
-                if let latestChapter = manga.latestChapter,
-                   let latestIdInt = Int(latestChapter.id)
-                {
-                    return latestIdInt
+            var mangaModel = try FsMangaModel.fetchOne(db, key: id)
+
+            if mangaModel == nil {
+                mangaModel = FsMangaModel(
+                    id: id,
+                    title: manga.title,
+                    status: manga.status.map { Int($0.rawValue) },
+                    description: manga.description,
+                    updatedAt: Date(),
+                    authors: manga.authors.joined(separator: "|"),
+                    genres: manga.genres.map { $0.rawValue }.joined(separator: "|"),
+                    latestChapterId: nil
+                )
+            } else {
+                if let title = manga.title {
+                    mangaModel?.title = title
                 }
-                return nil
-            }()
+                if let status = manga.status {
+                    mangaModel?.status = Int(status.rawValue)
+                }
+                if let description = manga.description {
+                    mangaModel?.description = description
+                }
+                mangaModel?.authors = manga.authors.joined(separator: "|")
+                mangaModel?.genres = manga.genres.map { $0.rawValue }.joined(separator: "|")
+                mangaModel?.updatedAt = Date()
+            }
 
-            let mangaModel = FsMangaModel(
-                id: manga.id,
-                title: manga.title,
-                status: manga.status.map { Int($0.rawValue) },
-                description: manga.description,
-                updatedAt: manga.updatedAt,
-                authors: manga.authors.joined(separator: "|"),
-                genres: manga.genres.map { $0.rawValue }.joined(separator: "|"),
-                latestChapterId: latestChapterId
-            )
-
-            try mangaModel.upsert(db)
+            try mangaModel?.upsert(db)
         }
 
         await MainActor.run {
             objectWillChange.send()
         }
 
-        return manga.id
+        return id
     }
 
     func deleteManga(_ mangaId: String) async throws {
@@ -197,7 +207,14 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Chapter Group Methods
 
-    func upsertChapterGroup(id: String?, mangaId: String, title: String) async throws {
+    func upsertChapterGroup(_ group: EditableChapterGroup) async throws {
+        guard let mangaId = group.mangaId, let title = group.title else {
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+            )
+        }
+
         Logger.fsPlugin.debug("Upserting chapter group: \(title) for manga: \(mangaId)")
         guard let db = db else {
             Logger.fsPlugin.error("Database not available for upsertChapterGroup")
@@ -209,7 +226,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
         try await db.write { db in
             let newGroup = FsChapterGroupModel(
-                id: id.flatMap { Int($0) },
+                id: group.id.flatMap { Int($0) },
                 mangaId: mangaId,
                 title: title
             )
@@ -308,8 +325,15 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
 
     // MARK: - Chapter Methods
 
-    func upsertChapter(id: String?, title: String, chapterGroupId: String) async throws {
-        let intId = id.flatMap { Int($0) }
+    func upsertChapter(_ chapter: EditableChapter) async throws {
+        guard let title = chapter.title, let chapterGroupId = chapter.chapterGroupId else {
+            throw NSError(
+                domain: "ReadWriteFsPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+            )
+        }
+
+        let intId = chapter.id.flatMap { Int($0) }
         let intChapterGroupId = Int(chapterGroupId)
         Logger.fsPlugin.debug(
             "Upserting chapter: \(title) (id: \(intId ?? -1), groupId: \(chapterGroupId))"
@@ -339,7 +363,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
                 sequence = existingChapter!.sequence
             }
 
-            let chapter =
+            let chapterModel =
                 try FsChapterModel(
                     id: existingChapterId,
                     title: title,
@@ -347,7 +371,7 @@ class ReadWriteFsPlugin: ReadFsPlugin, Editable {
                     chapterGroupId: intChapterGroupId
                 ).upsertAndFetch(db)
 
-            if existingChapterId == nil, let newChapterId = chapter.id {
+            if existingChapterId == nil, let newChapterId = chapterModel.id {
                 if let chapterGroup = try FsChapterGroupModel.fetchOne(db, key: intChapterGroupId) {
                     if var manga = try FsMangaModel.fetchOne(db, key: chapterGroup.mangaId) {
                         manga.latestChapterId = newChapterId

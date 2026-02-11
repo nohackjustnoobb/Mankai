@@ -24,7 +24,7 @@ let TOP_OVERSCROLL_TEXT_TAG = 12
 let BOTTOM_OVERSCROLL_ARROW_TAG = 13
 let BOTTOM_OVERSCROLL_TEXT_TAG = 14
 
-let OVERSCROLL_THRESHOLD: CGFloat = 100
+let OVERSCROLL_THRESHOLD: CGFloat = 80
 
 private struct ContinuousGroup: Identifiable, Hashable {
     let id = UUID()
@@ -909,13 +909,11 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
             // Overscroll view constraints
             overscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            overscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor, constant: -10),
+            overscrollView.bottomAnchor.constraint(equalTo: scrollView.topAnchor),
 
             // Bottom overscroll view constraints
             bottomOverscrollView.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            bottomOverscrollView.topAnchor.constraint(
-                equalTo: scrollView.bottomAnchor, constant: 10
-            ),
+            bottomOverscrollView.topAnchor.constraint(equalTo: scrollView.bottomAnchor),
 
             // Bottom bar constraints
             bottomBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),

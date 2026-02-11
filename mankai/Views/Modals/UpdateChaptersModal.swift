@@ -92,7 +92,9 @@ struct UpdateChaptersModal: View {
                 }
 
                 try await plugin.upsertChapter(
-                    id: chapterId, title: newTitle, chapterGroupId: groupId
+                    EditableChapter(
+                        id: chapterId, title: newTitle, chapterGroupId: groupId
+                    )
                 )
 
                 fetchChapters()
@@ -182,7 +184,9 @@ struct UpdateChaptersModal: View {
                             }
 
                             try await plugin.upsertChapter(
-                                id: nil, title: trimmedName, chapterGroupId: groupId
+                                EditableChapter(
+                                    id: nil, title: trimmedName, chapterGroupId: groupId
+                                )
                             )
 
                             fetchChapters()

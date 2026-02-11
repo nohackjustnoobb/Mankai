@@ -14,29 +14,10 @@ class EditableHttpPlugin: HttpPlugin, Editable {
 
     // MARK: - Manga Management
 
-    func upsertManga(_ manga: DetailedManga) async throws -> String {
+    func upsertManga(_ manga: EditableManga) async throws -> String {
         try await setup()
 
-        var body: [String: Any] = [
-            "id": manga.id,
-            "authors": manga.authors,
-            "genres": manga.genres.map { $0.rawValue },
-        ]
-
-        if let title = manga.title {
-            body["title"] = title
-        }
-        if let status = manga.status {
-            body["status"] = status.rawValue
-        }
-        if let description = manga.description {
-            body["description"] = description
-        }
-        if let remarks = manga.remarks {
-            body["remarks"] = remarks
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+        let jsonData = try JSONEncoder().encode(manga)
         let (data, _) = try await authManager.post(path: "/edit/manga", body: jsonData)
 
         let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
@@ -45,7 +26,7 @@ class EditableHttpPlugin: HttpPlugin, Editable {
             objectWillChange.send()
         }
 
-        return json?["id"] as? String ?? manga.id
+        return json?["id"] as? String ?? manga.id ?? ""
     }
 
     func deleteManga(_ mangaId: String) async throws {
@@ -75,19 +56,17 @@ class EditableHttpPlugin: HttpPlugin, Editable {
 
     // MARK: - Chapter Group Management
 
-    func upsertChapterGroup(id: String?, mangaId: String, title: String) async throws {
+    func upsertChapterGroup(_ group: EditableChapterGroup) async throws {
         try await setup()
 
-        var body: [String: Any] = [
-            "mangaId": mangaId,
-            "title": title,
-        ]
-
-        if let id = id {
-            body["id"] = id
+        guard group.mangaId != nil, group.title != nil else {
+            throw NSError(
+                domain: "EditableHttpPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+            )
         }
 
-        let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+        let jsonData = try JSONEncoder().encode(group)
         _ = try await authManager.post(path: "/edit/chapter-group", body: jsonData)
 
         await MainActor.run {
@@ -128,19 +107,17 @@ class EditableHttpPlugin: HttpPlugin, Editable {
 
     // MARK: - Chapter Management
 
-    func upsertChapter(id: String?, title: String, chapterGroupId: String) async throws {
+    func upsertChapter(_ chapter: EditableChapter) async throws {
         try await setup()
 
-        var body: [String: Any] = [
-            "title": title,
-            "chapterGroupId": chapterGroupId,
-        ]
-
-        if let id = id {
-            body["id"] = id
+        guard chapter.title != nil, chapter.chapterGroupId != nil else {
+            throw NSError(
+                domain: "EditableHttpPlugin", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Missing required fields"]
+            )
         }
 
-        let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+        let jsonData = try JSONEncoder().encode(chapter)
         _ = try await authManager.post(path: "/edit/chapter", body: jsonData)
 
         await MainActor.run {

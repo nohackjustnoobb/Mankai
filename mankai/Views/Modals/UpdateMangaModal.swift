@@ -136,7 +136,9 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            try await selectedPlugin.upsertChapterGroup(id: nil, mangaId: manga.id, title: trimmedKey)
+            try await selectedPlugin.upsertChapterGroup(
+                EditableChapterGroup(id: nil, title: trimmedKey, mangaId: manga.id)
+            )
             manga.chapters[trimmedKey] = []
             newChapterGroup = ""
             showingAddChapterGroupAlert = false
@@ -191,7 +193,16 @@ struct UpdateMangaContent: View {
                 return
             }
 
-            let newId = try await selectedPlugin.upsertManga(manga)
+            let editableManga = EditableManga(
+                id: manga.id,
+                title: manga.title,
+                status: manga.status,
+                description: manga.description,
+                authors: manga.authors,
+                genres: manga.genres,
+                remarks: manga.remarks
+            )
+            let newId = try await selectedPlugin.upsertManga(editableManga)
             manga.id = newId
 
             if isCoverChanged, let coverData = coverImageData {
