@@ -9,24 +9,22 @@ import SwiftUI
 
 struct MainScreen: View {
     var body: some View {
-        ZStack {
-            TabView {
-                HomeTab()
-                    .tabItem {
-                        Label("home", systemImage: "house")
-                    }
-                LibraryTab()
-                    .tabItem {
-                        Label("library", systemImage: "books.vertical.fill")
-                    }
-                SettingsTab()
-                    .tabItem {
-                        Label("settings", systemImage: "gearshape")
-                    }
-            }
-
+        TabView {
+            HomeTab()
+                .tabItem {
+                    Label("home", systemImage: "house")
+                }
+            LibraryTab()
+                .tabItem {
+                    Label("library", systemImage: "books.vertical.fill")
+                }
+            SettingsTab()
+                .tabItem {
+                    Label("settings", systemImage: "gearshape")
+                }
+        }
+        .overlay(alignment: .bottom) {
             NotificationContainerView()
-                .allowsHitTesting(true)
         }
     }
 }

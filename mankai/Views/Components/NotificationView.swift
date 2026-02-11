@@ -11,17 +11,23 @@ struct NotificationView: View {
     let notification: AppNotification
     let onDismiss: () -> Void
 
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: iconName)
-                .foregroundStyle(iconColor)
-                .font(.system(size: 18, weight: .semibold))
+    @State private var dragOffset: CGFloat = 0
 
-            Text(notification.message)
-                .font(.system(size: 14))
-                .foregroundStyle(.primary)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    var body: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Image(systemName: iconName)
+                    .foregroundStyle(iconColor)
+                    .font(.system(size: 18, weight: .semibold))
+
+                Text(notification.message)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.leading, 16)
+            .padding(.vertical, 12)
 
             Button {
                 onDismiss()
@@ -29,13 +35,39 @@ struct NotificationView: View {
                 Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 18))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
         .applyGlassBackground()
         .padding(.horizontal, 16)
+        .offset(y: dragOffset)
+        .opacity(1 - Double(abs(dragOffset) / 200))
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { gesture in
+                    if gesture.translation.height > 0 {
+                        dragOffset = gesture.translation.height
+                    }
+                }
+                .onEnded { gesture in
+                    if gesture.translation.height > 50 {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            dragOffset = 300
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            onDismiss()
+                        }
+                    } else {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            dragOffset = 0
+                        }
+                    }
+                }
+        )
     }
 
     private var iconName: String {
@@ -88,34 +120,22 @@ struct NotificationContainerView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 8) {
-                Spacer()
-
-                ForEach(notificationService.notifications) { notification in
-                    NotificationView(notification: notification) {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            notificationService.dismiss(notification.id)
-                        }
+        VStack(spacing: 8) {
+            ForEach(notificationService.notifications) { notification in
+                NotificationView(notification: notification) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        notificationService.dismiss(notification.id)
                     }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, bottomPadding(for: geometry))
         }
+        .frame(maxWidth: .infinity, alignment: .bottom)
+        .padding(.bottom)
         .animation(
-            .spring(response: 0.3, dampingFraction: 0.8), value: notificationService.notifications
+            .spring(response: 0.3, dampingFraction: 0.8),
+            value: notificationService.notifications
         )
         .allowsHitTesting(true)
-    }
-
-    private func bottomPadding(for geometry: GeometryProxy) -> CGFloat {
-        // On iPad (regular horizontal size class), tab bar is at top, so just use safe area + margin
-        if horizontalSizeClass == .regular {
-            return max(geometry.safeAreaInsets.bottom, 8)
-        }
-        // On iPhone (compact), tab bar is at bottom, so add tab bar height
-        return max(geometry.safeAreaInsets.bottom, 61)
     }
 }
