@@ -248,7 +248,7 @@ struct UpdateMangaContent: View {
             }
 
             Section("cover") {
-                VStack(alignment: .center, spacing: 0) {
+                HStack(alignment: .center, spacing: 8) {
                     Group {
                         if let coverImageData = coverImageData,
                            let uiImage = UIImage(data: coverImageData)
@@ -275,8 +275,6 @@ struct UpdateMangaContent: View {
                                 }
                         }
                     }
-                    .padding(.top)
-                    .padding(.horizontal, 12)
 
                     PhotosPicker(selection: $selectedPhoto, matching: .images) {
                         HStack {
@@ -286,7 +284,6 @@ struct UpdateMangaContent: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .padding(.vertical)
                 }
             }
 

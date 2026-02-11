@@ -29,6 +29,7 @@ struct ReaderGroup: Identifiable, Hashable {
     }
 }
 
+@MainActor
 class ReaderSession: ObservableObject {
     @Published var images: [String: ReaderImage] = [:]
     @Published var groups: [ReaderGroup] = []
@@ -85,15 +86,13 @@ class ReaderSession: ObservableObject {
 
     private func loadImage(url: String) {
         let task = Task {
-            let currentRetry = await MainActor.run { self.retryCount[url] ?? 0 }
+            let currentRetry = self.retryCount[url] ?? 0
 
             do {
                 let imageData = try await plugin.getImage(url)
                 if let image = UIImage(data: imageData) {
-                    await MainActor.run {
-                        self.images[url] = ReaderImage(url: url, state: .success(image))
-                        self.groupImages()
-                    }
+                    self.images[url] = ReaderImage(url: url, state: .success(image))
+                    self.groupImages()
                 } else {
                     await self.handleImageLoadFailure(url: url, currentRetry: currentRetry)
                 }
@@ -112,9 +111,7 @@ class ReaderSession: ObservableObject {
             // Exponential backoff: 1s, 2s, 4s
             let delay = TimeInterval(1 << currentRetry)
 
-            await MainActor.run {
-                self.retryCount[url] = currentRetry + 1
-            }
+            retryCount[url] = currentRetry + 1
 
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
 
@@ -122,9 +119,7 @@ class ReaderSession: ObservableObject {
                 loadImage(url: url)
             }
         } else {
-            await MainActor.run {
-                self.images[url] = ReaderImage(url: url, state: .failed)
-            }
+            images[url] = ReaderImage(url: url, state: .failed)
         }
     }
 

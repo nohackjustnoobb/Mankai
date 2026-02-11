@@ -1015,240 +1015,179 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         loadChapter()
     }
 
-    // MARK: - Helper Methods for Image View Creation
+    // MARK: - Image View Factories
+
+    private func makePlaceholderView(
+        child: UIView, identifierTag: Int
+    ) -> UIView {
+        let wrapper = UIView()
+        child.translatesAutoresizingMaskIntoConstraints = false
+        child.tag = identifierTag
+        wrapper.addSubview(child)
+        NSLayoutConstraint.activate([
+            child.centerXAnchor.constraint(equalTo: wrapper.centerXAnchor),
+            child.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
+        ])
+        return wrapper
+    }
 
     private func createErrorImageView() -> UIView {
-        let containerView = UIView()
-
-        // Create error icon
-        let errorIcon = UIImageView()
-        errorIcon.image = UIImage(systemName: "photo.badge.exclamationmark")
-        errorIcon.tintColor = .secondaryLabel
-        errorIcon.translatesAutoresizingMaskIntoConstraints = false
-        errorIcon.tag = ERROR_IMAGE_VIEW_ID
-
-        containerView.addSubview(errorIcon)
-
-        // Center the error icon
+        let icon = UIImageView(image: UIImage(systemName: "photo.badge.exclamationmark"))
+        icon.tintColor = .secondaryLabel
         NSLayoutConstraint.activate([
-            errorIcon.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            errorIcon.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-            errorIcon.widthAnchor.constraint(equalToConstant: 48),
-            errorIcon.heightAnchor.constraint(equalToConstant: 48),
+            icon.widthAnchor.constraint(equalToConstant: 48),
+            icon.heightAnchor.constraint(equalToConstant: 48),
         ])
-
-        return containerView
+        return makePlaceholderView(child: icon, identifierTag: ERROR_IMAGE_VIEW_ID)
     }
 
     private func createLoadingImageView() -> UIView {
-        let containerView = UIView()
-
-        // Create loading indicator
-        let loadingIndicator = UIActivityIndicatorView(style: .medium)
-        loadingIndicator.translatesAutoresizingMaskIntoConstraints = false
-        loadingIndicator.startAnimating()
-        loadingIndicator.tag = LOADING_IMAGE_VIEW_ID
-
-        containerView.addSubview(loadingIndicator)
-
-        // Center the loading indicator
-        NSLayoutConstraint.activate([
-            loadingIndicator.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
-            loadingIndicator.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
-        ])
-
-        return containerView
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.startAnimating()
+        return makePlaceholderView(child: spinner, identifierTag: LOADING_IMAGE_VIEW_ID)
     }
 
-    // MARK: - Image View Management Helper Methods
+    // MARK: - Image View Management
 
-    private func getImageState(for url: String) -> ReaderImageState {
-        return readerSession.images[url]?.state ?? .loading
-    }
-
-    private func updateViewFrame(_ view: UIView, url: String, frames: [String: CGRect]) {
-        if let frame = frames[url] {
-            view.frame = frame
-        }
-    }
-
-    private func replaceView(
-        _ oldView: UIView, with newView: UIView, tag: Int, url: String, frames: [String: CGRect]
-    ) {
-        oldView.removeFromSuperview()
-        addImageViewToContent(newView, tag: tag, url: url, frames: frames)
-    }
-
-    private func addImageViewToContent(
-        _ view: UIView, tag: Int, url: String, frames: [String: CGRect]
-    ) {
-        view.tag = tag
-        updateViewFrame(view, url: url, frames: frames)
-        containerView.addSubview(view)
-    }
-
-    private func handleExistingImageView(
-        _ existingView: UIView, url: String, tag: Int, frames: [String: CGRect]
-    ) {
-        switch getImageState(for: url) {
-        case let .success(uiImage):
-            if let existingImageView = existingView as? UIImageView,
-               existingImageView.image === uiImage
-            {
-                updateViewFrame(existingView, url: url, frames: frames)
-            } else {
-                let imageView = UIImageView(image: uiImage)
-                imageView.contentMode = .scaleToFill
-                replaceView(existingView, with: imageView, tag: tag, url: url, frames: frames)
-            }
-
-        case .failed:
-            let isErrorView = existingView.viewWithTag(ERROR_IMAGE_VIEW_ID) != nil
-
-            if !isErrorView {
-                let errorImageView = createErrorImageView()
-                replaceView(existingView, with: errorImageView, tag: tag, url: url, frames: frames)
-            } else {
-                updateViewFrame(existingView, url: url, frames: frames)
-            }
-
-        case .loading:
-            let isLoadingView = existingView.viewWithTag(LOADING_IMAGE_VIEW_ID) != nil
-
-            if !isLoadingView {
-                let loadingImageView = createLoadingImageView()
-                replaceView(
-                    existingView, with: loadingImageView, tag: tag, url: url, frames: frames
-                )
-            } else {
-                updateViewFrame(existingView, url: url, frames: frames)
-            }
-        }
-    }
-
-    private func createNewImageView(url: String, tag: Int, frames: [String: CGRect]) {
-        switch getImageState(for: url) {
+    private func viewForState(_ state: ReaderImageState) -> UIView {
+        switch state {
         case let .success(uiImage):
             let imageView = UIImageView(image: uiImage)
             imageView.contentMode = .scaleToFill
-            addImageViewToContent(imageView, tag: tag, url: url, frames: frames)
-
+            return imageView
         case .failed:
-            let errorImageView = createErrorImageView()
-            addImageViewToContent(errorImageView, tag: tag, url: url, frames: frames)
-
+            return createErrorImageView()
         case .loading:
-            let loadingImageView = createLoadingImageView()
-            addImageViewToContent(loadingImageView, tag: tag, url: url, frames: frames)
+            return createLoadingImageView()
         }
     }
 
-    private func removeLoadingAndErrorViews() {
-        view.viewWithTag(LOADER_VIEW_ID)?.removeFromSuperview()
-        view.viewWithTag(ERROR_VIEW_ID)?.removeFromSuperview()
+    private func stateTag(for state: ReaderImageState) -> Int? {
+        switch state {
+        case .success: nil
+        case .failed: ERROR_IMAGE_VIEW_ID
+        case .loading: LOADING_IMAGE_VIEW_ID
+        }
     }
+
+    private func tagForUrl(_ url: String) -> Int {
+        var hasher = Hasher()
+        hasher.combine(url)
+        return hasher.finalize()
+    }
+
+    /// Reconciles the view for a single image URL against the current state.
+    private func reconcileImageView(url: String, frames: [String: CGRect]) {
+        let tag = tagForUrl(url)
+        let state = readerSession.images[url]?.state ?? .loading
+        let frame = frames[url] ?? .zero
+
+        if let existing = containerView.viewWithTag(tag) {
+            // Check if the existing view already matches the desired state
+            let alreadyCorrect: Bool = {
+                switch state {
+                case let .success(uiImage):
+                    return (existing as? UIImageView)?.image === uiImage
+                case .failed:
+                    return existing.viewWithTag(ERROR_IMAGE_VIEW_ID) != nil
+                case .loading:
+                    return existing.viewWithTag(LOADING_IMAGE_VIEW_ID) != nil
+                }
+            }()
+
+            if alreadyCorrect {
+                existing.frame = frame
+            } else {
+                existing.removeFromSuperview()
+                let newView = viewForState(state)
+                newView.tag = tag
+                newView.frame = frame
+                containerView.addSubview(newView)
+            }
+        } else {
+            let newView = viewForState(state)
+            newView.tag = tag
+            newView.frame = frame
+            containerView.addSubview(newView)
+        }
+    }
+
+    // MARK: - Layout Calculations
 
     private func calculateImageRatios() -> [String: CGFloat] {
-        var ratios: [String: CGFloat] = [:]
-        for (url, readerImage) in readerSession.images {
+        readerSession.images.compactMapValues { readerImage in
             if case let .success(image) = readerImage.state {
-                ratios[url] = image.size.width / image.size.height
+                return image.size.width / image.size.height
             }
+            return nil
         }
-        return ratios
     }
 
+    /// Returns the most common (mode) aspect ratio, rounded to 2 decimal places.
     private func calculateModeRatio(from ratios: [String: CGFloat]) -> CGFloat {
-        let ratioValues = Array(ratios.values)
-        guard !ratioValues.isEmpty else { return 1 }
+        guard !ratios.isEmpty else { return 1 }
 
         var counts: [CGFloat: Int] = [:]
-
-        for value in ratioValues {
+        for value in ratios.values {
             let rounded = (value * 100).rounded() / 100
             counts[rounded, default: 0] += 1
         }
 
         let maxCount = counts.values.max() ?? 0
-        let modeCandidates = counts.filter { $0.value == maxCount }.map { $0.key }
-
-        return modeCandidates.min() ?? 1
+        return counts
+            .filter { $0.value == maxCount }
+            .keys
+            .min() ?? 1
     }
 
     private func calculateFrames(
         ratios: [String: CGFloat], mode: CGFloat
     ) -> ([String: CGRect], CGFloat) {
-        var frames: [String: CGRect] = [:]
-        var currentY: CGFloat = 0.0
-
         guard let window = view.window else { return ([:], 0) }
-        let safeFrame = window.safeAreaLayoutGuide.layoutFrame
-        let width = safeFrame.width
+
+        let width = window.safeAreaLayoutGuide.layoutFrame.width
+        let isRTL = cachedReadingDirection == .rightToLeft
+        var frames: [String: CGRect] = [:]
+        var currentY: CGFloat = 0
 
         for index in groups.indices {
-            let group = groups[index]
-            let groupUrls = group.urls
+            let groupUrls = groups[index].urls
 
-            // Check if this is a single portrait image
-            let isSinglePortraitImage =
-                defaultGroupSize != 1 && groupUrls.count == 1
+            let isSinglePortrait =
+                defaultGroupSize != 1
+                    && groupUrls.count == 1
                     && ratios[groupUrls[0], default: mode] < 1
-            let effectiveWidth = isSinglePortraitImage ? width / CGFloat(defaultGroupSize) : width
 
-            let ratiosSum: CGFloat = groupUrls.reduce(0) { result, url in
-                result + ratios[url, default: mode]
-            }
+            let effectiveWidth = isSinglePortrait ? width / CGFloat(defaultGroupSize) : width
+            let ratiosSum = groupUrls.reduce(CGFloat(0)) { $0 + ratios[$1, default: mode] }
+            let rowHeight = effectiveWidth / ratiosSum
 
-            let height = effectiveWidth / ratiosSum
-            var currentX: CGFloat = 0.0
+            var currentX: CGFloat = 0
+            let orderedUrls = isRTL ? groupUrls.reversed() : groupUrls
 
-            for url in cachedReadingDirection == .rightToLeft ? groupUrls.reversed() : groupUrls {
-                let imageWidth = height * ratios[url, default: mode]
+            for url in orderedUrls {
+                let imageWidth = rowHeight * ratios[url, default: mode]
 
-                // Align single portrait images based on reading direction
                 let xPosition: CGFloat
-                if isSinglePortraitImage {
-                    xPosition = cachedReadingDirection == .rightToLeft ? width - imageWidth : 0
+                if isSinglePortrait {
+                    xPosition = isRTL ? width - imageWidth : 0
                 } else {
                     xPosition = currentX
                 }
 
-                let frame = CGRect(
-                    x: xPosition,
-                    y: currentY,
-                    width: imageWidth,
-                    height: height
-                )
-
-                frames[url] = frame
+                frames[url] = CGRect(x: xPosition, y: currentY, width: imageWidth, height: rowHeight)
                 currentX += imageWidth
             }
 
             groups[index].y = currentY
-            groups[index].height = height
-            currentY += height
+            groups[index].height = rowHeight
+            currentY += rowHeight
         }
 
         return (frames, currentY)
     }
 
     // MARK: - Image Views
-
-    private func updateImageViewsWithFrames(_ frames: [String: CGRect]) {
-        for url in urls {
-            var hasher = Hasher()
-            hasher.combine(url)
-            let tag = hasher.finalize()
-
-            let existingView = containerView.viewWithTag(tag)
-
-            if let existingView = existingView {
-                handleExistingImageView(existingView, url: url, tag: tag, frames: frames)
-            } else {
-                createNewImageView(url: url, tag: tag, frames: frames)
-            }
-        }
-    }
 
     private func updateContentSize(finalY: CGFloat) {
         guard let navigationBar = navigationController?.navigationBar else { return }
@@ -1258,9 +1197,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         containerTopConstraint.constant = startY
         containerWidthConstraint.constant = view.safeAreaLayoutGuide.layoutFrame.width
         containerHeightConstraint.constant = finalY
-
-        contentHeightConstraint.constant =
-            finalY + startY + view.safeAreaInsets.bottom
+        contentHeightConstraint.constant = finalY + startY + view.safeAreaInsets.bottom
 
         if overscrollView.isHidden {
             overscrollView.isHidden = false
@@ -1273,15 +1210,18 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     private func updateImageViews() {
         guard !readerSession.images.isEmpty else { return }
 
-        removeLoadingAndErrorViews()
+        // Remove full-screen loading / error overlays
+        view.viewWithTag(LOADER_VIEW_ID)?.removeFromSuperview()
+        view.viewWithTag(ERROR_VIEW_ID)?.removeFromSuperview()
 
         let ratios = calculateImageRatios()
         let mode = calculateModeRatio(from: ratios)
-        let (frames, finalY) = calculateFrames(
-            ratios: ratios, mode: mode
-        )
+        let (frames, finalY) = calculateFrames(ratios: ratios, mode: mode)
 
-        updateImageViewsWithFrames(frames)
+        for url in urls {
+            reconcileImageView(url: url, frames: frames)
+        }
+
         updateContentSize(finalY: finalY)
     }
 

@@ -545,11 +545,15 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     private func updatePageViewController() {
         removeLoadingAndErrorViews()
 
-        guard !groups.isEmpty else { return }
+        let currentGroups = groups
+        let currentUrls = urls
 
-        if let initialPage = initialPage, initialPage >= 0, initialPage < urls.count {
+        guard !currentGroups.isEmpty else { return }
+
+        if let initialPage = initialPage, initialPage >= 0, initialPage < currentUrls.count {
             let allImagesLoaded = (0 ... initialPage).allSatisfy { index in
-                let url = urls[index]
+                guard index < currentUrls.count else { return false }
+                let url = currentUrls[index]
                 if let readerImage = readerSession.images[url],
                    case .success = readerImage.state
                 {
@@ -567,7 +571,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
 
         // Ensure currentGroup is valid for current groups
-        let safeCurrentGroup = min(currentGroup, groups.count - 1)
+        let safeCurrentGroup = min(currentGroup, currentGroups.count - 1)
         if safeCurrentGroup != currentGroup {
             currentGroup = safeCurrentGroup
         }
@@ -952,7 +956,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     // MARK: - Page Navigation
 
     private func navigateToGroup(_ group: Int, animated: Bool = false) {
-        guard group >= 0, group < groups.count else { return }
+        let currentGroups = groups
+        guard group >= 0, group < currentGroups.count else { return }
 
         let direction: UIPageViewController.NavigationDirection
         // Only reverse animation direction for horizontal RTL
@@ -977,17 +982,24 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     }
 
     private func navigateToPage(_ page: Int, animated: Bool = false) {
-        guard page >= 0, page < urls.count else { return }
-        let targetUrl = urls[page]
-        if let groupIndex = groups.firstIndex(where: { $0.contains(targetUrl) }) {
+        let currentUrls = urls
+        let currentGroups = groups
+        guard page >= 0, page < currentUrls.count else { return }
+
+        let targetUrl = currentUrls[page]
+        if let groupIndex = currentGroups.firstIndex(where: { $0.contains(targetUrl) }) {
             navigateToGroup(groupIndex, animated: animated)
         }
     }
 
     private func syncCurrentPage() {
-        let group = groups[currentGroup]
+        let currentUrls = urls
+        let currentGroups = groups
+        guard currentGroup >= 0, currentGroup < currentGroups.count else { return }
+
+        let group = currentGroups[currentGroup]
         if let lastUrl = group.urls.last,
-           let pageIndex = urls.lastIndex(of: lastUrl), currentPage != pageIndex
+           let pageIndex = currentUrls.lastIndex(of: lastUrl), currentPage != pageIndex
         {
             currentPage = pageIndex
             updateBottomBar()
@@ -996,7 +1008,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     }
 
     private func createPageContentViewController(for groupIndex: Int) -> PageContentViewController {
-        guard groupIndex >= 0, groupIndex < groups.count else {
+        let currentGroups = groups
+        guard groupIndex >= 0, groupIndex < currentGroups.count else {
             return PageContentViewController(
                 pageIndex: 0,
                 urls: [],
@@ -1005,7 +1018,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             )
         }
 
-        let group = groups[groupIndex]
+        let group = currentGroups[groupIndex]
         var groupImages: [String: ReaderImageState] = [:]
         for url in group.urls {
             groupImages[url] = readerSession.images[url]?.state ?? .loading
@@ -1061,6 +1074,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         guard let contentVC = viewController as? PageContentViewController else { return nil }
 
+        let groupCount = groups.count
+
         let newIndex: Int
         // In vertical mode, "before" means previous page (scroll up)
         // In horizontal mode, "before" depends on reading direction
@@ -1076,7 +1091,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         if cachedReadingDirection == .rightToLeft, cachedNavigationOrientation == .horizontal {
             // RTL Logic
             // Before -> Next Chapter (End of Chapter)
-            if newIndex >= groups.count {
+            if newIndex >= groupCount {
                 return createOverscrollViewController(type: .next)
             }
             // Valid Page
@@ -1103,6 +1118,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         guard let contentVC = viewController as? PageContentViewController else { return nil }
 
+        let groupCount = groups.count
+
         let newIndex: Int
         // In vertical mode, "after" means next page (scroll down)
         // In horizontal mode, "after" depends on reading direction
@@ -1125,7 +1142,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         } else {
             // Vertical or LTR Logic
             // After -> Next Chapter (End of Chapter)
-            if newIndex >= groups.count {
+            if newIndex >= groupCount {
                 return createOverscrollViewController(type: .next)
             }
             // Valid Page
@@ -1315,10 +1332,11 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             return
         }
 
-        let totalPages = urls.count
-        pageInfoButton.setTitle("\(currentPage + 1) / \(totalPages)", for: .normal)
+        let totalPages = max(urls.count, 1)
+        let currentGroups = groups
+        pageInfoButton.setTitle("\(min(currentPage + 1, totalPages)) / \(totalPages)", for: .normal)
         previousButton.isEnabled = currentGroup != 0
-        nextButton.isEnabled = currentGroup < groups.count - 1
+        nextButton.isEnabled = currentGroup < currentGroups.count - 1
 
         if currentChapterIndex > 0 {
             let previousChapter = chapters[currentChapterIndex - 1]

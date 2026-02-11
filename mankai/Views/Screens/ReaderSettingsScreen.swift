@@ -28,8 +28,8 @@ struct ReaderSettingsScreen: View {
                         set: { readerTypeRawValue = $0.rawValue }
                     )
                 ) {
-                    Text(String(localized: "continuous")).tag(ReaderType.continuous)
                     Text(String(localized: "paged")).tag(ReaderType.paged)
+                    Text(String(localized: "continuous")).tag(ReaderType.continuous)
                 }
             }
 
