@@ -17,6 +17,7 @@ enum LogCategory: String {
     case updateService = "UpdateService"
     case pluginService = "PluginService"
     case syncService = "SyncService"
+    case downloadService = "DownloadService"
 
     // UI
     case ui = "UI"
@@ -28,6 +29,7 @@ enum LogCategory: String {
     case jsPlugin = "JsPlugin"
     case appDirPlugin = "AppDirPlugin"
     case httpPlugin = "HttpPlugin"
+    case downloadPlugin = "DownloadPlugin"
 
     // Runtime
     case jsRuntime = "JsRuntime"
@@ -168,6 +170,7 @@ extension Logger {
     static let updateService = Logger(category: .updateService)
     static let pluginService = Logger(category: .pluginService)
     static let syncService = Logger(category: .syncService)
+    static let downloadService = Logger(category: .downloadService)
 
     // UI
     static let ui = Logger(category: .ui)
@@ -179,6 +182,7 @@ extension Logger {
     static let jsPlugin = Logger(category: .jsPlugin)
     static let httpPlugin = Logger(category: .httpPlugin)
     static let appDirPlugin = Logger(category: .appDirPlugin)
+    static let downloadPlugin = Logger(category: .downloadPlugin)
 
     // Runtime
     static let jsRuntime = Logger(category: .jsRuntime)
