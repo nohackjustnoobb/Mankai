@@ -12,17 +12,19 @@ enum SettingsKey: String {
     case hideBuiltInPlugins
     case showDebugScreen
 
+    // Shared Reader Settings
     case readerType
+    case imageLayout
+    case useSmartGrouping
+    case smartGroupingSensitivity
 
     // Continuous Reader
-    case CR_imageLayout
     case CR_readingDirection
     case CR_tapNavigation
     case CR_snapToPage
     case CR_softSnap
 
     // Paged Reader
-    case PR_imageLayout
     case PR_navigationOrientation
     case PR_readingDirection
     case PR_tapNavigation

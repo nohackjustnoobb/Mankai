@@ -20,6 +20,8 @@ enum LogCategory: String {
 
     // UI
     case ui = "UI"
+    case readerSession = "ReaderSession"
+    case adjacencyModel = "AdjacencyModel"
 
     // Plugin Types
     case fsPlugin = "FsPlugin"
@@ -169,6 +171,8 @@ extension Logger {
 
     // UI
     static let ui = Logger(category: .ui)
+    static let readerSession = Logger(category: .readerSession)
+    static let adjacencyModel = Logger(category: .adjacencyModel)
 
     // Plugin Types
     static let fsPlugin = Logger(category: .fsPlugin)

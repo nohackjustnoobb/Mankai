@@ -34,76 +34,83 @@ struct ChaptersModal: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    if chapters.isEmpty {
-                        Text("noChaptersAvailable")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
-                            Button(action: {
-                                onNavigateToChapter(chapter, nil, chaptersKey)
-                            }) {
-                                HStack {
-                                    Text(chapter.title ?? chapter.id)
-                                        .foregroundColor(.primary)
+            ScrollViewReader { proxy in
+                List {
+                    Section {
+                        if chapters.isEmpty {
+                            Text("noChaptersAvailable")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) { chapter in
+                                Button(action: {
+                                    onNavigateToChapter(chapter, nil, chaptersKey)
+                                }) {
+                                    HStack {
+                                        Text(chapter.title ?? chapter.id)
+                                            .foregroundColor(.primary)
 
-                                    if let record = record, record.chapterId == chapter.id {
-                                        Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                                            .foregroundColor(.accentColor)
+                                        if let record = record, record.chapterId == chapter.id {
+                                            Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                                .foregroundColor(.accentColor)
+                                        }
+
+                                        Spacer()
+                                        Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
+                                            .foregroundColor(.secondary)
                                     }
+                                }
+                                .disabled(chapter.locked ?? false)
+                            }
+                        }
+                    } header: {
+                        Spacer(minLength: 0)
+                    }
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .navigationTitle(LocalizedStringKey(chaptersKey))
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        HStack {
+                            Button(action: {
+                                isReversed.toggle()
+                            }) {
+                                Image(
+                                    systemName: isReversed
+                                        ? "arrow.up"
+                                        : "arrow.down")
+                            }
 
-                                    Spacer()
-                                    Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
-                                        .foregroundColor(.secondary)
+                            if plugin is Editable {
+                                NavigationLink(destination: {
+                                    UpdateChaptersModal(
+                                        plugin: plugin as! any Editable, manga: manga, chaptersKey: chaptersKey
+                                    )
+                                }) {
+                                    Image(systemName: "pencil")
                                 }
                             }
-                            .disabled(chapter.locked ?? false)
                         }
                     }
-                } header: {
-                    Spacer(minLength: 0)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle(LocalizedStringKey(chaptersKey))
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    HStack {
-                        Button(action: {
-                            isReversed.toggle()
-                        }) {
-                            Image(
-                                systemName: isReversed
-                                    ? "arrow.up"
-                                    : "arrow.down")
-                        }
 
-                        if plugin is Editable {
-                            NavigationLink(destination: {
-                                UpdateChaptersModal(
-                                    plugin: plugin as! any Editable, manga: manga, chaptersKey: chaptersKey
-                                )
-                            }) {
-                                Image(systemName: "pencil")
-                            }
+                    ToolbarItem(placement: .principal) {
+                        VStack {
+                            Text(LocalizedStringKey(chaptersKey))
+                                .font(.headline)
+                            Text("\(chapters.count) chapters")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("close") {
+                            dismiss()
                         }
                     }
                 }
-
-                ToolbarItem(placement: .principal) {
-                    VStack {
-                        Text(LocalizedStringKey(chaptersKey))
-                            .font(.headline)
-                        Text("\(chapters.count) chapters")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("close") {
-                        dismiss()
+                .onAppear {
+                    if let record = record {
+                        proxy.scrollTo(record.chapterId, anchor: .center)
                     }
                 }
             }

@@ -342,73 +342,90 @@ struct MangaDetailsScreen: View {
                     if let selectedChapterKey = selectedChapterKey,
                        let chapters = detailedManga?.chapters[selectedChapterKey]
                     {
-                        List {
-                            Section {
-                                if chapters.isEmpty {
-                                    Text("noChaptersAvailable")
-                                        .foregroundStyle(.secondary)
-                                } else {
-                                    ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
-                                        chapter in
-                                        Button(action: {
-                                            navigateToChapter(chapter)
-                                        }) {
-                                            HStack {
-                                                Text(chapter.title ?? chapter.id)
-                                                    .foregroundColor(.primary)
-
-                                                if let record = record, record.chapterId == chapter.id {
-                                                    Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
-                                                        .foregroundColor(.accentColor)
-                                                }
-
-                                                Spacer()
-                                                Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
-                                                    .foregroundColor(.secondary)
-                                            }
-                                        }
-                                        .disabled(chapter.locked ?? false)
-                                    }
-                                }
-
-                            } header: {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(LocalizedStringKey(selectedChapterKey))
-                                        Text("\(chapters.count) chapters")
-                                            .font(.caption)
+                        ScrollViewReader { proxy in
+                            List {
+                                Section {
+                                    if chapters.isEmpty {
+                                        Text("noChaptersAvailable")
                                             .foregroundStyle(.secondary)
+                                    } else {
+                                        ForEach(isReversed ? chapters.reversed() : chapters, id: \.id) {
+                                            chapter in
+                                            Button(action: {
+                                                navigateToChapter(chapter)
+                                            }) {
+                                                HStack {
+                                                    Text(chapter.title ?? chapter.id)
+                                                        .foregroundColor(.primary)
+
+                                                    if let record = record, record.chapterId == chapter.id {
+                                                        Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                                            .foregroundColor(.accentColor)
+                                                    }
+
+                                                    Spacer()
+                                                    Image(systemName: (chapter.locked ?? false) ? "lock.fill" : "chevron.right")
+                                                        .foregroundColor(.secondary)
+                                                }
+                                            }
+                                            .disabled(chapter.locked ?? false)
+                                        }
                                     }
 
-                                    Spacer()
-
+                                } header: {
                                     HStack {
-                                        Button(action: {
-                                            isReversed.toggle()
-                                        }) {
-                                            Image(
-                                                systemName: isReversed
-                                                    ? "arrow.up"
-                                                    : "arrow.down"
-                                            )
-                                            .font(.headline)
+                                        VStack(alignment: .leading) {
+                                            Text(LocalizedStringKey(selectedChapterKey))
+                                            Text("\(chapters.count) chapters")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
                                         }
-                                        .buttonStyle(.plain)
 
-                                        if plugin is Editable {
+                                        Spacer()
+
+                                        HStack {
                                             Button(action: {
-                                                isUpdateChaptersModalPresented = true
+                                                isReversed.toggle()
                                             }) {
-                                                Image(systemName: "pencil")
-                                                    .font(.headline)
+                                                Image(
+                                                    systemName: isReversed
+                                                        ? "arrow.up"
+                                                        : "arrow.down"
+                                                )
+                                                .font(.headline)
                                             }
                                             .buttonStyle(.plain)
+
+                                            if plugin is Editable {
+                                                Button(action: {
+                                                    isUpdateChaptersModalPresented = true
+                                                }) {
+                                                    Image(systemName: "pencil")
+                                                        .font(.headline)
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
                                         }
                                     }
                                 }
                             }
+                            .frame(maxWidth: .infinity)
+                            .onAppear {
+                                if let record = record {
+                                    proxy.scrollTo(record.chapterId, anchor: .center)
+                                }
+                            }
+                            .onChange(of: record, initial: false) { _, newRecord in
+                                if let newRecord = newRecord {
+                                    proxy.scrollTo(newRecord.chapterId, anchor: .center)
+                                }
+                            }
+                            .onChange(of: selectedChapterKey) {
+                                if let record = record {
+                                    proxy.scrollTo(record.chapterId, anchor: .center)
+                                }
+                            }
                         }
-                        .frame(maxWidth: .infinity)
                     } else {
                         ProgressView()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)

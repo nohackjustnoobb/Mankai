@@ -1422,6 +1422,22 @@
         }
       }
     },
+    "failedToCreatePixelBuffer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to Create Pixel Buffer"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建立像素緩衝區失敗"
+          }
+        }
+      }
+    },
     "failedToDeleteManga" : {
       "localizations" : {
         "en" : {
@@ -2182,6 +2198,22 @@
         }
       }
     },
+    "imageGrouping" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Grouping"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片分組"
+          }
+        }
+      }
+    },
     "imageLayout" : {
       "localizations" : {
         "en" : {
@@ -2306,6 +2338,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無效的雜湊回應"
+          }
+        }
+      }
+    },
+    "invalidInputImage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid Input Image"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入的圖片無效"
           }
         }
       }
@@ -4388,6 +4436,38 @@
         }
       }
     },
+    "smartGroupingSensitivity" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart Grouping Sensitivity"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能分組敏感度"
+          }
+        }
+      }
+    },
+    "smartGroupingSensitivityDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Higher sensitivity will tend to group pages together and lower sensitivity will tend to split pages apart."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "數值越高，越容易將頁面分在一起。數值越低，越容易將頁面分開。"
+          }
+        }
+      }
+    },
     "snapToPage" : {
       "localizations" : {
         "en" : {
@@ -4903,6 +4983,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用者名稱"
+          }
+        }
+      }
+    },
+    "useSmartGrouping" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Smart Grouping"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用智能分組"
+          }
+        }
+      }
+    },
+    "useSmartGroupingDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smart grouping uses deep learning to automatically organize pages based on content similarity. Results may vary, and enabling this feature could impact performance."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "智能分組利用深度學習技術，根據內容相似度自動對頁面進行分類。請注意，分組結果可能不盡完美，且可能會影響執行效能。"
           }
         }
       }

@@ -236,7 +236,6 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     var isNavigationBarAnimating = false
 
     // Cached settings
-    private var cachedImageLayout: ImageLayout = SettingsDefaults.PR_imageLayout
     private var cachedReadingDirection: ReadingDirection = SettingsDefaults.PR_readingDirection
     private var cachedNavigationOrientation: NavigationOrientation = SettingsDefaults
         .PR_navigationOrientation
@@ -262,8 +261,7 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
         readerSession = ReaderSession(
             plugin: plugin,
-            manga: manga,
-            imageLayout: SettingsDefaults.PR_imageLayout
+            manga: manga
         )
 
         super.init(nibName: nil, bundle: nil)
@@ -278,28 +276,13 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         super.viewDidLoad()
 
         updateCachedSettings()
+        readerSession.readingDirection = cachedReadingDirection
 
         setupUI()
         setupGestures()
         setupConstraints()
 
         loadChapter()
-
-        // Observe orientation changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(updateGrouping),
-            name: UIDevice.orientationDidChangeNotification,
-            object: nil
-        )
-
-        // Observe specific UserDefaults keys that affect layout
-        UserDefaults.standard.addObserver(
-            self,
-            forKeyPath: SettingsKey.PR_imageLayout.rawValue,
-            options: [.new],
-            context: nil
-        )
 
         UserDefaults.standard.addObserver(
             self,
@@ -341,7 +324,6 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.PR_imageLayout.rawValue)
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.PR_readingDirection.rawValue
         )
@@ -387,10 +369,8 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
     ) {
         updateCachedSettings()
 
-        if keyPath == SettingsKey.PR_imageLayout.rawValue {
-            updateGrouping()
-        } else if keyPath == SettingsKey.PR_readingDirection.rawValue {
-            // Reload current page to apply new reading direction
+        if keyPath == SettingsKey.PR_readingDirection.rawValue {
+            readerSession.readingDirection = cachedReadingDirection
             navigateToGroup(currentGroup, animated: false)
         } else if keyPath == SettingsKey.PR_navigationOrientation.rawValue {
             // Recreate page view controller with new orientation
@@ -398,19 +378,9 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
         }
     }
 
-    @objc private func updateGrouping() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.readerSession.imageLayout = self.cachedImageLayout
-            self.navigateToPage(self.currentPage, animated: false)
-        }
-    }
-
     private func updateCachedSettings() {
         let defaults = UserDefaults.standard
-        cachedImageLayout =
-            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.PR_imageLayout.rawValue))
-                ?? SettingsDefaults.PR_imageLayout
+
         cachedReadingDirection =
             ReadingDirection(
                 rawValue: defaults.integer(forKey: SettingsKey.PR_readingDirection.rawValue))
@@ -570,10 +540,16 @@ private class PagedReaderViewController: UIViewController, UIPageViewControllerD
             }
         }
 
-        // Ensure currentGroup is valid for current groups
-        let safeCurrentGroup = min(currentGroup, currentGroups.count - 1)
-        if safeCurrentGroup != currentGroup {
-            currentGroup = safeCurrentGroup
+        // Recalculate currentGroup based on currentPage to maintain position
+        if currentPage >= 0, currentPage < currentUrls.count {
+            let currentUrl = currentUrls[currentPage]
+            if let groupIndex = currentGroups.firstIndex(where: { $0.contains(currentUrl) }) {
+                currentGroup = groupIndex
+            } else {
+                currentGroup = min(currentGroup, currentGroups.count - 1)
+            }
+        } else {
+            currentGroup = min(currentGroup, currentGroups.count - 1)
         }
 
         // Set the initial page

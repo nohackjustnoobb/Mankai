@@ -255,8 +255,7 @@ class JsPlugin: Plugin {
     private let cacheLock = NSLock()
 
     private func getInMemoryCacheExpiryDuration() -> TimeInterval {
-        let defaults = UserDefaults.standard
-        let duration = defaults.double(forKey: SettingsKey.inMemoryCacheExpiryDuration.rawValue)
+        let duration = UserDefaults.standard.double(forKey: SettingsKey.inMemoryCacheExpiryDuration.rawValue)
         return duration > 0 ? duration : JsPluginConstants.defaultInMemoryCacheExpiryDuration
     }
 

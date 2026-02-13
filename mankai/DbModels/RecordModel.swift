@@ -39,3 +39,5 @@ extension RecordModel: TableRecord {
 }
 
 extension RecordModel: Codable, FetchableRecord, PersistableRecord {}
+
+extension RecordModel: Equatable {}

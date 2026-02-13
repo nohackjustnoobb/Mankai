@@ -90,7 +90,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     // Cached settings
     private var cachedTapNavigation: Bool = SettingsDefaults.CR_tapNavigation
     private var cachedSnapToPage: Bool = SettingsDefaults.CR_snapToPage
-    private var cachedImageLayout: ImageLayout = SettingsDefaults.CR_imageLayout
+    private var cachedImageLayout: ImageLayout = SettingsDefaults.imageLayout
     private var cachedReadingDirection: ReadingDirection = SettingsDefaults.CR_readingDirection
     private var cachedSoftSnap: Bool = SettingsDefaults.CR_softSnap
 
@@ -124,8 +124,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         readerSession = ReaderSession(
             plugin: plugin,
-            manga: manga,
-            imageLayout: SettingsDefaults.CR_imageLayout
+            manga: manga
         )
 
         super.init(nibName: nil, bundle: nil)
@@ -155,7 +154,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         // Observe specific UserDefaults keys that affect layout
         UserDefaults.standard.addObserver(
             self,
-            forKeyPath: SettingsKey.CR_imageLayout.rawValue,
+            forKeyPath: SettingsKey.imageLayout.rawValue,
             options: [.new],
             context: nil
         )
@@ -190,6 +189,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
         // Initialize cached settings
         updateCachedSettings()
+        readerSession.readingDirection = cachedReadingDirection
 
         // Subscribe to ReaderSession changes
         readerSession.$images
@@ -203,7 +203,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
 
     deinit {
         NotificationCenter.default.removeObserver(self)
-        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.CR_imageLayout.rawValue)
+        UserDefaults.standard.removeObserver(self, forKeyPath: SettingsKey.imageLayout.rawValue)
         UserDefaults.standard.removeObserver(
             self, forKeyPath: SettingsKey.CR_readingDirection.rawValue
         )
@@ -255,7 +255,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
     ) {
         updateCachedSettings()
 
-        if keyPath == SettingsKey.CR_imageLayout.rawValue
+        if keyPath == SettingsKey.imageLayout.rawValue
             || keyPath == SettingsKey.CR_readingDirection.rawValue
         {
             updateGrouping()
@@ -266,6 +266,7 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.readerSession.imageLayout = self.cachedImageLayout
+            self.readerSession.readingDirection = self.cachedReadingDirection
             self.syncGroupsFromSession()
             self.navigateToPage(self.currentPage, animated: false)
         }
@@ -280,8 +281,8 @@ private class ContinuousReaderViewController: UIViewController, UIScrollViewDele
             defaults.object(forKey: SettingsKey.CR_snapToPage.rawValue) as? Bool
                 ?? SettingsDefaults.CR_snapToPage
         cachedImageLayout =
-            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.CR_imageLayout.rawValue))
-                ?? SettingsDefaults.CR_imageLayout
+            ImageLayout(rawValue: defaults.integer(forKey: SettingsKey.imageLayout.rawValue))
+                ?? SettingsDefaults.imageLayout
         cachedReadingDirection =
             ReadingDirection(
                 rawValue: defaults.integer(forKey: SettingsKey.CR_readingDirection.rawValue))

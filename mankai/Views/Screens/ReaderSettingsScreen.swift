@@ -10,6 +10,12 @@ import SwiftUI
 struct ReaderSettingsScreen: View {
     @AppStorage(SettingsKey.readerType.rawValue) private var readerTypeRawValue: Int =
         SettingsDefaults.readerType.rawValue
+    @AppStorage(SettingsKey.imageLayout.rawValue) private var imageLayoutRawValue: Int =
+        SettingsDefaults.imageLayout.rawValue
+    @AppStorage(SettingsKey.useSmartGrouping.rawValue) private var useSmartGrouping: Bool =
+        SettingsDefaults.useSmartGrouping
+    @AppStorage(SettingsKey.smartGroupingSensitivity.rawValue) private var smartGroupingSensitivity: Double =
+        SettingsDefaults.smartGroupingSensitivity
 
     var body: some View {
         List {
@@ -19,6 +25,44 @@ struct ReaderSettingsScreen: View {
                 title: String(localized: "reader"),
                 description: String(localized: "readerDescription")
             )
+
+            Section("imageGrouping") {
+                Picker(
+                    String(localized: "imageLayout"),
+                    selection: Binding(
+                        get: { ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.imageLayout },
+                        set: { imageLayoutRawValue = $0.rawValue }
+                    )
+                ) {
+                    Text(String(localized: "auto")).tag(ImageLayout.auto)
+                    Text(String(localized: "onePerRow")).tag(ImageLayout.onePerRow)
+                    Text(String(localized: "twoPerRow")).tag(ImageLayout.twoPerRow)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle(
+                        String(localized: "useSmartGrouping"),
+                        isOn: $useSmartGrouping
+                    )
+                    Text(String(localized: "useSmartGroupingDescription"))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                if useSmartGrouping {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(String(localized: "smartGroupingSensitivity"))
+                        Slider(
+                            value: $smartGroupingSensitivity,
+                            in: 0 ... 1,
+                            step: 0.1
+                        )
+                        Text(String(localized: "smartGroupingSensitivityDescription"))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
 
             Section {
                 Picker(
@@ -46,8 +90,6 @@ struct ReaderSettingsScreen: View {
 }
 
 struct ContinuousReaderSettingsView: View {
-    @AppStorage(SettingsKey.CR_imageLayout.rawValue) private var imageLayoutRawValue: Int =
-        SettingsDefaults.CR_imageLayout.rawValue
     @AppStorage(SettingsKey.CR_readingDirection.rawValue) private var readingDirectionRawValue: Int =
         SettingsDefaults.CR_readingDirection.rawValue
     @AppStorage(SettingsKey.CR_tapNavigation.rawValue) private var tapNavigation: Bool =
@@ -59,18 +101,6 @@ struct ContinuousReaderSettingsView: View {
 
     var body: some View {
         Section("continuousReaderSettings") {
-            Picker(
-                "imageLayout",
-                selection: Binding(
-                    get: { ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.CR_imageLayout },
-                    set: { imageLayoutRawValue = $0.rawValue }
-                )
-            ) {
-                Text("auto").tag(ImageLayout.auto)
-                Text("onePerRow").tag(ImageLayout.onePerRow)
-                Text("twoPerRow").tag(ImageLayout.twoPerRow)
-            }
-
             Picker(
                 "readingDirection",
                 selection: Binding(
@@ -106,8 +136,6 @@ struct ContinuousReaderSettingsView: View {
 }
 
 struct PagedReaderSettingsView: View {
-    @AppStorage(SettingsKey.PR_imageLayout.rawValue) private var imageLayoutRawValue: Int =
-        SettingsDefaults.PR_imageLayout.rawValue
     @AppStorage(SettingsKey.PR_readingDirection.rawValue) private var readingDirectionRawValue: Int =
         SettingsDefaults.PR_readingDirection.rawValue
     @AppStorage(SettingsKey.PR_navigationOrientation.rawValue) private var navigationOrientationRawValue: Int =
@@ -123,18 +151,6 @@ struct PagedReaderSettingsView: View {
 
     var body: some View {
         Section("pagedReaderSettings") {
-            Picker(
-                "imageLayout",
-                selection: Binding(
-                    get: { ImageLayout(rawValue: imageLayoutRawValue) ?? SettingsDefaults.PR_imageLayout },
-                    set: { imageLayoutRawValue = $0.rawValue }
-                )
-            ) {
-                Text("auto").tag(ImageLayout.auto)
-                Text("onePerRow").tag(ImageLayout.onePerRow)
-                Text("twoPerRow").tag(ImageLayout.twoPerRow)
-            }
-
             Picker(
                 "navigationOrientation",
                 selection: Binding(

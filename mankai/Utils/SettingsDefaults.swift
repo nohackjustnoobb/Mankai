@@ -18,15 +18,17 @@ enum SettingsDefaults {
         UIDevice.isIPad ? .paged : .continuous
     }
 
+    static let imageLayout: ImageLayout = .auto
+    static let useSmartGrouping: Bool = false
+    static let smartGroupingSensitivity: Double = 0.5
+
     // Continuous Reader Defaults
-    static let CR_imageLayout: ImageLayout = .auto
     static let CR_readingDirection: ReadingDirection = .rightToLeft
     static let CR_tapNavigation: Bool = true
     static let CR_snapToPage: Bool = false
     static let CR_softSnap: Bool = false
 
     // Paged Reader Defaults
-    static let PR_imageLayout: ImageLayout = .auto
     static let PR_navigationOrientation: NavigationOrientation = .vertical
     static let PR_readingDirection: ReadingDirection = .rightToLeft
     static let PR_tapNavigation: Bool = true

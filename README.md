@@ -18,7 +18,7 @@
 
 </div>
 
-Mankai is a powerful and extensible manga reader for iPhone and iPad, written in Swift. It features a **plugin system** for multi-source support (JavaScript, filesystem, and HTTP), **library management** to organize your collection, **reading history** tracking, and a **modern UI** built with SwiftUI.
+Mankai is a powerful, extensible manga reader and manager for iOS and iPadOS. It is primarily built with SwiftUI, featuring a high-performance UIKit-based reader, multi-source plugin support, and cross-device syncing.
 
 ![Demo](assets/demo.png)
 
@@ -38,6 +38,15 @@ Mankai is a powerful and extensible manga reader for iPhone and iPad, written in
 | ![Home](assets/ipad-home.jpeg) | ![Library](assets/ipad-library.jpeg) | ![Details](assets/ipad-details.jpeg) |
 
 </details>
+
+## Features
+
+- **Extensible Plugin System**: Support for [JavaScript, File System, and HTTP](#plugins) sources.
+- **Modern UI**: A responsive interface built with SwiftUI.
+- **High-Performance Readers**: [Continuous and Paged](#reader) reading modes built on UIKit.
+- **Smart Grouping**: Deep learning-powered [automatic spread detection](#smart-grouping).
+- **Library & History**: Manage your collection and track reading progress.
+- **Cross-Device Syncing**: Keep your library in sync using [HttpEngine or Supabase](#syncing).
 
 ## Plugins
 
@@ -61,6 +70,39 @@ This plugin is designed for external providers to use Mankai as a reader and, op
 
 - **Specification**: [Mankai API Specification](https://github.com/nohackjustnoobb/mankai-server/blob/master/doc/api.md)
 - **Reference Server**: [mankai-server](https://github.com/nohackjustnoobb/mankai-server)
+
+## Reader
+
+Mankai provides two high-performance reading modes, both implemented in UIKit to ensure smooth scrolling and page transitions:
+
+- **Continuous Reader**: A traditional webtoon-style vertical scrolling experience.
+- **Paged Reader**: A paginated experience supporting both vertical and horizontal reading directions.
+
+### Smart Grouping
+
+Mankai features an advanced **Smart Grouping** system that uses a deep learning model to detect and merge split-page spreads. By analyzing the visual adjacency of images, the app can automatically group two separate files into a single seamless spread, restoring the original artistic intent.
+
+- **Model Repository**: [mankai-smart-grouping](https://github.com/nohackjustnoobb/mankai-smart-grouping)
+
+#### Performance
+
+| Metric            | Value                   |
+| :---------------- | :---------------------- |
+| **Base Model**    | `mobilenetv3_large_100` |
+| **Test Accuracy** | 99.51%                  |
+| **Precision**     | 99.45%                  |
+| **Recall**        | 99.55%                  |
+| **F1 Score**      | 99.50%                  |
+
+#### Inference
+
+Performance benchmarks on **iPhone 15**:
+
+| Compute Units           | Prediction (Median) | Load (Median) | Compilation (Median) |
+| :---------------------- | :------------------ | :------------ | :------------------- |
+| **CPU Only**            | 5.81 ms             | 31.56 ms      | 109.14 ms            |
+| **CPU + GPU**           | 14.54 ms            | 69.52 ms      | 174.20 ms            |
+| **CPU + Neural Engine** | 1.60 ms             | 35.36 ms      | 107.57 ms            |
 
 ## Syncing
 
